@@ -43,6 +43,20 @@ func vestings{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
     return StarkVest.vestings(vesting_id)
 end
 
+@view
+func withdrawable_amount{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
+    withdrawable_amount : Uint256
+):
+    return StarkVest.withdrawable_amount()
+end
+
+@view
+func get_contract_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
+    balance : Uint256
+):
+    return StarkVest.get_contract_balance()
+end
+
 # -----
 # CONSTRUCTOR
 # -----
