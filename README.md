@@ -2,7 +2,7 @@
   <h1 align="center">StarkVest</h1>
   <p align="center">
     <a href="https://github.com/abdelhamidbakhta">
-        <img src="https://img.shields.io/badge/Discord-6666FF?style=for-the-badge&logo=github&logoColor=white">
+        <img src="https://img.shields.io/badge/Github-4078c0?style=for-the-badge&logo=github&logoColor=white">
     </a>
     <a href="https://twitter.com/intent/follow?screen_name=dimahledba">
         <img src="https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white">
