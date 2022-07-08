@@ -23,10 +23,10 @@ func erc20_address{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check
 end
 
 @view
-func vesting_total_amount{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
-    vesting_total_amount : Uint256
+func vestings_total_amount{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
+    vestings_total_amount : Uint256
 ):
-    return StarkVest.vesting_total_amount()
+    return StarkVest.vestings_total_amount()
 end
 
 @view

@@ -6,13 +6,15 @@
 # Starkware dependencies
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.bool import TRUE, FALSE
-from starkware.cairo.common.uint256 import Uint256
+from starkware.cairo.common.uint256 import Uint256, uint256_le
 from starkware.cairo.common.hash import hash2
 from starkware.cairo.common.math import assert_not_zero, assert_nn, assert_le, assert_in_range
+from starkware.starknet.common.syscalls import get_contract_address
 
 # OpenZeppelin dependencies
 from openzeppelin.access.ownable import Ownable
 from openzeppelin.security.safemath import SafeUint256
+from openzeppelin.token.erc20.interfaces.IERC20 import IERC20
 
 # Project dependencies
 
@@ -30,7 +32,7 @@ end
 
 # Amount of tokens currently locked in vestings.
 @storage_var
-func vesting_total_amount_() -> (vesting_total_amount : Uint256):
+func vestings_total_amount_() -> (vesting_total_amount : Uint256):
 end
 
 # Number of vesting per beneficiary address.
@@ -53,10 +55,10 @@ namespace StarkVest:
         return erc20_address_.read()
     end
 
-    func vesting_total_amount{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        ) -> (vesting_total_amount : Uint256):
-        let (vesting_total_amount) = vesting_total_amount_.read()
-        return (vesting_total_amount)
+    func vestings_total_amount{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        ) -> (vestings_total_amount : Uint256):
+        let (vestings_total_amount) = vestings_total_amount_.read()
+        return (vestings_total_amount)
     end
 
     func vesting_count{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
@@ -71,6 +73,25 @@ namespace StarkVest:
     ) -> (vesting : Vesting):
         let (vesting) = vestings_.read(vesting_id)
         return (vesting)
+    end
+
+    # Returns the amount of tokens that can be withdrawn by the owner.
+    # This can also be used to determine the number of tokens usable to create vestings.
+    func withdrawable_amount{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        ) -> (withdrawable_amount : Uint256):
+        let (contract_balance) = get_contract_balance()
+        let (vestings_total_amount) = vestings_total_amount_.read()
+        let (withdrawable_amount) = SafeUint256.sub_le(contract_balance, vestings_total_amount)
+        return (withdrawable_amount)
+    end
+
+    # Get current contract balance
+    func get_contract_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        ) -> (balance : Uint256):
+        let (erc20_address) = erc20_address_.read()
+        let (contract_address) = get_contract_address()
+        let (balance) = IERC20.balanceOf(erc20_address, contract_address)
+        return (balance)
     end
 
     # ------
@@ -106,10 +127,18 @@ namespace StarkVest:
         # At cliff + 1 second it is possible to claim vested tokens
         let cliff = start + cliff_delta
 
-        # Check preconditions
+        # Check parameters preconditions
         new_vesting_check_preconditions(
             beneficiary, cliff, start, duration, slice_period_seconds, revocable, amount_total
         )
+
+        # Get the number of available tokens
+        let (available_amount) = withdrawable_amount()
+        # Check if the contract owns sufficient tokens to pay the entire vesting
+        let (has_enough_available_tokens) = uint256_le(amount_total, available_amount)
+        with_attr error_message("StarkVest: not enough available tokens"):
+            assert has_enough_available_tokens = TRUE
+        end
 
         # Get current vesting count for beneficiary
         let (vesting_count) = vesting_count_.read(beneficiary)
@@ -147,8 +176,6 @@ namespace StarkVest:
         revocable : felt,
         amount_total : Uint256,
     ):
-        # TODO: check if the contract owns sufficient tokens to pay the entire vesting
-
         internal.assert_valid_timestamp(cliff)
         internal.assert_valid_timestamp(start)
         internal.assert_valid_timestamp(duration)

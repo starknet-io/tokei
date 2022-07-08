@@ -10,7 +10,7 @@ from starkware.cairo.common.math import assert_not_zero
 from starkware.cairo.common.uint256 import Uint256
 from starkware.starknet.common.syscalls import get_block_timestamp
 
-# OpenZeppelin depdencies
+# OpenZeppelin dependencies
 from openzeppelin.token.erc20.interfaces.IERC20 import IERC20
 
 # Project dependencies
@@ -29,7 +29,6 @@ const TOKEN_INITIAL_SUPPLY_HI = 0
 func __setup__{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
     tempvar token_contract
     tempvar starkvest_contract
-    # TODO: deploy ERC20 token and pass the address to starkvest constructor
     %{
         ids.token_contract = deploy_contract(
             "./tests/mocks/token/erc20.cairo", 

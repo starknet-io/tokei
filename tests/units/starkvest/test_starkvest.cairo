@@ -50,6 +50,7 @@ func test_create_vesting_nominal_case{
     let (local context : TestContext) = test_internal.prepare()
 
     %{ stop=start_prank(ids.context.signers.admin) %}
+    %{ mock_call(ids.context.mocks.vesting_token_address, "balanceOf", [2000, 0]) %}
     let beneficiary = context.signers.anyone_1
     let cliff_delta = 0
     let start = 1000
@@ -61,6 +62,33 @@ func test_create_vesting_nominal_case{
         beneficiary, cliff_delta, start, duration, slice_period_seconds, revocable, amount_total
     )
     assert_not_zero(vesting_id)
+    %{ stop() %}
+    return ()
+end
+
+# Test case: create vesting without enough available tokens
+# Category: BAD_CONDITIONS
+# Expected result: create_vesting must fail and revert with correct message
+@external
+func test_create_vesting_not_enough_tokens{
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+}():
+    alloc_locals
+    let (local context : TestContext) = test_internal.prepare()
+
+    %{ stop=start_prank(ids.context.signers.admin) %}
+    %{ mock_call(ids.context.mocks.vesting_token_address, "balanceOf", [999, 0]) %}
+    let beneficiary = context.signers.anyone_1
+    let cliff_delta = 0
+    let start = 1000
+    let duration = 3600
+    let slice_period_seconds = 1
+    let revocable = TRUE
+    let amount_total = Uint256(1000, 0)
+    %{ expect_revert("TRANSACTION_FAILED", "StarkVest: not enough available tokens") %}
+    StarkVest.create_vesting(
+        beneficiary, cliff_delta, start, duration, slice_period_seconds, revocable, amount_total
+    )
     %{ stop() %}
     return ()
 end
