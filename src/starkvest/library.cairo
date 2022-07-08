@@ -8,8 +8,15 @@ from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.cairo.common.uint256 import Uint256, uint256_le
 from starkware.cairo.common.hash import hash2
-from starkware.cairo.common.math import assert_not_zero, assert_nn, assert_le, assert_in_range
-from starkware.starknet.common.syscalls import get_contract_address
+from starkware.cairo.common.math import (
+    assert_not_zero,
+    assert_nn,
+    assert_le,
+    assert_in_range,
+    unsigned_div_rem,
+)
+from starkware.cairo.common.math_cmp import is_le, is_nn
+from starkware.starknet.common.syscalls import get_contract_address, get_block_timestamp
 
 # OpenZeppelin dependencies
 from openzeppelin.access.ownable import Ownable
@@ -112,6 +119,20 @@ namespace StarkVest:
         return (balance)
     end
 
+    ###
+    # Get releaseable amount of tokens for a vesting
+    ###
+    func releaseable_amount{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        vesting_id : felt
+    ) -> (releaseable_amount : Uint256):
+        let (vesting) = vestings_.read(vesting_id)
+        with_attr error_message("StarkVest: invalid beneficiary"):
+            assert_not_zero(vesting.beneficiary)
+        end
+        let (releaseable_amount) = _releaseable_amount(vesting)
+        return (releaseable_amount)
+    end
+
     # ------
     # CONSTRUCTOR
     # ------
@@ -192,6 +213,51 @@ namespace StarkVest:
     # ------
     # INTERNAL FUNCTIONS
     # ------
+
+    ###
+    # Get releaseable amount of tokens for a vesting
+    ###
+    func _releaseable_amount{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        vesting : Vesting
+    ) -> (releaseable_amount : Uint256):
+        # Get current timestamp
+        let (current_time) = get_block_timestamp()
+        # Check if we are before the cliff
+        let (before_cliff) = is_le(current_time, vesting.cliff)
+        # Check if revoked
+        let (is_revoked) = vesting.is_revoked
+        let (before_cliff_or_is_revoked) = before_cliff + is_revoked
+        # Either we are before the cliff or the vesting is revoked
+        # In both cases the amount of releaseable tokens is 0
+        if is_nn(before_cliff_or_is_revoked) == TRUE:
+            return (0)
+        end
+
+        # Compute vesting end timestamp
+        let (vesting_end_time) = vesting.start + vesting.duration
+        let (after_vesting_end) = is_le(vesting_end_time, current_time)
+
+        # Vesting is over
+        # Return total minus what has already been released
+        if after_vesting_end == TRUE:
+            let (releaseable_amount) = vesting.amount_total - vesting.released
+            return (releaseable_amount)
+        end
+
+        # Compute how much time we are past the start of vesting
+        let (time_from_start) = current_time - vesting.start
+        # Get the number of seconds per vesting period
+        let (seconds_per_slice) = vesting.slice_period_seconds
+        # Compute how many periods have been vested
+        # We can ignore the remainder here
+        let (vested_periods, _) = unsigned_div_rem(time_from_start, seconds_per_slice)
+        # The final vested seconds is the number of vested periods multiplied by the number of seconds per period
+        let (final_vested_seconds) = vested_periods * seconds_per_slice
+
+        let (tmp_amount) = vesting.amount_total * final_vested_seconds
+        let (vested_amount, _) = unsigned_div_rem(tmp_amount, vesting.duration)
+        return (vested_amount)
+    end
 
     ###
     # Checks conditions on vesting parameters.
