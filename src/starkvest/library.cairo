@@ -49,18 +49,28 @@ namespace StarkVest:
     # ------
     # VIEWS
     # ------
+
+    ###
+    # Returns the address of the ERC20 token managed by the vesting contract.
+    ###
     func erc20_address{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
         erc20_address : felt
     ):
         return erc20_address_.read()
     end
 
+    ###
+    # Returns the total amount of tokens currently locked in vestings.
+    ###
     func vestings_total_amount{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         ) -> (vestings_total_amount : Uint256):
         let (vestings_total_amount) = vestings_total_amount_.read()
         return (vestings_total_amount)
     end
 
+    ###
+    # Returns the number of vestings associated to a beneficiary.
+    ###
     func vesting_count{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         account : felt
     ) -> (vesting_count : felt):
@@ -68,6 +78,10 @@ namespace StarkVest:
         return (vesting_count)
     end
 
+    ###
+    # Get a vesting for a specified id.
+    # @param vesting_id the identifier of the vesting
+    ###
     func vestings{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         vesting_id : felt
     ) -> (vesting : Vesting):
@@ -75,8 +89,10 @@ namespace StarkVest:
         return (vesting)
     end
 
+    ###
     # Returns the amount of tokens that can be withdrawn by the owner.
     # This can also be used to determine the number of tokens usable to create vestings.
+    ###
     func withdrawable_amount{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         ) -> (withdrawable_amount : Uint256):
         let (contract_balance) = get_contract_balance()
@@ -85,7 +101,9 @@ namespace StarkVest:
         return (withdrawable_amount)
     end
 
-    # Get current contract balance
+    ###
+    # Get current contract balance.
+    ###
     func get_contract_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         ) -> (balance : Uint256):
         let (erc20_address) = erc20_address_.read()
@@ -109,6 +127,16 @@ namespace StarkVest:
     # EXTERNAL FUNCTIONS
     # ------
 
+    ###
+    # Creates a new vesting for a beneficiary.
+    # @param beneficiary address of the beneficiary to whom vested tokens are transferred
+    # @param _start start time of the vesting period
+    # @param cliff_delta duration in seconds of the cliff in which tokens will begin to vest
+    # @param duration duration in seconds of the period in which the tokens will vest
+    # @param slice_period_seconds duration of a slice period for the vesting in seconds
+    # @param revocable whether the vesting is revocable or not
+    # @param amount_total total amount of tokens to be released at the end of the vesting
+    ###
     func create_vesting{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         beneficiary : felt,
         cliff_delta : felt,
@@ -165,6 +193,9 @@ namespace StarkVest:
     # INTERNAL FUNCTIONS
     # ------
 
+    ###
+    # Checks conditions on vesting parameters.
+    ###
     func new_vesting_check_preconditions{
         syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
     }(
@@ -196,7 +227,7 @@ namespace StarkVest:
             assert_nn(duration)
         end
 
-        # Check duration
+        # Check slice period seconds
         with_attr error_message(
                 "StarkVest: Slice period seconds must be between 1 and MAX_SLICE_PERIOD_SECONDS"):
             assert_in_range(slice_period_seconds, 1, MAX_SLICE_PERIOD_SECONDS)
@@ -204,6 +235,10 @@ namespace StarkVest:
         return ()
     end
 
+    ###
+    # Increment the vesting count for a given account.
+    # @param account the account
+    ###
     func increment_vesting_count{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         account : felt
     ):
@@ -213,7 +248,11 @@ namespace StarkVest:
         return ()
     end
 
-    # Compute vesting_id for a given account and vesting_count
+    ###
+    # Compute vesting_id for a given account and vesting_count.
+    # @param account the account linked to the vesting
+    # @param vesting_count the current number of vestings associated to the account
+    ###
     func compute_vesting_id{pedersen_ptr : HashBuiltin*}(account : felt, vesting_count : felt) -> (
         vesting_id : felt
     ):
@@ -222,7 +261,9 @@ namespace StarkVest:
         return (vesting_id=vesting_id)
     end
 
+    ###
     # Initialize Vesting struct
+    ###
     func init_vesting(
         beneficiary : felt,
         cliff : felt,
