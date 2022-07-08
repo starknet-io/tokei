@@ -31,7 +31,14 @@ protostar build
 ### 🌡️ Test
 
 ```bash
-protostar test tests
+# Run all tests
+protostar test
+
+# Run only unit tests
+protostar test tests/units
+
+# Run only integration tests
+protostar test tests/integrations
 ```
 
 ### 💋 Format code

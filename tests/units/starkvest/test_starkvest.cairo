@@ -13,11 +13,11 @@ from starkware.cairo.common.uint256 import Uint256
 from starkvest.library import StarkVest
 from starkvest.model import Vesting, MAX_SLICE_PERIOD_SECONDS, MAX_TIMESTAMP
 
-const VESTING_TOKEN_ADDRESS = 5000
-const ADMIN = 1000
-const ANYONE_1 = 1001
-const ANYONE_2 = 1002
-const ANYONE_3 = 1003
+const VESTING_TOKEN_ADDRESS = 'vesting-token-address'
+const ADMIN = 'starkvest-admin'
+const ANYONE_1 = 'user-1'
+const ANYONE_2 = 'user-2'
+const ANYONE_3 = 'user-3'
 
 # -------
 # STRUCTS
@@ -85,6 +85,33 @@ func test_create_vesting_invalid_cliff_delta{
     %{ stop=start_prank(ids.context.signers.admin) %}
 
     %{ expect_revert("TRANSACTION_FAILED", "StarkVest: value is not a valid timestamp in the context of StarkVest") %}
+    StarkVest.create_vesting(
+        beneficiary, cliff_delta, start, duration, slice_period_seconds, revocable, amount_total
+    )
+    %{ stop() %}
+    return ()
+end
+
+# Test case: create vesting with an invalid cliff delta
+# Category: INVALID_PARAMETERS
+# Expected result: create_vesting must fail and revert with correct message
+@external
+func test_create_vesting_invalid_beneficiary{
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+}():
+    alloc_locals
+    let (local context : TestContext) = test_internal.prepare()
+
+    let beneficiary = 0
+    let cliff_delta = 0
+    let start = 1000
+    let duration = 3600
+    let slice_period_seconds = 1
+    let revocable = TRUE
+    let amount_total = Uint256(1000, 0)
+    %{ stop=start_prank(ids.context.signers.admin) %}
+
+    %{ expect_revert("TRANSACTION_FAILED", "StarkVest: cannot set the beneficiary to zero address") %}
     StarkVest.create_vesting(
         beneficiary, cliff_delta, start, duration, slice_period_seconds, revocable, amount_total
     )

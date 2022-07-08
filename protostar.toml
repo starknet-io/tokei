@@ -12,6 +12,9 @@ StarkVest = [
     "src/starkvest/starkvest.cairo",
 ]
 
+["protostar.test"]
+target = ["tests"]
+
 # https://github.com/Shard-Labs/starknet-devnet
 [profile.devnet.protostar.deploy]
 gateway_url="http://127.0.0.1:5050/"
