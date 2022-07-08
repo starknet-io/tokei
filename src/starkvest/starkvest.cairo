@@ -61,14 +61,14 @@ end
 @external
 func create_vesting{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     beneficiary : felt,
-    cliff : felt,
+    cliff_delta : felt,
     start : felt,
     duration : felt,
-    slicePeriodSeconds : felt,
+    slice_period_seconds : felt,
     revocable : felt,
-    amountTotal : Uint256,
+    amount_total : Uint256,
 ) -> (vesting_id : felt):
     return StarkVest.create_vesting(
-        beneficiary, cliff, start, duration, slicePeriodSeconds, revocable, amountTotal
+        beneficiary, cliff_delta, start, duration, slice_period_seconds, revocable, amount_total
     )
 end

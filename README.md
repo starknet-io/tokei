@@ -25,13 +25,19 @@
 ### ⛏️ Compile
 
 ```bash
-make
+protostar build
 ```
 
 ### 🌡️ Test
 
 ```bash
-make test
+protostar test tests
+```
+
+### 💋 Format code
+
+```bash
+cairo-format -i src/**/*.cairo tests/**/*.cairo
 ```
 
 ## 📄 License

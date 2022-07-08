@@ -8,14 +8,15 @@ from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.hash import hash2
-from starkware.cairo.common.math import assert_not_zero, assert_nn
+from starkware.cairo.common.math import assert_not_zero, assert_nn, assert_le, assert_in_range
 
 # OpenZeppelin dependencies
 from openzeppelin.access.ownable import Ownable
+from openzeppelin.security.safemath import SafeUint256
 
 # Project dependencies
 
-from starkvest.model import Vesting
+from starkvest.model import Vesting, MAX_SLICE_PERIOD_SECONDS, MAX_TIMESTAMP
 from starkvest.events import VestingCreated
 
 # ------
@@ -86,23 +87,30 @@ namespace StarkVest:
     # ------
     # EXTERNAL FUNCTIONS
     # ------
-    
+
     func create_vesting{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         beneficiary : felt,
-        cliff : felt,
+        cliff_delta : felt,
         start : felt,
         duration : felt,
-        slicePeriodSeconds : felt,
+        slice_period_seconds : felt,
         revocable : felt,
-        amountTotal : Uint256,
+        amount_total : Uint256,
     ) -> (vesting_id : felt):
         alloc_locals
         # Access control check
         Ownable.assert_only_owner()
+
+        # cliff_delta is expressed as a delta compared to start
+        # cliff is the timestamp after which the cliff period ends
+        # at cliff + 1 second it is possible to claim vested tokens
+        let cliff = start + cliff_delta
+
         # Check preconditions
         new_vesting_check_preconditions(
-            beneficiary, start, duration, slicePeriodSeconds, revocable, amountTotal
+            beneficiary, cliff, start, duration, slice_period_seconds, revocable, amount_total
         )
+
         # Get current vesting count for beneficiary
         let (vesting_count) = vesting_count_.read(beneficiary)
         # Compute the next vesting id
@@ -112,14 +120,14 @@ namespace StarkVest:
         increment_vesting_count{syscall_ptr=syscall_ptr, pedersen_ptr=pedersen_ptr}(beneficiary)
         # Init vesting struct
         let (vesting) = init_vesting(
-            beneficiary, cliff, start, duration, slicePeriodSeconds, revocable, amountTotal
+            beneficiary, cliff, start, duration, slice_period_seconds, revocable, amount_total
         )
 
         # Write Vesting struct in storage
         vestings_.write(vesting_id, vesting)
 
         # Emit event
-        VestingCreated.emit(beneficiary, amountTotal, vesting_id)
+        VestingCreated.emit(beneficiary, amount_total, vesting_id)
 
         return (vesting_id)
     end
@@ -132,18 +140,35 @@ namespace StarkVest:
         syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
     }(
         beneficiary : felt,
+        cliff : felt,
         start : felt,
         duration : felt,
-        slicePeriodSeconds : felt,
+        slice_period_seconds : felt,
         revocable : felt,
-        amountTotal : Uint256,
+        amount_total : Uint256,
     ):
+        # TODO: check if the contract owns sufficient tokens to pay the entire vesting
+
+        internal.assert_valid_timestamp(cliff)
+        internal.assert_valid_timestamp(start)
+        internal.assert_valid_timestamp(duration)
+        internal.assert_valid_timestamp(slice_period_seconds)
+
+        # Check beneficiary address
         with_attr error_message("StarkVest: cannot set the beneficiary to zero address"):
             assert_not_zero(beneficiary)
         end
+
+        # Check duration
         with_attr error_message("StarkVest: Duration must be > 0"):
             assert_not_zero(duration)
             assert_nn(duration)
+        end
+
+        # Check duration
+        with_attr error_message(
+                "StarkVest: Slice period seconds must be between 1 and MAX_SLICE_PERIOD_SECONDS"):
+            assert_in_range(slice_period_seconds, 1, MAX_SLICE_PERIOD_SECONDS)
         end
         return ()
     end
@@ -172,9 +197,9 @@ namespace StarkVest:
         cliff : felt,
         start : felt,
         duration : felt,
-        slicePeriodSeconds : felt,
+        slice_period_seconds : felt,
         revocable : felt,
-        amountTotal : Uint256,
+        amount_total : Uint256,
     ) -> (vesting : Vesting):
         alloc_locals
         local vesting : Vesting
@@ -182,11 +207,21 @@ namespace StarkVest:
         assert vesting.cliff = cliff
         assert vesting.start = start
         assert vesting.duration = duration
-        assert vesting.slicePeriodSeconds = slicePeriodSeconds
+        assert vesting.slice_period_seconds = slice_period_seconds
         assert vesting.revocable = revocable
-        assert vesting.amountTotal = amountTotal
+        assert vesting.amount_total = amount_total
         assert vesting.released = Uint256(0, 0)
         assert vesting.revoked = FALSE
         return (vesting=vesting)
+    end
+end
+
+namespace internal:
+    func assert_valid_timestamp{range_check_ptr}(value : felt):
+        with_attr error_message(
+                "StarkVest: value is not a valid timestamp in the context of StarkVest"):
+            assert_in_range(value, 0, MAX_TIMESTAMP)
+        end
+        return ()
     end
 end
