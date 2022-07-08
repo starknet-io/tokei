@@ -8,13 +8,22 @@ from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.cairo.common.math import assert_not_zero
 from starkware.cairo.common.uint256 import Uint256
+from starkware.starknet.common.syscalls import get_block_timestamp
+
+# OpenZeppelin depdencies
+from openzeppelin.token.erc20.interfaces.IERC20 import IERC20
 
 # Project dependencies
 from interfaces.starkvest import IStarkVest
 from starkvest.model import Vesting
 
 const ADMIN = 'starkvest-admin'
-const VESTING_TOKEN_ADDRESS = 'vesting-token-address'
+const USER_1 = 'user-1'
+const TOKEN_NAME = 'StarkVestToken'
+const TOKEN_SYMBOL = 'SVT'
+const TOKEN_DECIMALS = 6
+const TOKEN_INITIAL_SUPPLY_LO = 1000000
+const TOKEN_INITIAL_SUPPLY_HI = 0
 
 @view
 func __setup__{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
@@ -22,12 +31,18 @@ func __setup__{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
     tempvar starkvest_contract
     # TODO: deploy ERC20 token and pass the address to starkvest constructor
     %{
-        ids.starkvest_contract = deploy_contract("./src/starkvest/starkvest.cairo", [ids.ADMIN, ids.VESTING_TOKEN_ADDRESS]).contract_address 
+        ids.token_contract = deploy_contract(
+            "./tests/mocks/token/erc20.cairo", 
+            [ids.TOKEN_NAME, ids.TOKEN_SYMBOL, ids.TOKEN_DECIMALS, ids.TOKEN_INITIAL_SUPPLY_LO, ids.TOKEN_INITIAL_SUPPLY_HI, ids.ADMIN]
+        ).contract_address 
+        context.token_contract = ids.token_contract
+
+        ids.starkvest_contract = deploy_contract("./src/starkvest/starkvest.cairo", [ids.ADMIN, ids.token_contract]).contract_address 
         context.starkvest_contract = ids.starkvest_contract
     %}
 
-    %{ stop_pranks = [start_prank(ids.ADMIN, contract) for contract in [ids.starkvest_contract] ] %}
-
+    %{ stop_pranks = [start_prank(ids.ADMIN, contract) for contract in [ids.starkvest_contract, ids.token_contract] ] %}
+    # Setup contracts with admin account
     %{ [stop_prank() for stop_prank in stop_pranks] %}
 
     return ()
@@ -36,11 +51,39 @@ end
 @view
 func test_e2e{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
     alloc_locals
+    # Get ERC20 token deployed contract instance
+    let (token) = token_instance.deployed()
+    # Get StarkVest deployed contract instance
     let (starkvest) = starkvest_instance.deployed()
 
+    # ADMIN => STARKVEST : 2000 $SVT
+    %{ stop_prank = start_prank(ids.ADMIN, ids.token) %}
+    IERC20.transfer(token, starkvest, Uint256(2000, 0))
+    %{ stop_prank() %}
+
     with starkvest:
-        let (erc20_address) = starkvest_instance.erc20_address()
-        assert erc20_address = VESTING_TOKEN_ADDRESS
+        # Create vesting:
+        # 1000 $SVT over 1 hour, with no cliff period
+        # vested second by second, starting at timestamp: 1000
+        let beneficiary = USER_1
+        let cliff_delta = 0
+        let start = 1000
+        let duration = 3600
+        let slice_period_seconds = 1
+        let revocable = TRUE
+        let amount_total = Uint256(1000, 0)
+        %{ expect_events({"name": "VestingCreated"}) %}
+        let (vesting_id) = starkvest_instance.create_vesting(
+            beneficiary, cliff_delta, start, duration, slice_period_seconds, revocable, amount_total
+        )
+
+        # Set block time to 999 (1 second before vesting starts)
+        %{ stop_warp = warp(999, ids.starkvest) %}
+
+        %{ stop_warp() %}
+        # TODO: remove this instruction
+        # temporary used to bypass this error: Found a hint at the end of a code block. Hints must be followed by an instruction.
+        assert 1 = 1
     end
 
     return ()
@@ -53,10 +96,37 @@ namespace starkvest_instance:
         return (starkvest_contract)
     end
 
-    func erc20_address{
+    func create_vesting{
         syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, starkvest : felt
-    }() -> (erc20_address):
-        let (erc20_address) = IStarkVest.erc20_address(starkvest)
-        return (erc20_address)
+    }(
+        beneficiary : felt,
+        cliff_delta : felt,
+        start : felt,
+        duration : felt,
+        slice_period_seconds : felt,
+        revocable : felt,
+        amount_total : Uint256,
+    ) -> (vesting_id):
+        %{ stop_prank = start_prank(ids.ADMIN, ids.starkvest) %}
+        let (vesting_id) = IStarkVest.create_vesting(
+            starkvest,
+            beneficiary,
+            cliff_delta,
+            start,
+            duration,
+            slice_period_seconds,
+            revocable,
+            amount_total,
+        )
+        %{ stop_prank() %}
+        return (vesting_id)
+    end
+end
+
+namespace token_instance:
+    func deployed() -> (token_contract : felt):
+        tempvar token_contract
+        %{ ids.token_contract = context.token_contract %}
+        return (token_contract)
     end
 end
