@@ -15,7 +15,7 @@ from starkware.cairo.common.math import (
     assert_in_range,
     unsigned_div_rem,
 )
-from starkware.cairo.common.math_cmp import is_le, is_nn
+from starkware.cairo.common.math_cmp import is_le, is_not_zero
 from starkware.starknet.common.syscalls import get_contract_address, get_block_timestamp
 
 # OpenZeppelin dependencies
@@ -230,7 +230,7 @@ namespace StarkVest:
         # Check if revoked
         let is_revoked = vesting.revoked
         let sum = before_cliff + is_revoked
-        let (before_cliff_or_is_revoked) = is_nn(sum)
+        let (before_cliff_or_is_revoked) = is_not_zero(sum)
         # Either we are before the cliff or the vesting is revoked
         # In both cases the amount of releaseable tokens is 0
         if before_cliff_or_is_revoked == TRUE:

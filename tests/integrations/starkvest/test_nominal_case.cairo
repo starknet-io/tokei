@@ -81,6 +81,13 @@ func test_e2e{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
         let (vested_amount) = starkvest_instance.releaseable_amount(vesting_id)
         %{ stop_warp() %}
         assert vested_amount = Uint256(0, 0)
+
+        # Set block time to 2800 (1800 second after vesting starts)
+        # Should have vested 50% of tokens
+        %{ stop_warp = warp(2800, ids.starkvest) %}
+        let (vested_amount) = starkvest_instance.releaseable_amount(vesting_id)
+        %{ stop_warp() %}
+        assert vested_amount = Uint256(500, 0)
     end
 
     return ()

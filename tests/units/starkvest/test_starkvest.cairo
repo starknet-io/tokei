@@ -66,6 +66,37 @@ func test_create_vesting_nominal_case{
     return ()
 end
 
+# Test case: create vesting and vest some tokens
+# Category: NOMINAL
+# Expected result: some tokens are vested
+@external
+func test_vest_some_tokens{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
+    alloc_locals
+    let (local context : TestContext) = test_internal.prepare()
+
+    %{ stop=start_prank(ids.context.signers.admin) %}
+    %{ mock_call(ids.context.mocks.vesting_token_address, "balanceOf", [2000, 0]) %}
+    let beneficiary = context.signers.anyone_1
+    let cliff_delta = 0
+    let start = 1000
+    let duration = 3600
+    let slice_period_seconds = 1
+    let revocable = TRUE
+    let amount_total = Uint256(1000, 0)
+    let (vesting_id) = StarkVest.create_vesting(
+        beneficiary, cliff_delta, start, duration, slice_period_seconds, revocable, amount_total
+    )
+    assert_not_zero(vesting_id)
+    %{ stop() %}
+
+    %{ stop_warp = warp(2800) %}
+    let (vested_amount) = StarkVest.releaseable_amount(vesting_id)
+    %{ stop_warp() %}
+
+    assert vested_amount = Uint256(500, 0)
+    return ()
+end
+
 # Test case: create vesting without enough available tokens
 # Category: BAD_CONDITIONS
 # Expected result: create_vesting must fail and revert with correct message
