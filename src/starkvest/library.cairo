@@ -103,7 +103,7 @@ namespace StarkVest:
 
         # cliff_delta is expressed as a delta compared to start
         # cliff is the timestamp after which the cliff period ends
-        # at cliff + 1 second it is possible to claim vested tokens
+        # At cliff + 1 second it is possible to claim vested tokens
         let cliff = start + cliff_delta
 
         # Check preconditions
@@ -117,7 +117,7 @@ namespace StarkVest:
         let (vesting_id) = compute_vesting_id(beneficiary, vesting_count)
         local syscall_ptr : felt* = syscall_ptr
         # Increment vesting count for beneficiary
-        increment_vesting_count{syscall_ptr=syscall_ptr, pedersen_ptr=pedersen_ptr}(beneficiary)
+        increment_vesting_count(beneficiary)
         # Init vesting struct
         let (vesting) = init_vesting(
             beneficiary, cliff, start, duration, slice_period_seconds, revocable, amount_total
@@ -153,6 +153,10 @@ namespace StarkVest:
         internal.assert_valid_timestamp(start)
         internal.assert_valid_timestamp(duration)
         internal.assert_valid_timestamp(slice_period_seconds)
+
+        let vesting_end_timestamp = start + duration
+        # vesting cannot end after January 1, 3000
+        internal.assert_valid_timestamp(vesting_end_timestamp)
 
         # Check beneficiary address
         with_attr error_message("StarkVest: cannot set the beneficiary to zero address"):
