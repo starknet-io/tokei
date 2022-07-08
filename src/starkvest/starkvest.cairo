@@ -57,6 +57,18 @@ func get_contract_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
     return StarkVest.get_contract_balance()
 end
 
+###
+# Compute and return releaseable amount of tokens for a vesting.
+# @param vesting_id the vesting identifier
+# @return the amount of releaseable / vested tokens
+###
+@view
+func releaseable_amount{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    vesting_id : felt
+) -> (releaseable_amount : Uint256):
+    return StarkVest.releaseable_amount(vesting_id)
+end
+
 # -----
 # CONSTRUCTOR
 # -----
@@ -72,6 +84,17 @@ end
 # EXTERNAL FUNCTIONS
 # -----
 
+###
+# Creates a new vesting for a beneficiary.
+# @param beneficiary address of the beneficiary to whom vested tokens are transferred
+# @param _start start time of the vesting period
+# @param cliff_delta duration in seconds of the cliff in which tokens will begin to vest
+# @param duration duration in seconds of the period in which the tokens will vest
+# @param slice_period_seconds duration of a slice period for the vesting in seconds
+# @param revocable whether the vesting is revocable or not
+# @param amount_total total amount of tokens to be released at the end of the vesting
+# @return the created vesting id
+###
 @external
 func create_vesting{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     beneficiary : felt,

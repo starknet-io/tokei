@@ -78,11 +78,9 @@ func test_e2e{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
 
         # Set block time to 999 (1 second before vesting starts)
         %{ stop_warp = warp(999, ids.starkvest) %}
-
+        let (vested_amount) = starkvest_instance.releaseable_amount(vesting_id)
         %{ stop_warp() %}
-        # TODO: remove this instruction
-        # temporary used to bypass this error: Found a hint at the end of a code block. Hints must be followed by an instruction.
-        assert 1 = 1
+        assert vested_amount = Uint256(0, 0)
     end
 
     return ()
@@ -105,7 +103,7 @@ namespace starkvest_instance:
         slice_period_seconds : felt,
         revocable : felt,
         amount_total : Uint256,
-    ) -> (vesting_id):
+    ) -> (vesting_id : felt):
         %{ stop_prank = start_prank(ids.ADMIN, ids.starkvest) %}
         let (vesting_id) = IStarkVest.create_vesting(
             starkvest,
@@ -119,6 +117,13 @@ namespace starkvest_instance:
         )
         %{ stop_prank() %}
         return (vesting_id)
+    end
+
+    func releaseable_amount{
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, starkvest : felt
+    }(vesting_id : felt) -> (releaseable_amount : Uint256):
+        let (releaseable_amount) = IStarkVest.releaseable_amount(starkvest, vesting_id)
+        return (releaseable_amount)
     end
 end
 

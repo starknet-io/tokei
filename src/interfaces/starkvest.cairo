@@ -9,6 +9,14 @@ from starkware.cairo.common.uint256 import Uint256
 @contract_interface
 namespace IStarkVest:
     ###
+    # Compute and return releaseable amount of tokens for a vesting.
+    # @param vesting_id the vesting identifier
+    # @return the amount of releaseable / vested tokens
+    ###
+    func releaseable_amount(vesting_id : felt) -> (releaseable_amount : Uint256):
+    end
+
+    ###
     # Creates a new vesting for a beneficiary.
     # @param beneficiary address of the beneficiary to whom vested tokens are transferred
     # @param _start start time of the vesting period
@@ -17,6 +25,7 @@ namespace IStarkVest:
     # @param slice_period_seconds duration of a slice period for the vesting in seconds
     # @param revocable whether the vesting is revocable or not
     # @param amount_total total amount of tokens to be released at the end of the vesting
+    # @return the created vesting id
     ###
     func create_vesting(
         beneficiary : felt,

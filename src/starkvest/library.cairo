@@ -120,7 +120,9 @@ namespace StarkVest:
     end
 
     ###
-    # Get releaseable amount of tokens for a vesting
+    # Compute and return releaseable amount of tokens for a vesting.
+    # @param vesting_id the vesting identifier
+    # @return the amount of releaseable / vested tokens
     ###
     func releaseable_amount{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         vesting_id : felt
@@ -220,42 +222,47 @@ namespace StarkVest:
     func _releaseable_amount{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         vesting : Vesting
     ) -> (releaseable_amount : Uint256):
+        alloc_locals
         # Get current timestamp
         let (current_time) = get_block_timestamp()
         # Check if we are before the cliff
         let (before_cliff) = is_le(current_time, vesting.cliff)
         # Check if revoked
-        let (is_revoked) = vesting.is_revoked
-        let (before_cliff_or_is_revoked) = before_cliff + is_revoked
+        let is_revoked = vesting.revoked
+        let sum = before_cliff + is_revoked
+        let (before_cliff_or_is_revoked) = is_nn(sum)
         # Either we are before the cliff or the vesting is revoked
         # In both cases the amount of releaseable tokens is 0
-        if is_nn(before_cliff_or_is_revoked) == TRUE:
-            return (0)
+        if before_cliff_or_is_revoked == TRUE:
+            let vested_amount = Uint256(0, 0)
+            return (vested_amount)
         end
 
         # Compute vesting end timestamp
-        let (vesting_end_time) = vesting.start + vesting.duration
+        let vesting_end_time = vesting.start + vesting.duration
         let (after_vesting_end) = is_le(vesting_end_time, current_time)
 
         # Vesting is over
         # Return total minus what has already been released
         if after_vesting_end == TRUE:
-            let (releaseable_amount) = vesting.amount_total - vesting.released
+            let (releaseable_amount) = SafeUint256.sub_lt(vesting.amount_total, vesting.released)
             return (releaseable_amount)
         end
 
         # Compute how much time we are past the start of vesting
-        let (time_from_start) = current_time - vesting.start
+        let time_from_start = current_time - vesting.start
         # Get the number of seconds per vesting period
-        let (seconds_per_slice) = vesting.slice_period_seconds
+        let seconds_per_slice = vesting.slice_period_seconds
         # Compute how many periods have been vested
         # We can ignore the remainder here
         let (vested_periods, _) = unsigned_div_rem(time_from_start, seconds_per_slice)
         # The final vested seconds is the number of vested periods multiplied by the number of seconds per period
-        let (final_vested_seconds) = vested_periods * seconds_per_slice
-
-        let (tmp_amount) = vesting.amount_total * final_vested_seconds
-        let (vested_amount, _) = unsigned_div_rem(tmp_amount, vesting.duration)
+        # Cast it as a Uint256 to do math operations with tokens amount which are experessed as Uint256
+        let final_vested_seconds = Uint256(vested_periods * seconds_per_slice, 0)
+        # Cast duration as Uint256 as well
+        let vesting_duration_uint256 = Uint256(vesting.duration, 0)
+        let (tmp_amount) = SafeUint256.mul(vesting.amount_total, final_vested_seconds)
+        let (vested_amount, _) = SafeUint256.div_rem(tmp_amount, vesting_duration_uint256)
         return (vested_amount)
     end
 
