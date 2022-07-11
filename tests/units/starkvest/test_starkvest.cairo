@@ -319,3 +319,39 @@ func test_revoke_nominal_case{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, 
     %{ stop() %}
     return ()
 end
+
+# Test case: revoke vesting in normal conditions
+# Category: BAD_CONDITIONS
+# Expected result: revoke must fail and revert with correct message
+@external
+func test_revoke_not_revocable{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
+    alloc_locals
+    let (local context : TestContext) = test_internal.prepare()
+
+    %{ stop=start_prank(ids.context.signers.admin) %}
+
+    ###
+    # Create the vesting
+    ###
+    %{ mock_call(ids.context.mocks.vesting_token_address, "balanceOf", [2000, 0]) %}
+    let beneficiary = context.signers.anyone_1
+    let cliff_delta = 0
+    let start = 1000
+    let duration = 3600
+    let slice_period_seconds = 1
+    let revocable = FALSE
+    let amount_total = Uint256(1000, 0)
+    let (vesting_id) = StarkVest.create_vesting(
+        beneficiary, cliff_delta, start, duration, slice_period_seconds, revocable, amount_total
+    )
+
+    # ##
+    # Revoke the vesting
+    # Must fail
+    ###
+    %{ expect_revert("TRANSACTION_FAILED", "StarkVest: vesting is not revocable") %}
+    StarkVest.revoke(vesting_id)
+
+    %{ stop() %}
+    return ()
+end
