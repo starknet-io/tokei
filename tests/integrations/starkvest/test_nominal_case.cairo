@@ -78,14 +78,14 @@ func test_e2e{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
 
         # Set block time to 999 (1 second before vesting starts)
         %{ stop_warp = warp(999, ids.starkvest) %}
-        let (releasable_amount) = starkvest_instance.releaseable_amount(vesting_id)
+        let (releasable_amount) = starkvest_instance.releasable_amount(vesting_id)
         %{ stop_warp() %}
         assert releasable_amount = Uint256(0, 0)
 
         # Set block time to 2800 (1800 second after vesting starts)
         # Should have vested 50% of tokens
         %{ stop_warp = warp(2800, ids.starkvest) %}
-        let (releasable_amount) = starkvest_instance.releaseable_amount(vesting_id)
+        let (releasable_amount) = starkvest_instance.releasable_amount(vesting_id)
         assert releasable_amount = Uint256(500, 0)
 
         # Check balance of vesting contract before release
@@ -102,7 +102,7 @@ func test_e2e{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
 
         # Release 100 tokens
         starkvest_instance.release(vesting_id, Uint256(100, 0))
-        let (releasable_amount) = starkvest_instance.releaseable_amount(vesting_id)
+        let (releasable_amount) = starkvest_instance.releasable_amount(vesting_id)
         %{ stop_warp() %}
         assert releasable_amount = Uint256(400, 0)
 
@@ -162,11 +162,11 @@ namespace starkvest_instance:
         return (vesting_id)
     end
 
-    func releaseable_amount{
+    func releasable_amount{
         syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, starkvest : felt
-    }(vesting_id : felt) -> (releaseable_amount : Uint256):
-        let (releaseable_amount) = IStarkVest.releaseable_amount(starkvest, vesting_id)
-        return (releaseable_amount)
+    }(vesting_id : felt) -> (releasable_amount : Uint256):
+        let (releasable_amount) = IStarkVest.releasable_amount(starkvest, vesting_id)
+        return (releasable_amount)
     end
 
     func revoke{

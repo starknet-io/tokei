@@ -6,7 +6,7 @@
 # Starkware dependencies
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.bool import TRUE, FALSE
-from starkware.cairo.common.uint256 import Uint256, uint256_le
+from starkware.cairo.common.uint256 import Uint256, uint256_le, uint256_lt
 from starkware.cairo.common.hash import hash2
 from starkware.cairo.common.math import (
     assert_not_zero,
@@ -125,19 +125,19 @@ namespace StarkVest:
     end
 
     ###
-    # Compute and return releaseable amount of tokens for a vesting.
+    # Compute and return releasable amount of tokens for a vesting.
     # @param vesting_id the vesting identifier
-    # @return the amount of releaseable tokens
+    # @return the amount of releasable tokens
     ###
-    func releaseable_amount{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    func releasable_amount{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         vesting_id : felt
-    ) -> (releaseable_amount : Uint256):
+    ) -> (releasable_amount : Uint256):
         let (vesting) = vestings_.read(vesting_id)
         with_attr error_message("StarkVest: invalid beneficiary"):
             assert_not_zero(vesting.beneficiary)
         end
-        let (releaseable_amount) = _releaseable_amount(vesting)
-        return (releaseable_amount)
+        let (releasable_amount) = _releasable_amount(vesting)
+        return (releasable_amount)
     end
 
     # ------
@@ -225,7 +225,7 @@ namespace StarkVest:
     ###
     # Revokes the vesting identified by vesting_id.
     # @param vesting_id the vesting identifier
-    # @return the amount of releaseable tokens
+    # @return the amount of releasable tokens
     ###
     func revoke{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         vesting_id : felt
@@ -240,8 +240,20 @@ namespace StarkVest:
         # Check that vesting is revocable
         internal.assert_revocable(vesting)
 
-        # TODO: release releasable tokens
-        # TODO: update vestings_total_amount_
+        # Release releasable tokens
+        let (releasable_amount) = _releasable_amount(vesting)
+        release_if_tokens_releasable(vesting_id, releasable_amount)
+
+        # Get the vesting from storage
+        let (vesting) = vestings_.read(vesting_id)
+
+        # Update vestings total_amount
+        let (unreleased_tokens) = SafeUint256.sub_le(vesting.amount_total, vesting.released)
+        let (vestings_total_amount) = vestings_total_amount_.read()
+        let (new_vestings_total_amount) = SafeUint256.sub_le(
+            vestings_total_amount, unreleased_tokens
+        )
+        vestings_total_amount_.write(new_vestings_total_amount)
 
         # Update vesting
         let vesting = Vesting(
@@ -259,6 +271,17 @@ namespace StarkVest:
         vestings_.write(vesting_id, vesting)
         # Emit event
         VestingRevoked.emit(vesting_id)
+        return ()
+    end
+
+    func release_if_tokens_releasable{
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+    }(vesting_id : felt, amount : Uint256):
+        let (has_tokens_to_release) = uint256_lt(Uint256(0, 0), amount)
+        if has_tokens_to_release == TRUE:
+            release(vesting_id, amount)
+            return ()
+        end
         return ()
     end
 
@@ -288,11 +311,11 @@ namespace StarkVest:
             assert_not_zero(owner_or_beneficiary)
         end
 
-        # Check that account has enough releaseable tokens
-        let (releaseable_amount) = _releaseable_amount(vesting)
+        # Check that account has enough releasable tokens
+        let (releasable_amount) = _releasable_amount(vesting)
         with_attr error_message(
                 "StarkVest: cannot release tokens, not enough vested releasable tokens"):
-            uint256_le(amount, releaseable_amount)
+            uint256_le(amount, releasable_amount)
         end
 
         # Update vesting
@@ -376,11 +399,11 @@ namespace StarkVest:
     # ------
 
     ###
-    # Get releaseable amount of tokens for a vesting
+    # Get releasable amount of tokens for a vesting
     ###
-    func _releaseable_amount{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    func _releasable_amount{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         vesting : Vesting
-    ) -> (releaseable_amount : Uint256):
+    ) -> (releasable_amount : Uint256):
         alloc_locals
         # Get current timestamp
         let (current_time) = get_block_timestamp()
@@ -391,7 +414,7 @@ namespace StarkVest:
         let sum = before_cliff + is_revoked
         let (before_cliff_or_is_revoked) = is_not_zero(sum)
         # Either we are before the cliff or the vesting is revoked
-        # In both cases the amount of releaseable tokens is 0
+        # In both cases the amount of releasable tokens is 0
         if before_cliff_or_is_revoked == TRUE:
             let vested_amount = Uint256(0, 0)
             return (vested_amount)
@@ -404,8 +427,8 @@ namespace StarkVest:
         # Vesting is over
         # Return total minus what has already been released
         if after_vesting_end == TRUE:
-            let (releaseable_amount) = SafeUint256.sub_lt(vesting.amount_total, vesting.released)
-            return (releaseable_amount)
+            let (releasable_amount) = SafeUint256.sub_lt(vesting.amount_total, vesting.released)
+            return (releasable_amount)
         end
 
         # Compute how much time we are past the start of vesting
@@ -423,8 +446,8 @@ namespace StarkVest:
         let (tmp_amount) = SafeUint256.mul(vesting.amount_total, final_vested_seconds)
         let (vested_amount, _) = SafeUint256.div_rem(tmp_amount, vesting_duration_uint256)
         # Substract released tokens
-        let (releaseable_amount) = SafeUint256.sub_lt(vested_amount, vesting.released)
-        return (releaseable_amount)
+        let (releasable_amount) = SafeUint256.sub_lt(vested_amount, vesting.released)
+        return (releasable_amount)
     end
 
     ###

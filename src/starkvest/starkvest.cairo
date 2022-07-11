@@ -65,15 +65,15 @@ func get_contract_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
 end
 
 ###
-# Compute and return releaseable amount of tokens for a vesting.
+# Compute and return releasable amount of tokens for a vesting.
 # @param vesting_id the vesting identifier
-# @return the amount of releaseable / vested tokens
+# @return the amount of releasable / vested tokens
 ###
 @view
-func releaseable_amount{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+func releasable_amount{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     vesting_id : felt
-) -> (releaseable_amount : Uint256):
-    return StarkVest.releaseable_amount(vesting_id)
+) -> (releasable_amount : Uint256):
+    return StarkVest.releasable_amount(vesting_id)
 end
 
 # -----
@@ -120,7 +120,7 @@ end
 ###
 # Revokes the vesting identified by vesting_id.
 # @param vesting_id the vesting identifier
-# @return the amount of releaseable tokens
+# @return the amount of releasable tokens
 ###
 @external
 func revoke{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(vesting_id : felt):

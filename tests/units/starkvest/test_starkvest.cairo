@@ -90,25 +90,25 @@ func test_vest_some_tokens{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ran
     %{ stop() %}
 
     %{ stop_warp = warp(2800) %}
-    let (vested_amount) = StarkVest.releaseable_amount(vesting_id)
+    let (vested_amount) = StarkVest.releasable_amount(vesting_id)
     %{ stop_warp() %}
 
     assert vested_amount = Uint256(500, 0)
 
     %{ stop_warp = warp(3700) %}
-    let (vested_amount) = StarkVest.releaseable_amount(vesting_id)
+    let (vested_amount) = StarkVest.releasable_amount(vesting_id)
     %{ stop_warp() %}
 
     assert vested_amount = Uint256(750, 0)
 
     %{ stop_warp = warp(3988) %}
-    let (vested_amount) = StarkVest.releaseable_amount(vesting_id)
+    let (vested_amount) = StarkVest.releasable_amount(vesting_id)
     %{ stop_warp() %}
 
     assert vested_amount = Uint256(830, 0)
 
     %{ stop_warp = warp(4600) %}
-    let (vested_amount) = StarkVest.releaseable_amount(vesting_id)
+    let (vested_amount) = StarkVest.releasable_amount(vesting_id)
     %{ stop_warp() %}
 
     assert vested_amount = Uint256(1000, 0)
@@ -391,7 +391,7 @@ func test_release_nominal_case{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*,
     # Got to timestamp 100
     ###
     %{ stop_warp = warp(100) %}
-    let (releasable_amount) = StarkVest.releaseable_amount(vesting_id)
+    let (releasable_amount) = StarkVest.releasable_amount(vesting_id)
     assert releasable_amount = Uint256(100, 0)
 
     # ##
@@ -412,7 +412,7 @@ func test_release_nominal_case{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*,
     ###
     # Assert that releasable amount is now 0
     ###
-    let (releasable_amount) = StarkVest.releaseable_amount(vesting_id)
+    let (releasable_amount) = StarkVest.releasable_amount(vesting_id)
     assert releasable_amount = Uint256(0, 0)
 
     return ()

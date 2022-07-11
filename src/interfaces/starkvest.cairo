@@ -9,11 +9,11 @@ from starkware.cairo.common.uint256 import Uint256
 @contract_interface
 namespace IStarkVest:
     ###
-    # Compute and return releaseable amount of tokens for a vesting.
+    # Compute and return releasable amount of tokens for a vesting.
     # @param vesting_id the vesting identifier
-    # @return the amount of releaseable tokens
+    # @return the amount of releasable tokens
     ###
-    func releaseable_amount(vesting_id : felt) -> (releaseable_amount : Uint256):
+    func releasable_amount(vesting_id : felt) -> (releasable_amount : Uint256):
     end
 
     ###
@@ -26,13 +26,13 @@ namespace IStarkVest:
     # Compute and return the amount of tokens withdrawable by the owner.
     # @return the amount of withdrawable tokens
     ###
-    func withdrawable_amount() -> (releaseable_amount : Uint256):
+    func withdrawable_amount() -> (releasable_amount : Uint256):
     end
 
     ###
     # Revokes the vesting identified by vesting_id.
     # @param vesting_id the vesting identifier
-    # @return the amount of releaseable tokens
+    # @return the amount of releasable tokens
     ###
     func revoke(vesting_id : felt):
     end
