@@ -13,3 +13,7 @@ from starkware.cairo.common.uint256 import Uint256
 @event
 func VestingCreated(beneficiary : felt, amount : Uint256, vesting_id : felt):
 end
+
+@event
+func VestingRevoked(vesting_id : felt):
+end

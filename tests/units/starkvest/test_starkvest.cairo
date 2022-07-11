@@ -307,10 +307,11 @@ func test_revoke_nominal_case{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, 
     # ##
     # Revoke the vesting
     ###
+    %{ expect_events({"name": "VestingRevoked", "data": [ids.vesting_id]},) %}
     StarkVest.revoke(vesting_id)
 
     ###
-    # Assert that vesting is not revoked
+    # Assert that vesting is revoked
     ###
     let (vesting) = StarkVest.vestings(vesting_id)
     assert vesting.revoked = TRUE

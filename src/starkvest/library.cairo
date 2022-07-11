@@ -26,7 +26,7 @@ from openzeppelin.token.erc20.interfaces.IERC20 import IERC20
 # Project dependencies
 
 from starkvest.model import Vesting, MAX_SLICE_PERIOD_SECONDS, MAX_TIMESTAMP
-from starkvest.events import VestingCreated
+from starkvest.events import VestingCreated, VestingRevoked
 
 # ------
 # STORAGE
@@ -247,6 +247,8 @@ namespace StarkVest:
         )
         # Save updated vesting
         vestings_.write(vesting_id, vesting)
+        # Emit event
+        VestingRevoked.emit(vesting_id)
         return ()
     end
 
