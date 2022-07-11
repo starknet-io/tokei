@@ -11,6 +11,9 @@ cairo_path = ["./lib/cairo_contracts/src", "src", "tests"]
 StarkVest = [
     "src/starkvest/starkvest.cairo",
 ]
+Token = [
+    "tests/mocks/token/erc20.cairo",
+]
 
 ["protostar.test"]
 target = ["tests"]
