@@ -11,7 +11,7 @@ namespace IStarkVest:
     ###
     # Compute and return releaseable amount of tokens for a vesting.
     # @param vesting_id the vesting identifier
-    # @return the amount of releaseable / vested tokens
+    # @return the amount of releaseable tokens
     ###
     func releaseable_amount(vesting_id : felt) -> (releaseable_amount : Uint256):
     end

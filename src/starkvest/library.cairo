@@ -122,7 +122,7 @@ namespace StarkVest:
     ###
     # Compute and return releaseable amount of tokens for a vesting.
     # @param vesting_id the vesting identifier
-    # @return the amount of releaseable / vested tokens
+    # @return the amount of releaseable tokens
     ###
     func releaseable_amount{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         vesting_id : felt
