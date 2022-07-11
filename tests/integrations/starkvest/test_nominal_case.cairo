@@ -117,6 +117,13 @@ func test_e2e{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
         # Check vestings total amount after release
         let (vestings_total_amount) = starkvest_instance.vestings_total_amount()
         assert vestings_total_amount = Uint256(900, 0)
+
+        # Withdraw 1000
+        starkvest_instance.withdraw(Uint256(1000, 0))
+        let (starkvest_balance) = IERC20.balanceOf(token, starkvest)
+        assert starkvest_balance = Uint256(900, 0)
+        let (owner_balance) = IERC20.balanceOf(token, ADMIN)
+        assert owner_balance = Uint256(999000, 0)
     end
 
     return ()
@@ -185,6 +192,15 @@ namespace starkvest_instance:
     }() -> (vestings_total_amount : Uint256):
         let (vestings_total_amount) = IStarkVest.vestings_total_amount(starkvest)
         return (vestings_total_amount)
+    end
+
+    func withdraw{
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, starkvest : felt
+    }(amount : Uint256):
+        %{ stop_prank = start_prank(ids.ADMIN, ids.starkvest) %}
+        IStarkVest.withdraw(starkvest, amount)
+        %{ stop_prank() %}
+        return ()
     end
 end
 
