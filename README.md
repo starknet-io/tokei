@@ -22,6 +22,8 @@
 
 #### 📦 Install the requirements
 
+- [protostar](https://github.com/software-mansion/protostar)
+
 ### ⛏️ Compile
 
 ```bash
