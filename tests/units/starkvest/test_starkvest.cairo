@@ -94,6 +94,24 @@ func test_vest_some_tokens{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ran
     %{ stop_warp() %}
 
     assert vested_amount = Uint256(500, 0)
+
+    %{ stop_warp = warp(3700) %}
+    let (vested_amount) = StarkVest.releaseable_amount(vesting_id)
+    %{ stop_warp() %}
+
+    assert vested_amount = Uint256(750, 0)
+
+    %{ stop_warp = warp(3988) %}
+    let (vested_amount) = StarkVest.releaseable_amount(vesting_id)
+    %{ stop_warp() %}
+
+    assert vested_amount = Uint256(830, 0)
+
+    %{ stop_warp = warp(4600) %}
+    let (vested_amount) = StarkVest.releaseable_amount(vesting_id)
+    %{ stop_warp() %}
+
+    assert vested_amount = Uint256(1000, 0)
     return ()
 end
 
