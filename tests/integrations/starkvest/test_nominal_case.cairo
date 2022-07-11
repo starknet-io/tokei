@@ -78,16 +78,45 @@ func test_e2e{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
 
         # Set block time to 999 (1 second before vesting starts)
         %{ stop_warp = warp(999, ids.starkvest) %}
-        let (vested_amount) = starkvest_instance.releaseable_amount(vesting_id)
+        let (releasable_amount) = starkvest_instance.releaseable_amount(vesting_id)
         %{ stop_warp() %}
-        assert vested_amount = Uint256(0, 0)
+        assert releasable_amount = Uint256(0, 0)
 
         # Set block time to 2800 (1800 second after vesting starts)
         # Should have vested 50% of tokens
         %{ stop_warp = warp(2800, ids.starkvest) %}
-        let (vested_amount) = starkvest_instance.releaseable_amount(vesting_id)
+        let (releasable_amount) = starkvest_instance.releaseable_amount(vesting_id)
+        assert releasable_amount = Uint256(500, 0)
+
+        # Check balance of vesting contract before release
+        let (starkvest_balance) = IERC20.balanceOf(token, starkvest)
+        assert starkvest_balance = Uint256(2000, 0)
+
+        # Check balance of user 1 before release
+        let (user_1_balance) = IERC20.balanceOf(token, USER_1)
+        assert user_1_balance = Uint256(0, 0)
+
+        # Check vestings total amount before release
+        let (vestings_total_amount) = starkvest_instance.vestings_total_amount()
+        assert vestings_total_amount = Uint256(1000, 0)
+
+        # Release 100 tokens
+        starkvest_instance.release(vesting_id, Uint256(100, 0))
+        let (releasable_amount) = starkvest_instance.releaseable_amount(vesting_id)
         %{ stop_warp() %}
-        assert vested_amount = Uint256(500, 0)
+        assert releasable_amount = Uint256(400, 0)
+
+        # Check balance of vesting contract after release
+        let (starkvest_balance) = IERC20.balanceOf(token, starkvest)
+        assert starkvest_balance = Uint256(1900, 0)
+
+        # Check balance of user 1 after release
+        let (user_1_balance) = IERC20.balanceOf(token, USER_1)
+        assert user_1_balance = Uint256(100, 0)
+
+        # Check vestings total amount after release
+        let (vestings_total_amount) = starkvest_instance.vestings_total_amount()
+        assert vestings_total_amount = Uint256(900, 0)
     end
 
     return ()
@@ -136,7 +165,26 @@ namespace starkvest_instance:
     func revoke{
         syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, starkvest : felt
     }(vesting_id : felt):
-        return IStarkVest.revoke(vesting_id)
+        %{ stop_prank = start_prank(ids.ADMIN, ids.starkvest) %}
+        IStarkVest.revoke(starkvest, vesting_id)
+        %{ stop_prank() %}
+        return ()
+    end
+
+    func release{
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, starkvest : felt
+    }(vesting_id : felt, amount : Uint256):
+        %{ stop_prank = start_prank(ids.ADMIN, ids.starkvest) %}
+        IStarkVest.release(starkvest, vesting_id, amount)
+        %{ stop_prank() %}
+        return ()
+    end
+
+    func vestings_total_amount{
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, starkvest : felt
+    }() -> (vestings_total_amount : Uint256):
+        let (vestings_total_amount) = IStarkVest.vestings_total_amount(starkvest)
+        return (vestings_total_amount)
     end
 end
 

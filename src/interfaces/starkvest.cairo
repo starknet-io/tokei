@@ -45,4 +45,15 @@ namespace IStarkVest:
     ###
     func revoke(vesting_id : felt):
     end
+
+    ###
+    # Release vested amount of tokens.
+    # @param vesting_id the vesting identifier
+    # @param amount the amount to release
+    ###
+    func release(vesting_id : felt, amount : Uint256):
+    end
+
+    func vestings_total_amount() -> (vestings_total_amount: Uint256):
+    end
 end

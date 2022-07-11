@@ -16,11 +16,16 @@ from starkware.cairo.common.math import (
     unsigned_div_rem,
 )
 from starkware.cairo.common.math_cmp import is_le, is_not_zero
-from starkware.starknet.common.syscalls import get_contract_address, get_block_timestamp
+from starkware.starknet.common.syscalls import (
+    get_contract_address,
+    get_block_timestamp,
+    get_caller_address,
+)
 
 # OpenZeppelin dependencies
 from openzeppelin.access.ownable import Ownable
 from openzeppelin.security.safemath import SafeUint256
+from openzeppelin.security.reentrancyguard import ReentrancyGuard
 from openzeppelin.token.erc20.interfaces.IERC20 import IERC20
 
 # Project dependencies
@@ -206,6 +211,11 @@ namespace StarkVest:
         # Write Vesting struct in storage
         vestings_.write(vesting_id, vesting)
 
+        # Update vestings total amount
+        let (vestings_total_amount) = vestings_total_amount_.read()
+        let (new_vestings_total_amount) = SafeUint256.add(vestings_total_amount, amount_total)
+        vestings_total_amount_.write(new_vestings_total_amount)
+
         # Emit event
         VestingCreated.emit(beneficiary, amount_total, vesting_id)
 
@@ -249,6 +259,76 @@ namespace StarkVest:
         vestings_.write(vesting_id, vesting)
         # Emit event
         VestingRevoked.emit(vesting_id)
+        return ()
+    end
+
+    ###
+    # Release vested amount of tokens.
+    # @param vesting_id the vesting identifier
+    # @param amount the amount to release
+    ###
+    func release{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        vesting_id : felt, amount : Uint256
+    ):
+        alloc_locals
+        # Start reetrancy guard
+        ReentrancyGuard._start()
+
+        # Get vesting
+        let (vesting) = internal.get_vesting_and_assert_exist(vesting_id)
+
+        # Access control check
+        # Caller must be owner or beneficiary
+        let (caller) = get_caller_address()
+        let (owner) = Ownable.owner()
+        let (is_owner) = internal.are_equal(caller, owner)
+        let (is_beneficiary) = internal.are_equal(caller, vesting.beneficiary)
+        let owner_or_beneficiary = is_owner + is_beneficiary
+        with_attr error_message("StarkVest: only beneficiary and owner can release vested tokens"):
+            assert_not_zero(owner_or_beneficiary)
+        end
+
+        # Check that account has enough releaseable tokens
+        let (releaseable_amount) = _releaseable_amount(vesting)
+        with_attr error_message(
+                "StarkVest: cannot release tokens, not enough vested releasable tokens"):
+            uint256_le(amount, releaseable_amount)
+        end
+
+        # Update vesting
+        let (new_amount_released) = SafeUint256.add(vesting.released, amount)
+        let vesting = Vesting(
+            vesting.beneficiary,
+            vesting.cliff,
+            vesting.start,
+            vesting.duration,
+            vesting.slice_period_seconds,
+            vesting.revocable,
+            vesting.amount_total,
+            new_amount_released,
+            vesting.revoked,
+        )
+        # Save updated vesting
+        vestings_.write(vesting_id, vesting)
+
+        # Update vestings total amount
+        # Subtract the released amount from the total
+        let (vestings_total_amount) = vestings_total_amount_.read()
+        let (new_vestings_total_amount) = SafeUint256.sub_le(vestings_total_amount, amount)
+        vestings_total_amount_.write(new_vestings_total_amount)
+
+        # Do the transfer of released tokens to the benficiary
+        let (erc20_address) = erc20_address_.read()
+        let (contract_address) = get_contract_address()
+        let (transfer_success) = IERC20.transfer(erc20_address, vesting.beneficiary, amount)
+
+        # Assert transfer success
+        with_attr error_message("StarkVest: transfer of released tokens failed"):
+            assert transfer_success = TRUE
+        end
+
+        # End reetrancy guard
+        ReentrancyGuard._end()
         return ()
     end
 
@@ -303,7 +383,9 @@ namespace StarkVest:
         let vesting_duration_uint256 = Uint256(vesting.duration, 0)
         let (tmp_amount) = SafeUint256.mul(vesting.amount_total, final_vested_seconds)
         let (vested_amount, _) = SafeUint256.div_rem(tmp_amount, vesting_duration_uint256)
-        return (vested_amount)
+        # Substract released tokens
+        let (releaseable_amount) = SafeUint256.sub_lt(vested_amount, vesting.released)
+        return (releaseable_amount)
     end
 
     ###
@@ -402,6 +484,23 @@ namespace StarkVest:
 end
 
 namespace internal:
+    func get_vesting_and_assert_exist{
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+    }(vesting_id : felt) -> (vesting : Vesting):
+        let (vesting) = vestings_.read(vesting_id)
+        with_attr error_message("StarkVest: vesting does not exist"):
+            assert_not_zero(vesting.beneficiary)
+        end
+        return (vesting=vesting)
+    end
+
+    func are_equal(a : felt, b : felt) -> (res : felt):
+        if a == b:
+            return (res=TRUE)
+        end
+        return (res=FALSE)
+    end
+
     func assert_valid_timestamp{range_check_ptr}(value : felt):
         with_attr error_message(
                 "StarkVest: value is not a valid timestamp in the context of StarkVest"):

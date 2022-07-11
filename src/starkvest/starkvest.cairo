@@ -119,3 +119,15 @@ end
 func revoke{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(vesting_id : felt):
     return StarkVest.revoke(vesting_id)
 end
+
+###
+# Release vested amount of tokens.
+# @param vesting_id the vesting identifier
+# @param amount the amount to release
+###
+@external
+func release{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    vesting_id : felt, amount : Uint256
+):
+    return StarkVest.release(vesting_id, amount)
+end

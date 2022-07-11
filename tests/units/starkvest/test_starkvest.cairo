@@ -355,3 +355,65 @@ func test_revoke_not_revocable{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*,
     %{ stop() %}
     return ()
 end
+
+# Test case: release some tokens in normal conditions
+# Category: NOMINAL
+# Expected result: release must succeed
+@external
+func test_release_nominal_case{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
+    alloc_locals
+    let (local context : TestContext) = test_internal.prepare()
+
+    ###
+    # Create the vesting
+    ###
+    %{ stop=start_prank(ids.context.signers.admin) %}
+    %{ mock_call(ids.context.mocks.vesting_token_address, "balanceOf", [2000, 0]) %}
+    let beneficiary = context.signers.anyone_1
+    let cliff_delta = 0
+    let start = 0
+    let duration = 1000
+    let slice_period_seconds = 1
+    let revocable = TRUE
+    let amount_total = Uint256(1000, 0)
+    let (vesting_id) = StarkVest.create_vesting(
+        beneficiary, cliff_delta, start, duration, slice_period_seconds, revocable, amount_total
+    )
+    %{ stop() %}
+
+    ###
+    # Assert that amount of tokens released is 0
+    ###
+    let (vesting) = StarkVest.vestings(vesting_id)
+    assert vesting.released = Uint256(0, 0)
+
+    ###
+    # Got to timestamp 100
+    ###
+    %{ stop_warp = warp(100) %}
+    let (releasable_amount) = StarkVest.releaseable_amount(vesting_id)
+    assert releasable_amount = Uint256(100, 0)
+
+    # ##
+    # Release 100 tokens
+    ###
+    %{ stop=start_prank(ids.context.signers.anyone_1) %}
+    %{ mock_call(ids.context.mocks.vesting_token_address, "transfer", [1]) %}
+    StarkVest.release(vesting_id, Uint256(100, 0))
+    %{ stop() %}
+    %{ stop_warp() %}
+
+    ###
+    # Assert that amount of tokens released is 100
+    ###
+    let (vesting) = StarkVest.vestings(vesting_id)
+    assert vesting.released = Uint256(100, 0)
+
+    ###
+    # Assert that releasable amount is now 0
+    ###
+    let (releasable_amount) = StarkVest.releaseable_amount(vesting_id)
+    assert releasable_amount = Uint256(0, 0)
+
+    return ()
+end
