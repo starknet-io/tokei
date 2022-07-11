@@ -22,6 +22,9 @@ func erc20_address{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check
     return StarkVest.erc20_address()
 end
 
+###
+# @return the total amount locked in vestings
+###
 @view
 func vestings_total_amount{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
     vestings_total_amount : Uint256
@@ -43,6 +46,10 @@ func vestings{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
     return StarkVest.vestings(vesting_id)
 end
 
+###
+# Compute and return the amount of tokens withdrawable by the owner.
+# @return the amount of withdrawable tokens
+###
 @view
 func withdrawable_amount{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
     withdrawable_amount : Uint256
@@ -130,4 +137,13 @@ func release{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     vesting_id : felt, amount : Uint256
 ):
     return StarkVest.release(vesting_id, amount)
+end
+
+###
+# Witdraw an amount of tokens from the vesting contract.
+# @param amount the amount to withdraw
+###
+@external
+func withdraw{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(amount : Uint256):
+    return StarkVest.withdraw(amount)
 end

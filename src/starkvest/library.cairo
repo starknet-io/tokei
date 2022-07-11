@@ -332,6 +332,45 @@ namespace StarkVest:
         return ()
     end
 
+    ###
+    # Witdraw an amount of tokens from the vesting contract.
+    # @param amount the amount to withdraw
+    ###
+    func withdraw{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        amount : Uint256
+    ):
+        alloc_locals
+        # Access control check
+        Ownable.assert_only_owner()
+
+        # Start reetrancy guard
+        ReentrancyGuard._start()
+
+        # Get withdrawable amount
+        let (_withdrawable_amount) = withdrawable_amount()
+
+        # Check if enough tokens available
+        with_attr error_message(
+                "StarkVest: cannot withdraw tokens, not enough withdrawable tokens"):
+            let (is_le) = uint256_le(amount, _withdrawable_amount)
+            assert is_le = TRUE
+        end
+
+        # Do the transfer to the owner
+        let (owner) = Ownable.owner()
+        let (erc20_address) = erc20_address_.read()
+        let (transfer_success) = IERC20.transfer(erc20_address, owner, amount)
+
+        # Assert transfer success
+        with_attr error_message("StarkVest: withdraw tokens failed"):
+            assert transfer_success = TRUE
+        end
+
+        # End reetrancy guard
+        ReentrancyGuard._end()
+        return ()
+    end
+
     # ------
     # INTERNAL FUNCTIONS
     # ------

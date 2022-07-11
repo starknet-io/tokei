@@ -417,3 +417,41 @@ func test_release_nominal_case{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*,
 
     return ()
 end
+
+# Test case: withdraw some tokens in normal conditions
+# Category: NOMINAL
+# Expected result: withdraw must succeed
+@external
+func test_withdraw_nominal_case{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    ):
+    alloc_locals
+    let (local context : TestContext) = test_internal.prepare()
+
+    %{ stop=start_prank(ids.context.signers.admin) %}
+    %{ mock_call(ids.context.mocks.vesting_token_address, "balanceOf", [2000, 0]) %}
+    %{ mock_call(ids.context.mocks.vesting_token_address, "transfer", [1]) %}
+    StarkVest.withdraw(Uint256(1000, 0))
+    %{ stop() %}
+
+    return ()
+end
+
+# Test case: withdraw tokens but not enough withdrawable tokens
+# Category: BAD_CONDITIONS
+# Expected result: withdraw must fail and revert with correct message
+@external
+func test_withdraw_not_enough_tokens{
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+}():
+    alloc_locals
+    let (local context : TestContext) = test_internal.prepare()
+
+    %{ stop=start_prank(ids.context.signers.admin) %}
+    %{ mock_call(ids.context.mocks.vesting_token_address, "balanceOf", [999, 0]) %}
+    %{ mock_call(ids.context.mocks.vesting_token_address, "transfer", [1]) %}
+    %{ expect_revert("TRANSACTION_FAILED", "StarkVest: cannot withdraw tokens, not enough withdrawable tokens") %}
+    StarkVest.withdraw(Uint256(1000, 0))
+    %{ stop() %}
+
+    return ()
+end

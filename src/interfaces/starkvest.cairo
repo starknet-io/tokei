@@ -9,6 +9,43 @@ from starkware.cairo.common.uint256 import Uint256
 @contract_interface
 namespace IStarkVest:
     ###
+    # Compute and return releaseable amount of tokens for a vesting.
+    # @param vesting_id the vesting identifier
+    # @return the amount of releaseable tokens
+    ###
+    func releaseable_amount(vesting_id : felt) -> (releaseable_amount : Uint256):
+    end
+
+    ###
+    # @return the total amount locked in vestings
+    ###
+    func vestings_total_amount() -> (vestings_total_amount : Uint256):
+    end
+
+    ###
+    # Compute and return the amount of tokens withdrawable by the owner.
+    # @return the amount of withdrawable tokens
+    ###
+    func withdrawable_amount() -> (releaseable_amount : Uint256):
+    end
+
+    ###
+    # Revokes the vesting identified by vesting_id.
+    # @param vesting_id the vesting identifier
+    # @return the amount of releaseable tokens
+    ###
+    func revoke(vesting_id : felt):
+    end
+
+    ###
+    # Release vested amount of tokens.
+    # @param vesting_id the vesting identifier
+    # @param amount the amount to release
+    ###
+    func release(vesting_id : felt, amount : Uint256):
+    end
+
+    ###
     # Creates a new vesting for a beneficiary.
     # @param beneficiary address of the beneficiary to whom vested tokens are transferred
     # @param _start start time of the vesting period
@@ -31,29 +68,9 @@ namespace IStarkVest:
     end
 
     ###
-    # Compute and return releaseable amount of tokens for a vesting.
-    # @param vesting_id the vesting identifier
-    # @return the amount of releaseable tokens
+    # Witdraw an amount of tokens from the vesting contract.
+    # @param amount the amount to withdraw
     ###
-    func releaseable_amount(vesting_id : felt) -> (releaseable_amount : Uint256):
-    end
-
-    ###
-    # Revokes the vesting identified by vesting_id.
-    # @param vesting_id the vesting identifier
-    # @return the amount of releaseable tokens
-    ###
-    func revoke(vesting_id : felt):
-    end
-
-    ###
-    # Release vested amount of tokens.
-    # @param vesting_id the vesting identifier
-    # @param amount the amount to release
-    ###
-    func release(vesting_id : felt, amount : Uint256):
-    end
-
-    func vestings_total_amount() -> (vestings_total_amount: Uint256):
+    func withdraw(amount : Uint256):
     end
 end
