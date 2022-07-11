@@ -109,3 +109,13 @@ func create_vesting{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
         beneficiary, cliff_delta, start, duration, slice_period_seconds, revocable, amount_total
     )
 end
+
+###
+# Revokes the vesting identified by vesting_id.
+# @param vesting_id the vesting identifier
+# @return the amount of releaseable tokens
+###
+@external
+func revoke{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(vesting_id : felt):
+    return StarkVest.revoke(vesting_id)
+end

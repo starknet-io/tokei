@@ -132,6 +132,12 @@ namespace starkvest_instance:
         let (releaseable_amount) = IStarkVest.releaseable_amount(starkvest, vesting_id)
         return (releaseable_amount)
     end
+
+    func revoke{
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, starkvest : felt
+    }(vesting_id : felt):
+        return IStarkVest.revoke(vesting_id)
+    end
 end
 
 namespace token_instance:

@@ -212,6 +212,44 @@ namespace StarkVest:
         return (vesting_id)
     end
 
+    ###
+    # Revokes the vesting identified by vesting_id.
+    # @param vesting_id the vesting identifier
+    # @return the amount of releaseable tokens
+    ###
+    func revoke{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        vesting_id : felt
+    ):
+        alloc_locals
+        # Access control check
+        Ownable.assert_only_owner()
+        # Check vesting id
+        internal.assert_valid_vesting_id(vesting_id)
+        # Get the vesting from storage
+        let (vesting) = vestings_.read(vesting_id)
+        # Check that vesting is revocable
+        internal.assert_revocable(vesting)
+
+        # TODO: release releasable tokens
+        # TODO: update vestings_total_amount_
+
+        # Update vesting
+        let vesting = Vesting(
+            vesting.beneficiary,
+            vesting.cliff,
+            vesting.start,
+            vesting.duration,
+            vesting.slice_period_seconds,
+            vesting.revocable,
+            vesting.amount_total,
+            vesting.released,
+            TRUE,
+        )
+        # Save updated vesting
+        vestings_.write(vesting_id, vesting)
+        return ()
+    end
+
     # ------
     # INTERNAL FUNCTIONS
     # ------
@@ -366,6 +404,19 @@ namespace internal:
         with_attr error_message(
                 "StarkVest: value is not a valid timestamp in the context of StarkVest"):
             assert_in_range(value, 0, MAX_TIMESTAMP)
+        end
+        return ()
+    end
+
+    func assert_valid_vesting_id(vesting_id : felt):
+        with_attr error_message("StarkVest: not a valid vesting id"):
+            assert_not_zero(vesting_id)
+        end
+        return ()
+    end
+    func assert_revocable(vesting : Vesting):
+        with_attr error_message("StarkVest: vesting is not revocable"):
+            assert vesting.revocable = TRUE
         end
         return ()
     end
