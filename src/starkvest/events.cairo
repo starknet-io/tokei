@@ -17,3 +17,7 @@ end
 @event
 func VestingRevoked(vesting_id : felt):
 end
+
+@event
+func TokensReleased(vesting_id : felt, amount : Uint256):
+end

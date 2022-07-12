@@ -103,7 +103,6 @@ func test_e2e{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
         # Release 100 tokens
         starkvest_instance.release(vesting_id, Uint256(100, 0))
         let (releasable_amount) = starkvest_instance.releasable_amount(vesting_id)
-        %{ stop_warp() %}
         assert releasable_amount = Uint256(400, 0)
 
         # Check balance of vesting contract after release
@@ -124,6 +123,16 @@ func test_e2e{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
         assert starkvest_balance = Uint256(900, 0)
         let (owner_balance) = IERC20.balanceOf(token, ADMIN)
         assert owner_balance = Uint256(999000, 0)
+
+        # Revoke
+        # The 400 remaining vested tokens should be released
+        %{ expect_events({"name": "VestingRevoked", "data": [ids.vesting_id]}) %}
+        %{ expect_events({"name": "TokensReleased", "data": [ids.vesting_id, 400, 0]}) %}
+        starkvest_instance.revoke(vesting_id)
+        %{ stop_warp() %}
+        # Check balance of user 1 after revoke
+        let (user_1_balance) = IERC20.balanceOf(token, USER_1)
+        assert user_1_balance = Uint256(500, 0)        
     end
 
     return ()

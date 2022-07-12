@@ -31,7 +31,7 @@ from openzeppelin.token.erc20.interfaces.IERC20 import IERC20
 # Project dependencies
 
 from starkvest.model import Vesting, MAX_SLICE_PERIOD_SECONDS, MAX_TIMESTAMP
-from starkvest.events import VestingCreated, VestingRevoked
+from starkvest.events import VestingCreated, VestingRevoked, TokensReleased
 
 # ------
 # STORAGE
@@ -349,6 +349,9 @@ namespace StarkVest:
         with_attr error_message("StarkVest: transfer of released tokens failed"):
             assert transfer_success = TRUE
         end
+
+        # Emit event
+        TokensReleased.emit(vesting_id, amount)
 
         # End reetrancy guard
         ReentrancyGuard._end()
