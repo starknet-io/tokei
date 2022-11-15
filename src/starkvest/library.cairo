@@ -309,6 +309,7 @@ namespace StarkVest {
         with_attr error_message("StarkVest: only beneficiary and owner can release vested tokens") {
             assert_not_zero(owner_or_beneficiary);
         }
+        let beneficiary = vesting.beneficiary;
 
         // Check that account has enough releasable tokens
         let (releasable_amount) = _releasable_amount(vesting);
@@ -342,7 +343,7 @@ namespace StarkVest {
         // Do the transfer of released tokens to the benficiary
         let (erc20_address) = erc20_address_.read();
         let (contract_address) = get_contract_address();
-        let (transfer_success) = IERC20.transfer(erc20_address, caller, amount);
+        let (transfer_success) = IERC20.transfer(erc20_address, beneficiary, amount);
 
         // Assert transfer success
         with_attr error_message("StarkVest: transfer of released tokens failed") {
