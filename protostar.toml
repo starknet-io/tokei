@@ -1,29 +1,21 @@
-["protostar.config"]
-protostar_version = "0.2.5"
+[project]
+protostar-version = "0.7.0"
+lib-path = "lib"
+cairo-path = ["./lib/cairo_contracts/src", "src"]
 
-["protostar.project"]
-libs_path = "lib"
+[contracts]
+StarkVest = ["src/starkvest/starkvest.cairo"]
 
-["protostar.shared_command_configs"]
-cairo_path = ["./lib/cairo_contracts/src", "src", "tests"]
+Token = ["tests/mocks/erc20.cairo"]
 
-["protostar.contracts"]
-StarkVest = [
-    "src/starkvest/starkvest.cairo",
-]
-Token = [
-    "tests/mocks/token/erc20.cairo",
-]
-
-["protostar.test"]
+[test]
 target = ["tests"]
 
-# https://github.com/Shard-Labs/starknet-devnet
-[profile.devnet.protostar.deploy]
-gateway_url="http://127.0.0.1:5050/"
+[profile.devnet.deploy]
+gateway-url = "http://127.0.0.1:5050/"
 
-[profile.testnet.protostar.deploy]
-network="alpha-goerli"
+[profile.testnet.deploy]
+network = "alpha-goerli"
 
-[profile.mainnet.protostar.deploy]
-network="alpha-mainnet"
+[profile.mainnet.deploy]
+network = "alpha-mainnet"
