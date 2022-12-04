@@ -32,11 +32,24 @@ func vestings_total_amount{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
     return StarkVest.vestings_total_amount();
 }
 
+//##
+// @return the number of vestings associated to the account
+//##
 @view
 func vesting_count{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     account: felt
 ) -> (vesting_count: felt) {
     return StarkVest.vesting_count(account);
+}
+
+//##
+// @return the number of vestings associated to the account
+//##
+@view
+func get_vesting_id{pedersen_ptr: HashBuiltin*}(
+    account: felt, vesting_index: felt
+) -> (vesting_id: felt) {
+    return StarkVest.compute_vesting_id(account, vesting_index);
 }
 
 @view

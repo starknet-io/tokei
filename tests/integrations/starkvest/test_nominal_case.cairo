@@ -293,4 +293,3 @@ func test_e2e{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}()
 
     return ();
 }
-

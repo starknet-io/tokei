@@ -397,6 +397,19 @@ namespace StarkVest {
         return ();
     }
 
+    //##
+    // Compute vesting_id for a given account and vesting_count.
+    // @param account the account linked to the vesting
+    // @param vesting_count the current number of vestings associated to the account
+    //##
+    func compute_vesting_id{pedersen_ptr: HashBuiltin*}(account: felt, vesting_count: felt) -> (
+        vesting_id: felt
+    ) {
+        let vesting_id = account;
+        let (vesting_id) = hash2{hash_ptr=pedersen_ptr}(vesting_id, vesting_count);
+        return (vesting_id=vesting_id);
+    }
+
     // ------
     // INTERNAL FUNCTIONS
     // ------
@@ -506,19 +519,6 @@ namespace StarkVest {
         let vesting_count = vesting_count + 1;
         vesting_count_.write(account, vesting_count);
         return ();
-    }
-
-    //##
-    // Compute vesting_id for a given account and vesting_count.
-    // @param account the account linked to the vesting
-    // @param vesting_count the current number of vestings associated to the account
-    //##
-    func compute_vesting_id{pedersen_ptr: HashBuiltin*}(account: felt, vesting_count: felt) -> (
-        vesting_id: felt
-    ) {
-        let vesting_id = account;
-        let (vesting_id) = hash2{hash_ptr=pedersen_ptr}(vesting_id, vesting_count);
-        return (vesting_id=vesting_id);
     }
 
     //##
