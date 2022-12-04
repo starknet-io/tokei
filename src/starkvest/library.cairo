@@ -144,10 +144,9 @@ namespace StarkVest {
     // ------
     // CONSTRUCTOR
     // ------
-    func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-        owner: felt, erc20_address: felt
+    func initializer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+        erc20_address: felt
     ) {
-        Ownable.initializer(owner);
         erc20_address_.write(erc20_address);
         return ();
     }
@@ -176,8 +175,6 @@ namespace StarkVest {
         amount_total: Uint256,
     ) -> (vesting_id: felt) {
         alloc_locals;
-        // Access control check
-        Ownable.assert_only_owner();
 
         // cliff_delta is expressed as a delta compared to start
         // cliff is the timestamp after which the cliff period ends
@@ -230,8 +227,6 @@ namespace StarkVest {
     //##
     func revoke{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(vesting_id: felt) {
         alloc_locals;
-        // Access control check
-        Ownable.assert_only_owner();
         // Check vesting id
         internal.assert_valid_vesting_id(vesting_id);
         // Get the vesting from storage
@@ -366,9 +361,6 @@ namespace StarkVest {
         amount: Uint256
     ) {
         alloc_locals;
-        // Access control check
-        Ownable.assert_only_owner();
-
         // Start reetrancy guard
         ReentrancyGuard.start();
 

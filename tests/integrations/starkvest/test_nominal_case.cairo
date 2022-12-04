@@ -112,12 +112,26 @@ namespace payment_token_instance {
 }
 
 namespace starkvest_instance {
+    
+    
     // Internals
 
     func deployed() -> (starkvest_contract: felt) {
         tempvar starkvest_contract;
         %{ ids.starkvest_contract = context.starkvest_contract %}
         return (starkvest_contract,);
+    }
+
+    func get_admin_address() -> (address: felt) {
+        tempvar address;
+        %{ ids.address = ids.ADMIN %}
+        return (address,);
+    }
+
+    func get_user_address() -> (address: felt) {
+        tempvar address;
+        %{ ids.address = ids.USER_1USER_1 %}
+        return (address,);
     }
 
     func create_vesting{
@@ -130,8 +144,9 @@ namespace starkvest_instance {
         slice_period_seconds: felt,
         revocable: felt,
         amount_total: Uint256,
+        caller: felt,
     ) -> (vesting_id: felt) {
-        %{ stop_prank = start_prank(ids.ADMIN, ids.starkvest) %}
+        %{ stop_prank = start_prank(ids.caller, ids.starkvest) %}
         let (vesting_id) = IStarkVest.create_vesting(
             starkvest,
             beneficiary,
@@ -217,7 +232,7 @@ func test_e2e{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}()
         let amount_total = Uint256(1000, 0);
         %{ expect_events({"name": "VestingCreated"}) %}
         let (vesting_id) = starkvest_instance.create_vesting(
-            beneficiary, cliff_delta, start, duration, slice_period_seconds, revocable, amount_total
+            beneficiary, cliff_delta, start, duration, slice_period_seconds, revocable, amount_total, ADMIN
         );
 
         // Set block time to 999 (1 second before vesting starts)
@@ -291,5 +306,47 @@ func test_e2e{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}()
         assert user_1_balance = Uint256(500, 0);
     }
 
+    return ();
+}
+
+// Test case: create vesting from non owner account
+// Category: ACCESS_CONTROL
+// Expected result: create_vesting must fail and revert with correct message
+@external
+func test_create_vesting_from_non_owner_account{
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}() {
+    alloc_locals;
+
+    // Get ERC20 token deployed contract instance
+    let (payment_token) = payment_token_instance.deployed();
+    // Get StarkVest deployed contract instance
+    let (starkvest) = starkvest_instance.deployed();
+
+    with payment_token {
+        // ADMIN => STARKVEST : 2000 $SVT
+        let (success) = payment_token_instance.transfer(
+            starkvest, Uint256(2000, 0)
+        );
+        assert success = TRUE;
+    }
+
+
+    with starkvest {
+        // Create vesting:
+        // 1000 $SVT over 1 hour, with no cliff period
+        // vested second by second, starting at timestamp: 1000
+        let beneficiary = USER_1;
+        let cliff_delta = 0;
+        let start = 1000;
+        let duration = 3600;
+        let slice_period_seconds = 1;
+        let revocable = TRUE;
+        let amount_total = Uint256(1000, 0);
+        %{ expect_revert("TRANSACTION_FAILED", "Ownable: caller is not the owner") %}
+        let (vesting_id) = starkvest_instance.create_vesting(
+            beneficiary, cliff_delta, start, duration, slice_period_seconds, revocable, amount_total, USER_1
+        );
+    }
     return ();
 }
