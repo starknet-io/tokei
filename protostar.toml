@@ -1,21 +1,20 @@
 [project]
-protostar-version = "0.7.0"
+protostar-version = "0.8.1"
 lib-path = "lib"
 cairo-path = ["./lib/cairo_contracts/src", "src"]
 
 [contracts]
 StarkVest = ["src/starkvest/starkvest.cairo"]
-
 Token = ["tests/mocks/erc20.cairo"]
 
 [test]
 target = ["tests"]
 
-[profile.devnet.deploy]
+[profile.devnet.project]
 gateway-url = "http://127.0.0.1:5050/"
 
-[profile.testnet.deploy]
+[profile.testnet.project]
 network = "alpha-goerli"
 
-[profile.mainnet.deploy]
+[profile.mainnet.project]
 network = "alpha-mainnet"

@@ -9,6 +9,9 @@ from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.cairo.common.math import assert_not_zero
 from starkware.cairo.common.uint256 import Uint256
 
+// OpenZeplin
+from openzeppelin.access.ownable.library import Ownable
+
 // Project dependencies
 from starkvest.library import StarkVest
 from starkvest.model import Vesting, MAX_SLICE_PERIOD_SECONDS, MAX_TIMESTAMP
@@ -37,6 +40,28 @@ struct Mocks {
 struct TestContext {
     signers: Signers,
     mocks: Mocks,
+}
+
+namespace test_internal {
+    func prepare{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (
+        test_context: TestContext
+    ) {
+        alloc_locals;
+
+        local signers: Signers = Signers(admin=ADMIN, anyone_1=ANYONE_1, anyone_2=ANYONE_2, anyone_3=ANYONE_3);
+
+        local mocks: Mocks = Mocks(
+            vesting_token_address=VESTING_TOKEN_ADDRESS,
+            );
+
+        local context: TestContext = TestContext(
+            signers=signers,
+            mocks=mocks,
+            );
+        Ownable.initializer(signers.admin);
+        StarkVest.initializer(mocks.vesting_token_address);
+        return (test_context=context);
+    }
 }
 
 // Test case: create vesting in normal conditions and valid parameters
@@ -222,55 +247,6 @@ func test_create_vesting_invalid_vesting_end{
     );
     %{ stop() %}
     return ();
-}
-
-// Test case: create vesting from non owner account
-// Category: ACCESS_CONTROL
-// Expected result: create_vesting must fail and revert with correct message
-@external
-func test_create_vesting_from_non_owner_account{
-    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
-}() {
-    alloc_locals;
-    let (local context: TestContext) = test_internal.prepare();
-
-    let beneficiary = context.signers.anyone_1;
-    let cliff_delta = 0;
-    let start = 1;
-    let duration = 3600;
-    let slice_period_seconds = 1;
-    let revocable = TRUE;
-    let amount_total = Uint256(1000, 0);
-    %{ stop=start_prank(ids.context.signers.anyone_1) %}
-
-    %{ expect_revert("TRANSACTION_FAILED", "Ownable: caller is not the owner") %}
-    StarkVest.create_vesting(
-        beneficiary, cliff_delta, start, duration, slice_period_seconds, revocable, amount_total
-    );
-    %{ stop() %}
-    return ();
-}
-
-namespace test_internal {
-    func prepare{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (
-        test_context: TestContext
-    ) {
-        alloc_locals;
-
-        local signers: Signers = Signers(admin=ADMIN, anyone_1=ANYONE_1, anyone_2=ANYONE_2, anyone_3=ANYONE_3);
-
-        local mocks: Mocks = Mocks(
-            vesting_token_address=VESTING_TOKEN_ADDRESS,
-            );
-
-        local context: TestContext = TestContext(
-            signers=signers,
-            mocks=mocks,
-            );
-
-        StarkVest.constructor(signers.admin, mocks.vesting_token_address);
-        return (test_context=context);
-    }
 }
 
 // Test case: revoke vesting in normal conditions

@@ -7,6 +7,10 @@
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.uint256 import Uint256
 
+
+// OpenZeplin
+from openzeppelin.access.ownable.library import Ownable
+
 // Project dependencies
 from starkvest.library import StarkVest
 from starkvest.model import Vesting
@@ -32,11 +36,24 @@ func vestings_total_amount{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
     return StarkVest.vestings_total_amount();
 }
 
+//##
+// @return the number of vestings associated to the account
+//##
 @view
 func vesting_count{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     account: felt
 ) -> (vesting_count: felt) {
     return StarkVest.vesting_count(account);
+}
+
+//##
+// @return the number of vestings associated to the account
+//##
+@view
+func get_vesting_id{pedersen_ptr: HashBuiltin*}(
+    account: felt, vesting_index: felt
+) -> (vesting_id: felt) {
+    return StarkVest.compute_vesting_id(account, vesting_index);
 }
 
 @view
@@ -84,7 +101,8 @@ func releasable_amount{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     owner: felt, erc20_address: felt
 ) {
-    return StarkVest.constructor(owner, erc20_address);
+    Ownable.initializer(owner);
+    return StarkVest.initializer(erc20_address);
 }
 
 // -----
@@ -112,6 +130,8 @@ func create_vesting{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_
     revocable: felt,
     amount_total: Uint256,
 ) -> (vesting_id: felt) {
+    // Access control check
+    Ownable.assert_only_owner();
     return StarkVest.create_vesting(
         beneficiary, cliff_delta, start, duration, slice_period_seconds, revocable, amount_total
     );
@@ -124,6 +144,8 @@ func create_vesting{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_
 //##
 @external
 func revoke{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(vesting_id: felt) {
+    // Access control check
+    Ownable.assert_only_owner();
     return StarkVest.revoke(vesting_id);
 }
 
@@ -145,5 +167,7 @@ func release{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 //##
 @external
 func withdraw{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(amount: Uint256) {
+    // Access control check
+    Ownable.assert_only_owner();
     return StarkVest.withdraw(amount);
 }
