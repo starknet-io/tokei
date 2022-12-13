@@ -93,6 +93,18 @@ func releasable_amount{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     return StarkVest.releasable_amount(vesting_id);
 }
 
+//##
+// Find the value of all amount for a given account.
+// @param account the account linked to the vesting
+// @return the total amount of releasable for all vesting
+//##
+@view
+func releasable_amount_all_vestings{ 
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}(account: felt) -> (vestings_total_amount: Uint256){
+    return StarkVest.releasable_amount_all_vestings(account);
+}
+
 // -----
 // CONSTRUCTOR
 // -----
