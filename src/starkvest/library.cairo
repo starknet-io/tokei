@@ -6,7 +6,7 @@
 // Starkware dependencies
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.bool import TRUE, FALSE
-from starkware.cairo.common.uint256 import Uint256, uint256_le, uint256_lt
+from starkware.cairo.common.uint256 import Uint256, uint256_le, uint256_lt, uint256_add
 from starkware.cairo.common.hash import hash2
 from starkware.cairo.common.math import (
     assert_not_zero,
@@ -538,6 +538,52 @@ namespace StarkVest {
         assert vesting.revoked = FALSE;
         return (vesting=vesting);
     }
+
+    //##
+    // Find the value of all amount for a given account.
+    // @param account the account linked to the vesting
+    // @return the total amount of releasable for all vesting
+    //##
+    func releasable_amount_all_vestings{ 
+        syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+    }(account: felt) -> (vestings_total_amount: Uint256){
+        alloc_locals;
+
+        let (vesting_index) = vesting_count(account);
+        // Stop if index is 0 and return value 0
+        if (vesting_index == 0) {
+            return (vestings_total_amount=Uint256(0,0),);
+        }
+
+        let (vestings_total_amount) = _all_vestings_iter(account, vesting_index - 1);
+
+        return (vestings_total_amount=vestings_total_amount,);
+    }
+
+    
+    func _all_vestings_iter{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+        account: felt, vesting_index: felt
+    ) -> (vestings_total_amount: Uint256) {
+        alloc_locals;
+        
+        // Compute vesting_id
+        let (vesting_id) = compute_vesting_id(account, vesting_index);
+
+        let (vesting) = vestings_.read(vesting_id);
+
+        // Stop if vesting is null and return value 0
+        if (vesting.beneficiary == 0) {
+            return (vestings_total_amount=Uint256(0,0),);
+        }
+
+        let (releasable_amount) = _releasable_amount(vesting);
+
+        let (add) = _all_vestings_iter(account=account, vesting_index=vesting_index - 1);
+        let (vestings_total_amount, _) = uint256_add(releasable_amount, add);
+
+        return (vestings_total_amount=vestings_total_amount,);
+    }
+
 }
 
 namespace internal {
@@ -578,4 +624,5 @@ namespace internal {
         }
         return ();
     }
+
 }

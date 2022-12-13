@@ -430,3 +430,257 @@ func test_withdraw_not_enough_tokens{
 
     return ();
 }
+
+// Test case: retreive amount from multi vestings (two) for one account
+// Category: NOMINAL
+// Expected result: release must succeed
+@external
+func test_releasable_amount_all_for_two_vestings_nominal_case{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    alloc_locals;
+    let (local context: TestContext) = test_internal.prepare();
+
+    //##
+    // Create the frist vesting
+    //##
+    %{ stop=start_prank(ids.context.signers.admin) %}
+    %{ mock_call(ids.context.mocks.vesting_token_address, "balanceOf", [2000, 0]) %}
+    let beneficiary = context.signers.anyone_1;
+    let cliff_delta = 0;
+    let start = 0;
+    let duration = 1000;
+    let slice_period_seconds = 1;
+    let revocable = TRUE;
+    let amount_total = Uint256(1000, 0);
+    let (vesting_id) = StarkVest.create_vesting(
+        beneficiary, cliff_delta, start, duration, slice_period_seconds, revocable, amount_total
+    );
+    %{ stop() %}
+
+    //##
+    // Create the second vesting
+    //##
+    %{ stop=start_prank(ids.context.signers.admin) %}
+    let beneficiary = context.signers.anyone_1;
+    let cliff_delta = 0;
+    let start = 0;
+    let duration = 1000;
+    let slice_period_seconds = 1;
+    let revocable = TRUE;
+    let amount_total = Uint256(1000, 0);
+    let (vesting_id) = StarkVest.create_vesting(
+        beneficiary, cliff_delta, start, duration, slice_period_seconds, revocable, amount_total
+    );
+    %{ stop() %}
+
+
+    %{ stop_warp = warp(1000) %}
+    let (vesting_count) = StarkVest.vesting_count(context.signers.anyone_1);
+    assert vesting_count = 2;
+    let (vested_amount) = StarkVest.releasable_amount_all_vestings(context.signers.anyone_1);
+    %{ stop_warp() %}
+
+    assert vested_amount = Uint256(2000, 0);
+
+    return ();
+}
+
+// Test case: retreive amount from multi vestings (three) for one account
+// Category: NOMINAL
+// Expected result: release must succeed
+@external
+func test_releasable_amount_all_for_three_vestings_nominal_case{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    alloc_locals;
+    let (local context: TestContext) = test_internal.prepare();
+
+    //##
+    // Create the frist vesting
+    //##
+    %{ stop=start_prank(ids.context.signers.admin) %}
+    %{ mock_call(ids.context.mocks.vesting_token_address, "balanceOf", [4000, 0]) %}
+    let beneficiary = context.signers.anyone_1;
+    let cliff_delta = 0;
+    let start = 3000;
+    let duration = 1;
+    let slice_period_seconds = 1;
+    let revocable = TRUE;
+    let amount_total = Uint256(1000, 0);
+    let (vesting_id_1) = StarkVest.create_vesting(
+        beneficiary, cliff_delta, start, duration, slice_period_seconds, revocable, amount_total
+    );
+    %{ stop() %}
+
+    //##
+    // Create the second vesting
+    //##
+    %{ stop=start_prank(ids.context.signers.admin) %}
+    let beneficiary = context.signers.anyone_1;
+    let cliff_delta = 0;
+    let start = 1000;
+    let duration = 3600;
+    let slice_period_seconds = 1;
+    let revocable = TRUE;
+    let amount_total = Uint256(2000, 0);
+    let (vesting_id_2) = StarkVest.create_vesting(
+        beneficiary, cliff_delta, start, duration, slice_period_seconds, revocable, amount_total
+    );
+    %{ stop() %}
+
+    //##
+    // Create the third vesting
+    //##
+    %{ stop=start_prank(ids.context.signers.admin) %}
+    let beneficiary = context.signers.anyone_1;
+    let cliff_delta = 0;
+    let start = 1000;
+    let duration = 3600;
+    let slice_period_seconds = 1;
+    let revocable = TRUE;
+    let amount_total = Uint256(1000, 0);
+    let (vesting_id) = StarkVest.create_vesting(
+        beneficiary, cliff_delta, start, duration, slice_period_seconds, revocable, amount_total
+    );
+    assert_not_zero(vesting_id);
+    %{ stop() %}
+
+    %{ stop_warp = warp(2800) %}
+    let (vested_amount) = StarkVest.releasable_amount(vesting_id);
+    let (vesting_count) = StarkVest.vesting_count(context.signers.anyone_1);
+    assert vesting_count = 3;
+    let (total_vested_amount) = StarkVest.releasable_amount_all_vestings(context.signers.anyone_1);
+    %{ stop_warp() %}
+
+    assert vested_amount = Uint256(500, 0);
+    assert total_vested_amount = Uint256(1500, 0);
+
+    %{ stop_warp = warp(3700) %}
+    let (vested_amount) = StarkVest.releasable_amount(vesting_id);
+    let (total_vested_amount) = StarkVest.releasable_amount_all_vestings(context.signers.anyone_1);
+    %{ stop_warp() %}
+
+    assert vested_amount = Uint256(750, 0);
+    assert total_vested_amount = Uint256(3250, 0);
+
+    %{ stop_warp = warp(3988) %}
+    let (vested_amount) = StarkVest.releasable_amount(vesting_id);
+    let (total_vested_amount) = StarkVest.releasable_amount_all_vestings(context.signers.anyone_1);
+    %{ stop_warp() %}
+
+    assert vested_amount = Uint256(830, 0);
+    assert total_vested_amount = Uint256(3490, 0);
+
+    %{ stop_warp = warp(4600) %}
+    let (vested_amount) = StarkVest.releasable_amount(vesting_id);
+    let (total_vested_amount) = StarkVest.releasable_amount_all_vestings(context.signers.anyone_1);
+    %{ stop_warp() %}
+
+    assert vested_amount = Uint256(1000, 0);
+    assert total_vested_amount = Uint256(4000, 0);
+    return ();
+}
+
+// Test case: retreive amount from multi vestings (two) for one account
+// Category: BOUNDARY
+// Expected result: release must succeed
+@external
+func test_releasable_amount_all_no_vestings{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    alloc_locals;
+    let (local context: TestContext) = test_internal.prepare();
+
+    %{ stop_warp = warp(1000) %}
+    let (vesting_count) = StarkVest.vesting_count(context.signers.anyone_1);
+    assert vesting_count = 0;
+    let (vested_amount) = StarkVest.releasable_amount_all_vestings(context.signers.anyone_1);
+    %{ stop_warp() %}
+
+    assert vested_amount = Uint256(0, 0);
+
+    return ();
+}
+
+// Test case: retreive amount from multi vestings (two) for one account
+// Category: BOUNDARY
+// Expected result: release must succeed
+@external
+func test_releasable_amount_all_one_vestings{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    alloc_locals;
+    let (local context: TestContext) = test_internal.prepare();
+
+    //##
+    // Create the frist vesting
+    //##
+    %{ stop=start_prank(ids.context.signers.admin) %}
+    %{ mock_call(ids.context.mocks.vesting_token_address, "balanceOf", [2000, 0]) %}
+    let beneficiary = context.signers.anyone_1;
+    let cliff_delta = 0;
+    let start = 3000;
+    let duration = 1;
+    let slice_period_seconds = 1;
+    let revocable = TRUE;
+    let amount_total = Uint256(1000, 0);
+    let (vesting_id_1) = StarkVest.create_vesting(
+        beneficiary, cliff_delta, start, duration, slice_period_seconds, revocable, amount_total
+    );
+    %{ stop() %}
+
+    %{ stop_warp = warp(1000) %}
+    let (vesting_count) = StarkVest.vesting_count(context.signers.anyone_1);
+    assert vesting_count = 1;
+    let (vested_amount) = StarkVest.releasable_amount_all_vestings(context.signers.anyone_1);
+    %{ stop_warp() %}
+
+    assert vested_amount = Uint256(0, 0);
+
+    %{ stop_warp = warp(3000) %}
+    let (vesting_count) = StarkVest.vesting_count(context.signers.anyone_1);
+    assert vesting_count = 1;
+    let (vested_amount) = StarkVest.releasable_amount_all_vestings(context.signers.anyone_1);
+    %{ stop_warp() %}
+
+    assert vested_amount = Uint256(0, 0);
+
+        %{ stop_warp = warp(3001) %}
+    let (vesting_count) = StarkVest.vesting_count(context.signers.anyone_1);
+    assert vesting_count = 1;
+    let (vested_amount) = StarkVest.releasable_amount_all_vestings(context.signers.anyone_1);
+    %{ stop_warp() %}
+
+    assert vested_amount = Uint256(1000, 0);
+
+    return ();
+}
+
+// Test case: retreive amount from multi vestings (two) for one account
+// Category: BOUNDARY
+// Expected result: release must succeed
+@external
+func test_releasable_amount_all_no_account{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    alloc_locals;
+    let (local context: TestContext) = test_internal.prepare();
+
+    //##
+    // Create the frist vesting
+    //##
+    %{ stop=start_prank(ids.context.signers.admin) %}
+    %{ mock_call(ids.context.mocks.vesting_token_address, "balanceOf", [2000, 0]) %}
+    let beneficiary = context.signers.anyone_1;
+    let cliff_delta = 0;
+    let start = 1;
+    let duration = 50;
+    let slice_period_seconds = 1;
+    let revocable = TRUE;
+    let amount_total = Uint256(1000, 0);
+    let (vesting_id_1) = StarkVest.create_vesting(
+        beneficiary, cliff_delta, start, duration, slice_period_seconds, revocable, amount_total
+    );
+    %{ stop() %}
+
+    %{ stop_warp = warp(1000) %}
+    let (vesting_count) = StarkVest.vesting_count(0);
+    assert vesting_count = 0;
+    let (vested_amount) = StarkVest.releasable_amount_all_vestings(0);
+    %{ stop_warp() %}
+
+    assert vested_amount = Uint256(0, 0);
+
+    return ();
+}
