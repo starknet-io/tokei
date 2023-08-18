@@ -21,6 +21,7 @@ use za_warudo::core::lockup_linear::{
     IZaWarudoLockupLinearSafeDispatcher, IZaWarudoLockupLinearSafeDispatcherTrait
 };
 use za_warudo::types::lockup_linear::{Range, Broker};
+use za_warudo::tokens::erc721::{IERC721SafeDispatcher, IERC721SafeDispatcherTrait};
 
 /// TODO: Implement actual test and change the name of this function.
 #[test]
@@ -56,6 +57,12 @@ fn given_normal_conditions_when_create_with_range_then_expected_results() {
 
     // Assertions.
     assert(stream_id == 1, 'wrong stream id');
+
+    let stream_nft = IERC721SafeDispatcher { contract_address: za_warudo.contract_address };
+
+    // Check that the stream nft was minted to the recipient.
+    assert(stream_nft.owner_of(stream_id.into()).unwrap() == recipient, 'wrong stream nft owner');
+    assert(stream_nft.balance_of(recipient).unwrap() == 1, 'wrong stream nft balance');
 
     // *********************************************************************************************
     // *                              TEARDOWN                                                     *

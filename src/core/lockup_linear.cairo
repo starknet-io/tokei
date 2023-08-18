@@ -48,13 +48,16 @@ mod ZaWarudoLockupLinear {
 
     // Core lib imports.
     use core::result::ResultTrait;
-    use starknet::{get_caller_address, ContractAddress, contract_address_const};
+    use starknet::{
+        get_caller_address, ContractAddress, contract_address_const, get_contract_address
+    };
     use array::ArrayTrait;
     use traits::Into;
     use debug::PrintTrait;
     // Local imports.
     use za_warudo::types::lockup_linear::{Range, Broker, LockupLinearStream};
     use za_warudo::types::lockup::LockupAmounts;
+    use za_warudo::tokens::erc721::{ERC721, IERC721};
 
     // *************************************************************************
     //                              STORAGE
@@ -101,8 +104,15 @@ mod ZaWarudoLockupLinear {
     fn constructor(ref self: ContractState, initial_admin: ContractAddress) {
         // Set the initial admin.
         self.admin.write(initial_admin);
+
         // Set the next stream id.
         self.next_stream_id.write(1);
+
+        // Initialize as ERC-721 contract.
+        let mut state: ERC721::ContractState = ERC721::unsafe_new_contract_state();
+        IERC721::initializer(
+            ref state, 'Za Warudo Lockup Linear NFT', 'ZW-LOCKUP-LIN', get_contract_address()
+        );
     }
 
 
@@ -167,7 +177,8 @@ mod ZaWarudoLockupLinear {
             self.next_stream_id.write(stream_id + 1);
 
             // Effects: mint the NFT to the recipient.
-            // TODO: implement.
+            let mut state: ERC721::ContractState = ERC721::unsafe_new_contract_state();
+            IERC721::mint(ref state, recipient, stream_id.into());
 
             // Interactions: transfer the deposit and the protocol fee.
             // TODO: implement.
@@ -193,6 +204,69 @@ mod ZaWarudoLockupLinear {
 
             // Return the stream id.
             stream_id
+        }
+    }
+
+    #[external(v0)]
+    impl ZaWarudoLockupLinearERC721 of IERC721<ContractState> {
+        fn initializer(
+            ref self: ContractState, name_: felt252, symbol_: felt252, admin: ContractAddress
+        ) {}
+
+        fn balance_of(self: @ContractState, account: ContractAddress) -> u128 {
+            let mut state: ERC721::ContractState = ERC721::unsafe_new_contract_state();
+            IERC721::balance_of(@state, account)
+        }
+
+        fn owner_of(self: @ContractState, token_id: u128) -> ContractAddress {
+            let mut state: ERC721::ContractState = ERC721::unsafe_new_contract_state();
+            IERC721::owner_of(@state, token_id)
+        }
+
+        fn get_approved(self: @ContractState, token_id: u128) -> ContractAddress {
+            let mut state: ERC721::ContractState = ERC721::unsafe_new_contract_state();
+            IERC721::get_approved(@state, token_id)
+        }
+
+        fn is_approved_for_all(
+            self: @ContractState, owner: ContractAddress, operator: ContractAddress
+        ) -> bool {
+            let mut state: ERC721::ContractState = ERC721::unsafe_new_contract_state();
+            IERC721::is_approved_for_all(@state, owner, operator)
+        }
+
+        fn approve(ref self: ContractState, to: ContractAddress, token_id: u128) {
+            let mut state: ERC721::ContractState = ERC721::unsafe_new_contract_state();
+            IERC721::approve(ref state, to, token_id)
+        }
+        fn set_approval_for_all(
+            ref self: ContractState, operator: ContractAddress, approved: bool
+        ) {
+            let mut state: ERC721::ContractState = ERC721::unsafe_new_contract_state();
+            IERC721::set_approval_for_all(ref state, operator, approved)
+        }
+
+        fn transfer_from(
+            ref self: ContractState, from: ContractAddress, to: ContractAddress, token_id: u128
+        ) {
+            let mut state: ERC721::ContractState = ERC721::unsafe_new_contract_state();
+            IERC721::transfer_from(ref state, from, to, token_id)
+        }
+
+        fn safe_transfer_from(
+            ref self: ContractState,
+            from: ContractAddress,
+            to: ContractAddress,
+            token_id: u128,
+            data: Span<felt252>
+        ) {
+            let mut state: ERC721::ContractState = ERC721::unsafe_new_contract_state();
+            IERC721::safe_transfer_from(ref state, from, to, token_id, data)
+        }
+
+        fn mint(ref self: ContractState, to: ContractAddress, token_id: u128) {
+            let mut state: ERC721::ContractState = ERC721::unsafe_new_contract_state();
+            IERC721::mint(ref state, to, token_id)
         }
     }
 }
