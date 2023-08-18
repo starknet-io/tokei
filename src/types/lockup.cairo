@@ -11,7 +11,7 @@ use traits::{TryInto, Into};
 /// Represent Lockup amounts.
 // Struct encapsulating the deposit, withdrawn, and refunded amounts, all denoted in units
 /// of the asset's decimals.
-#[derive(Drop, starknet::Store, Serde)]
+#[derive(Drop, Copy, starknet::Store, Serde)]
 struct LockupAmounts {
     /// The initial amount deposited in the stream, net of fees.
     deposited: u128,

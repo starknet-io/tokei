@@ -67,6 +67,30 @@ mod ZaWarudoLockupLinear {
     }
 
     // *************************************************************************
+    // EVENTS
+    // *************************************************************************
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        LockupLinearStreamCreated: LockupLinearStreamCreated,
+    }
+
+
+    #[derive(Drop, starknet::Event)]
+    struct LockupLinearStreamCreated {
+        stream_id: u64,
+        funder: ContractAddress,
+        sender: ContractAddress,
+        recipient: ContractAddress,
+        amounts: LockupAmounts,
+        asset: ContractAddress,
+        cancelable: bool,
+        range: Range,
+        broker: ContractAddress,
+    }
+
+    // *************************************************************************
     //                              CONSTRUCTOR
     // *************************************************************************
 
@@ -122,6 +146,10 @@ mod ZaWarudoLockupLinear {
             // Checks: validate the user-provided parameters.
             // TODO: implement.
 
+            let amounts: LockupAmounts = LockupAmounts {
+                deposited: deposited_amount, withdrawn: 0, refunded: 0,
+            };
+
             // Effects: create the stream.
             let stream = LockupLinearStream {
                 sender,
@@ -131,7 +159,7 @@ mod ZaWarudoLockupLinear {
                 is_cancelable: cancelable,
                 was_canceled: false,
                 is_depleted: false,
-                amounts: LockupAmounts { deposited: deposited_amount, withdrawn: 0, refunded: 0, },
+                amounts,
             };
             self.streams.write(stream_id, stream);
 
@@ -148,7 +176,20 @@ mod ZaWarudoLockupLinear {
             // TODO: implement.
 
             // Emit an event for  the newly created stream.
-            // TODO: implement.
+            self
+                .emit(
+                    LockupLinearStreamCreated {
+                        stream_id,
+                        funder: get_caller_address(),
+                        sender,
+                        recipient,
+                        amounts,
+                        asset,
+                        cancelable,
+                        range,
+                        broker: broker.account,
+                    }
+                );
 
             // Return the stream id.
             stream_id
