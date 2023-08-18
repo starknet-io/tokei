@@ -1,0 +1,13 @@
+[book]
+authors = ["@abdelhamidbakhta"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Za Warudo Book"
+
+[output.html]
+git-repository-url = "https://github.com/abdelhamidbakhta/za-warudo"
+edit-url-template = "https://github.com/abdelhamidbakhta/za-warudo/book/{path}"
+
+[output.html.playground]
+runnable = false

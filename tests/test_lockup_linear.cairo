@@ -24,7 +24,7 @@ use za_warudo::types::lockup_linear::{Range, Broker};
 
 /// TODO: Implement actual test and change the name of this function.
 #[test]
-fn init_test() {
+fn given_normal_conditions_when_create_with_range_then_expected_results() {
     // *********************************************************************************************
     // *                              SETUP                                                        *
     // *********************************************************************************************
