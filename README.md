@@ -1,65 +1,66 @@
-<div align="center">
-  <h1 align="center">StarkVest</h1>
-  <p align="center">
-    <a href="https://github.com/abdelhamidbakhta">
-        <img src="https://img.shields.io/badge/Github-4078c0?style=for-the-badge&logo=github&logoColor=white">
-    </a>
-    <a href="https://twitter.com/intent/follow?screen_name=dimahledba">
-        <img src="https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white">
-    </a>       
-  </p>
-  <h3 align="center">ERC20 token vesting smart contracts written in Cairo for StarkNet.</h3>
-</div>
-
-## Usage
-
-> ## ⚠️ WARNING! ⚠️
-> This repo contains highly experimental code.
-> Expect rapid iteration.
-> **Use at your own risk.**
-
-### Set up the project
-
-#### 📦 Install the requirements
-
-- [protostar](https://github.com/software-mansion/protostar)
-
-### ⛏️ Compile
-
-```bash
-protostar build
-```
-
-### 🌡️ Test
-
-```bash
-# Run all tests
-protostar test
-
-# Run only unit tests
-protostar test tests/units
-
-# Run only integration tests
-protostar test tests/integrations
-```
-
-### 💋 Format code
-
-```bash
-cairo-format -i src/**/*.cairo tests/**/*.cairo
-```
-
-## 📄 License
-
-**starkvest** is released under the [MIT](LICENSE).
-
-## Contributors ✨
-
-<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
+<p align="center">
+  <img src="docs/images/logo.png" height="256">
+</p>
+
+<h1 align="center">⏳ Za Warudo ⏳</h1>
+
+<p align="center">
+  <strong>✨ 🐺 Starknet ERC20 token streaming protocol 💰⏳, inspired by Sablier.</strong>
+</p>
+
+<p align="center">
+  <a href="LICENSE">
+    <img src="https://img.shields.io/github/license/abdelhamidbakhta/za-warudo.svg?style=flat-square" alt="Project license">
+  </a>
+  <a href="https://github.com/abdelhamidbakhta/za-warudo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22">
+    <img src="https://img.shields.io/badge/PRs-welcome-ff69b4.svg?style=flat-square" alt="Pull Requests welcome">
+  </a>
+  <a href="https://abdelhamidbakhta.github.io/za-warudo/">
+    <img src="https://img.shields.io/badge/Read-Za Warudo_Book-blue" alt="Read Za Warudo Book">
+  </a>
+</p>
 
 <!-- markdownlint-restore -->
 <!-- prettier-ignore-end -->
 
-<!-- ALL-CONTRIBUTORS-LIST:END -->
+## ⚡ About Za Warudo ⚡
+
+Za Warudo is a token streaming protocol, inspired by Sablier, for Starknet.
+
+Read the [Za Warudo Book](https://abdelhamidbakhta.github.io/za-warudo/) to learn more about the project.
+
+## 🛠️ Build
+
+To build the project, run:
+
+```bash
+scarb build
+```
+
+## 🧪 Test
+
+To test the project, run:
+
+```bash
+snforge
+```
+
+## 📚 Resources
+
+Here are some resources to help you get started:
+
+- [Za Warudo Book](https://abdelhamidbakhta.github.io/za-warudo/)
+- [Cairo Book](https://book.cairo-lang.org/)
+- [Starknet Book](https://book.starknet.io/)
+- [Starknet Foundry Book](https://foundry-rs.github.io/starknet-foundry/)
+- [Starknet By Example](https://starknet-by-example.voyager.online/)
+- Sablier resources
+  - [Sablier Website](https://sablier.com/)
+  - [Sablier documentation](https://docs.sablier.com/)
+  - [Sablier v2 core contracts](https://github.com/sablier-labs/v2-core)
+
+## 📖 License
+
+This project is licensed under the **MIT license**. See [LICENSE](LICENSE) for more information.
