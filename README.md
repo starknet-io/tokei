@@ -1,7 +1,7 @@
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
 <p align="center">
-  <img src="docs/images/logo.png" height="256">
+  <img src="assets/logo/za-warudo.png" height="256">
 </p>
 
 <h1 align="center">⏳ Za Warudo ⏳</h1>
