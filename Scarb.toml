@@ -1,0 +1,24 @@
+[package]
+name = "za_warudo"
+version = "0.1.0"
+authors = ["Abdelhamid Bakhta <@abdelhamidbakhta>"]
+license = "MIT"
+keywords = ["starknet", "vesting"]
+description = "✨ 🐺 Starknet ERC20 token vesting smart contracts 💰⏳"
+documentation = "https://github.com/abdelhamidbakhta/za-warudo"
+homepage = "https://github.com/abdelhamidbakhta/za-warudo"
+repository = "https://github.com/abdelhamidbakhta/za-warudo"
+
+[[target.starknet-contract]]
+sierra = true
+casm = true
+allowed-libfuncs-list.name = "experimental"
+
+[cairo]
+sierra-replace-ids = true
+
+[dependencies]
+starknet = ">=2.1.0"
+
+[tool.snforge]
+exit_first = false
