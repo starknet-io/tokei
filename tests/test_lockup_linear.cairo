@@ -14,7 +14,10 @@ use starknet::{
     ClassHash,
 };
 use debug::PrintTrait;
-use cheatcodes::PreparedContract;
+
+// Starknet Foundry imports.
+use snforge_std::{declare, start_prank, stop_prank, ContractClassTrait};
+
 
 // Local imports.
 use za_warudo::core::lockup_linear::{
@@ -108,12 +111,8 @@ fn setup_contracts(caller_address: ContractAddress) -> (IZaWarudoLockupLinearSaf
 
 /// Utility function to deploy a `ZaWarudoLockupLinear` contract and return its address.
 fn deploy_za_warudo(initial_admin: ContractAddress) -> ContractAddress {
-    let class_hash = declare('ZaWarudoLockupLinear');
-    let mut constructor_calldata = array![];
-    constructor_calldata.append(initial_admin.into());
-    let prepared = PreparedContract {
-        class_hash: class_hash, constructor_calldata: @constructor_calldata
-    };
-    deploy(prepared).unwrap()
+    let za_warudo_contract = declare('ZaWarudoLockupLinear');
+    let mut constructor_calldata = array![initial_admin.into()];
+    za_warudo_contract.deploy(@constructor_calldata).unwrap()
 }
 
