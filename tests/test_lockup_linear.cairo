@@ -1,4 +1,4 @@
-//! Test file for `src/deposit/deposit_vault.cairo`.
+//! Test file for `src/core/lockup_linear.cairo`.
 
 // *************************************************************************
 //                                  IMPORTS

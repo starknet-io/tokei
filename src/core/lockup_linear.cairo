@@ -11,6 +11,20 @@ use starknet::{ContractAddress, ClassHash};
 // Local imports.
 use za_warudo::types::lockup_linear::{Range, Broker};
 
+// ███████╗ █████╗     ██╗    ██╗ █████╗ ██████╗ ██╗   ██╗██████╗  ██████╗
+// ╚══███╔╝██╔══██╗    ██║    ██║██╔══██╗██╔══██╗██║   ██║██╔══██╗██╔═══██╗
+//   ███╔╝ ███████║    ██║ █╗ ██║███████║██████╔╝██║   ██║██║  ██║██║   ██║
+//  ███╔╝  ██╔══██║    ██║███╗██║██╔══██║██╔══██╗██║   ██║██║  ██║██║   ██║
+// ███████╗██║  ██║    ╚███╔███╔╝██║  ██║██║  ██║╚██████╔╝██████╔╝╚██████╔╝
+// ╚══════╝╚═╝  ╚═╝     ╚══╝╚══╝ ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝  ╚═════╝
+
+// ██╗      ██████╗  ██████╗██╗  ██╗██╗   ██╗██████╗     ██╗     ██╗███╗   ██╗███████╗ █████╗ ██████╗
+// ██║     ██╔═══██╗██╔════╝██║ ██╔╝██║   ██║██╔══██╗    ██║     ██║████╗  ██║██╔════╝██╔══██╗██╔══██╗
+// ██║     ██║   ██║██║     █████╔╝ ██║   ██║██████╔╝    ██║     ██║██╔██╗ ██║█████╗  ███████║██████╔╝
+// ██║     ██║   ██║██║     ██╔═██╗ ██║   ██║██╔═══╝     ██║     ██║██║╚██╗██║██╔══╝  ██╔══██║██╔══██╗
+// ███████╗╚██████╔╝╚██████╗██║  ██╗╚██████╔╝██║         ███████╗██║██║ ╚████║███████╗██║  ██║██║  ██║
+// ╚══════╝ ╚═════╝  ╚═════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝         ╚══════╝╚═╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝
+
 // *************************************************************************
 //                  Interface of the `ZaWarudoLockupLinear` contract.
 // *************************************************************************
@@ -58,6 +72,7 @@ mod ZaWarudoLockupLinear {
     use za_warudo::types::lockup_linear::{Range, Broker, LockupLinearStream};
     use za_warudo::types::lockup::LockupAmounts;
     use za_warudo::tokens::erc721::{ERC721, IERC721};
+    use za_warudo::libraries::helpers;
 
     // *************************************************************************
     //                              STORAGE
@@ -143,8 +158,18 @@ mod ZaWarudoLockupLinear {
             range: Range,
             broker: Broker,
         ) -> u64 {
-            // Checks: check the fees and calculate the fee amounts.
+            // Safe Interactions: query the protocol fee. This is safe because it's a known Za Warudo contract that does
+            // not call other unknown contracts.
             // TODO: implement.
+            let protocol_fee = 0;
+
+            // TODO: Handle MAX_FEE as a constant, with handlign of fixed point numbers.
+            let MAX_FEE = 100;
+
+            // Checks: check the fees and calculate the fee amounts.
+            let create_amounts = helpers::check_and_calculate_fees(
+                total_amount, protocol_fee, broker.fee, MAX_FEE
+            );
 
             // Read the next stream id from storage.
             let stream_id = self.next_stream_id.read();

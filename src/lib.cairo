@@ -9,6 +9,12 @@ mod types {
     mod lockup_linear;
 }
 
+/// Module containing libraries.
+mod libraries {
+    mod helpers;
+    mod errors;
+}
+
 /// Module containing tokens implementations.
 /// TODO: remove and use OpenZeppelin dependency when it's ready.
 mod tokens {
