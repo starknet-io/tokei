@@ -1,6 +1,9 @@
 name: Security
 
-on: [push, pull_request]
+# Disabling Security workflow for now.
+# TODO: Enable this workflow once we have a stable version of Semgrep rules.
+on: []
+#on: [push, pull_request]
 
 jobs:
   check:
