@@ -1,17 +1,17 @@
 <!DOCTYPE HTML>
-<html lang="en" class="sidebar-visible no-js light">
+<html lang="en" class="light" dir="ltr">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Za Warudo Book</title>
-        <meta name="robots" content="noindex" />
+        <title>Tokei Book</title>
+        <meta name="robots" content="noindex">
 
 
         <!-- Custom HTML head -->
         
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="theme-color" content="#ffffff" />
+        <meta name="theme-color" content="#ffffff">
 
         <link rel="icon" href="favicon.svg">
         <link rel="shortcut icon" href="favicon.png">
@@ -32,7 +32,7 @@
         <!-- Custom theme stylesheets -->
 
     </head>
-    <body>
+    <body class="sidebar-visible no-js">
     <div id="body-container">
         <!-- Provide site root to javascript -->
         <script>
@@ -62,24 +62,29 @@
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
             var html = document.querySelector('html');
-            html.classList.remove('no-js')
             html.classList.remove('light')
             html.classList.add(theme);
-            html.classList.add('js');
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
         </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
 
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
-            var html = document.querySelector('html');
+            var body = document.querySelector('body');
             var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
             } else {
                 sidebar = 'hidden';
             }
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
@@ -117,9 +122,9 @@
                                 <div id="menu-bar-hover-placeholder"></div>
                 <div id="menu-bar" class="menu-bar sticky">
                     <div class="left-buttons">
-                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
                             <i class="fa fa-bars"></i>
-                        </button>
+                        </label>
                         <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
                             <i class="fa fa-paint-brush"></i>
                         </button>
@@ -135,13 +140,13 @@
                         </button>
                     </div>
 
-                    <h1 class="menu-title">Za Warudo Book</h1>
+                    <h1 class="menu-title">Tokei Book</h1>
 
                     <div class="right-buttons">
                         <a href="print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
-                        <a href="https://github.com/abdelhamidbakhta/za-warudo" title="Git repository" aria-label="Git repository">
+                        <a href="https://github.com/abdelhamidbakhta/tokei" title="Git repository" aria-label="Git repository">
                             <i id="git-repository-button" class="fa fa-github"></i>
                         </a>
 
@@ -170,9 +175,10 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="-za-warudo-"><a class="header" href="#-za-warudo-">⏳ Za Warudo ⏳</a></h1>
-<p>Za Warudo is a token streaming protocol, inspired by Sablier, for Starknet.</p>
-<p><img src="./assets/za-warudo-hello.gif" alt="Za Warudo" /></p>
+                        <h1 id="-tokei-"><a class="header" href="#-tokei-">⏳ Tokei ⏳</a></h1>
+<p>Tokei is a token streaming protocol, inspired by Sablier, for Starknet.</p>
+<p>Tokei means &quot;clock&quot; in Japanese.</p>
+<p><img src="./assets/tokei-hello.gif" alt="Tokei" /></p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="getting-started"><a class="header" href="#getting-started">Getting Started</a></h1>
 <p>In this section, we will go through the steps to build and test the smart contracts.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="prerequisites"><a class="header" href="#prerequisites">Prerequisites</a></h1>
@@ -186,13 +192,13 @@
 <p>This will build the smart contracts into <code>target</code> directory.</p>
 <p>Sample output:</p>
 <pre><code class="language-shell">tree target/dev
-├── za_warudo.starknet_artifacts.json
-├── za_warudo_ERC20.casm.json
-├── za_warudo_ERC20.sierra.json
-├── za_warudo_ERC721.casm.json
-├── za_warudo_ERC721.sierra.json
-├── za_warudo_ZaWarudoLockupLinear.casm.json
-└── za_warudo_ZaWarudoLockupLinear.sierra.json
+├── tokei.starknet_artifacts.json
+├── tokei_ERC20.casm.json
+├── tokei_ERC20.sierra.json
+├── tokei_ERC721.casm.json
+├── tokei_ERC721.sierra.json
+├── tokei_TokeiLockupLinear.casm.json
+└── tokei_TokeiLockupLinear.sierra.json
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="test-the-contracts"><a class="header" href="#test-the-contracts">Test the contracts</a></h1>
 <p>Open a terminal and run the following command:</p>
