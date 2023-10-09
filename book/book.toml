@@ -3,11 +3,11 @@ authors = ["@abdelhamidbakhta"]
 language = "en"
 multilingual = false
 src = "src"
-title = "Za Warudo Book"
+title = "Tokei Book"
 
 [output.html]
-git-repository-url = "https://github.com/abdelhamidbakhta/za-warudo"
-edit-url-template = "https://github.com/abdelhamidbakhta/za-warudo/book/{path}"
+git-repository-url = "https://github.com/abdelhamidbakhta/tokei"
+edit-url-template = "https://github.com/abdelhamidbakhta/tokei/book/{path}"
 
 [output.html.playground]
 runnable = false

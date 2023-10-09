@@ -6,8 +6,8 @@
 use zeroable::Zeroable;
 
 // Local imports.
-use za_warudo::types::lockup::CreateAmounts;
-use za_warudo::libraries::errors;
+use tokei::types::lockup::CreateAmounts;
+use tokei::libraries::errors;
 
 //Checks that neither fee is greater than `max_fee`, and then calculates the protocol fee amount, the
 /// broker fee amount, and the deposit amount from the total amount.

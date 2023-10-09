@@ -10,7 +10,7 @@ use traits::{TryInto, Into};
 use starknet::ContractAddress;
 
 // Local imports.
-use za_warudo::types::lockup::LockupAmounts;
+use tokei::types::lockup::LockupAmounts;
 
 /// Represent a Lockup Linear Stream.
 #[derive(Drop, starknet::Store, Serde)]

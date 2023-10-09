@@ -20,11 +20,11 @@ use snforge_std::{declare, start_prank, stop_prank, ContractClassTrait};
 
 
 // Local imports.
-use za_warudo::core::lockup_linear::{
-    IZaWarudoLockupLinearSafeDispatcher, IZaWarudoLockupLinearSafeDispatcherTrait
+use tokei::core::lockup_linear::{
+    ITokeiLockupLinearSafeDispatcher, ITokeiLockupLinearSafeDispatcherTrait
 };
-use za_warudo::types::lockup_linear::{Range, Broker};
-use za_warudo::tokens::erc721::{IERC721SafeDispatcher, IERC721SafeDispatcherTrait};
+use tokei::types::lockup_linear::{Range, Broker};
+use tokei::tokens::erc721::{IERC721SafeDispatcher, IERC721SafeDispatcherTrait};
 
 /// TODO: Implement actual test and change the name of this function.
 #[test]
@@ -34,7 +34,7 @@ fn given_normal_conditions_when_create_with_range_then_expected_results() {
     // *********************************************************************************************
     let caller_address = contract_address_const::<'caller'>();
 
-    let (za_warudo) = setup(caller_address);
+    let (tokei) = setup(caller_address);
     // *********************************************************************************************
     // *                              TEST LOGIC                                                   *
     // *********************************************************************************************
@@ -54,14 +54,14 @@ fn given_normal_conditions_when_create_with_range_then_expected_results() {
     let broker = Broker { account: broker_account, fee: broker_fee, };
 
     // Actual test.
-    let stream_id = za_warudo
+    let stream_id = tokei
         .create_with_range(sender, recipient, total_amount, asset, cancelable, range, broker,)
         .unwrap();
 
     // Assertions.
     assert(stream_id == 1, 'wrong stream id');
 
-    let stream_nft = IERC721SafeDispatcher { contract_address: za_warudo.contract_address };
+    let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
 
     // Check that the stream nft was minted to the recipient.
     assert(stream_nft.owner_of(stream_id.into()).unwrap() == recipient, 'wrong stream nft owner');
@@ -70,49 +70,47 @@ fn given_normal_conditions_when_create_with_range_then_expected_results() {
     // *********************************************************************************************
     // *                              TEARDOWN                                                     *
     // *********************************************************************************************
-    teardown(za_warudo);
+    teardown(tokei);
 }
 
 /// Utility function to setup the test environment.
-fn setup(caller_address: ContractAddress) -> (IZaWarudoLockupLinearSafeDispatcher,) {
+fn setup(caller_address: ContractAddress) -> (ITokeiLockupLinearSafeDispatcher,) {
     // Setup the contracts.
-    let (za_warudo,) = setup_contracts(caller_address);
+    let (tokei,) = setup_contracts(caller_address);
     // Prank the caller address.
-    prepare_contracts(caller_address, za_warudo,);
+    prepare_contracts(caller_address, tokei,);
     // Return the caller address and the contract interfaces.
-    (za_warudo,)
+    (tokei,)
 }
 
 // Utility function to prank the caller address
-fn prepare_contracts(
-    caller_address: ContractAddress, za_warudo: IZaWarudoLockupLinearSafeDispatcher,
-) {
-    // Prank the caller address for calls to `ZaWarudoLockupLinear` contract.
-    start_prank(za_warudo.contract_address, caller_address);
+fn prepare_contracts(caller_address: ContractAddress, tokei: ITokeiLockupLinearSafeDispatcher,) {
+    // Prank the caller address for calls to `TokeiLockupLinear` contract.
+    start_prank(tokei.contract_address, caller_address);
 }
 
 /// Utility function to teardown the test environment.
-fn teardown(za_warudo: IZaWarudoLockupLinearSafeDispatcher,) {
-    stop_prank(za_warudo.contract_address);
+fn teardown(tokei: ITokeiLockupLinearSafeDispatcher,) {
+    stop_prank(tokei.contract_address);
 }
 
 /// Setup required contracts.
-fn setup_contracts(caller_address: ContractAddress) -> (IZaWarudoLockupLinearSafeDispatcher,) {
+fn setup_contracts(caller_address: ContractAddress) -> (ITokeiLockupLinearSafeDispatcher,) {
     // Deploy the role store contract.
-    let za_warudo_address = deploy_za_warudo(caller_address);
+    let tokei_address = deploy_tokei(caller_address);
 
     // Create a role store dispatcher.
-    let za_warudo = IZaWarudoLockupLinearSafeDispatcher { contract_address: za_warudo_address };
+    let tokei = ITokeiLockupLinearSafeDispatcher { contract_address: tokei_address };
 
     // Return the caller address and the contract interfaces.
-    (za_warudo,)
+    (tokei,)
 }
 
 
-/// Utility function to deploy a `ZaWarudoLockupLinear` contract and return its address.
-fn deploy_za_warudo(initial_admin: ContractAddress) -> ContractAddress {
-    let za_warudo_contract = declare('ZaWarudoLockupLinear');
+/// Utility function to deploy a `TokeiLockupLinear` contract and return its address.
+fn deploy_tokei(initial_admin: ContractAddress) -> ContractAddress {
+    let tokei_contract = declare('TokeiLockupLinear');
     let mut constructor_calldata = array![initial_admin.into()];
-    za_warudo_contract.deploy(@constructor_calldata).unwrap()
+    tokei_contract.deploy(@constructor_calldata).unwrap()
 }
 

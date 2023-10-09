@@ -1,13 +1,13 @@
 [package]
-name = "za_warudo"
+name = "tokei"
 version = "0.1.0"
 authors = ["Abdelhamid Bakhta <@abdelhamidbakhta>"]
 license = "MIT"
 keywords = ["starknet", "vesting"]
 description = "✨ 🐺 Starknet ERC20 token vesting smart contracts 💰⏳"
-documentation = "https://github.com/abdelhamidbakhta/za-warudo"
-homepage = "https://github.com/abdelhamidbakhta/za-warudo"
-repository = "https://github.com/abdelhamidbakhta/za-warudo"
+documentation = "https://github.com/abdelhamidbakhta/tokei"
+homepage = "https://github.com/abdelhamidbakhta/tokei"
+repository = "https://github.com/abdelhamidbakhta/tokei"
 
 [[target.starknet-contract]]
 sierra = true

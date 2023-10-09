@@ -1,4 +1,4 @@
-//! Main contract of Za Warudo protocol.
+//! Main contract of Tokei protocol.
 
 // *************************************************************************
 //                                  IMPORTS
@@ -9,27 +9,31 @@ use core::traits::Into;
 use starknet::{ContractAddress, ClassHash};
 
 // Local imports.
-use za_warudo::types::lockup_linear::{Range, Broker};
+use tokei::types::lockup_linear::{Range, Broker};
 
-// ███████╗ █████╗     ██╗    ██╗ █████╗ ██████╗ ██╗   ██╗██████╗  ██████╗
-// ╚══███╔╝██╔══██╗    ██║    ██║██╔══██╗██╔══██╗██║   ██║██╔══██╗██╔═══██╗
-//   ███╔╝ ███████║    ██║ █╗ ██║███████║██████╔╝██║   ██║██║  ██║██║   ██║
-//  ███╔╝  ██╔══██║    ██║███╗██║██╔══██║██╔══██╗██║   ██║██║  ██║██║   ██║
-// ███████╗██║  ██║    ╚███╔███╔╝██║  ██║██║  ██║╚██████╔╝██████╔╝╚██████╔╝
-// ╚══════╝╚═╝  ╚═╝     ╚══╝╚══╝ ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝  ╚═════╝
+//   ______ ____   __ __  ______ ____
+//  /_  __// __ \ / //_/ / ____//  _/
+//   / /  / / / // ,<   / __/   / /
+//  / /  / /_/ // /| | / /___ _/ /
+// /_/   \____//_/ |_|/_____//___/
 
-// ██╗      ██████╗  ██████╗██╗  ██╗██╗   ██╗██████╗     ██╗     ██╗███╗   ██╗███████╗ █████╗ ██████╗
-// ██║     ██╔═══██╗██╔════╝██║ ██╔╝██║   ██║██╔══██╗    ██║     ██║████╗  ██║██╔════╝██╔══██╗██╔══██╗
-// ██║     ██║   ██║██║     █████╔╝ ██║   ██║██████╔╝    ██║     ██║██╔██╗ ██║█████╗  ███████║██████╔╝
-// ██║     ██║   ██║██║     ██╔═██╗ ██║   ██║██╔═══╝     ██║     ██║██║╚██╗██║██╔══╝  ██╔══██║██╔══██╗
-// ███████╗╚██████╔╝╚██████╗██║  ██╗╚██████╔╝██║         ███████╗██║██║ ╚████║███████╗██║  ██║██║  ██║
-// ╚══════╝ ╚═════╝  ╚═════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝         ╚══════╝╚═╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝
+//     __    ____   ______ __ __ __  __ ____
+//    / /   / __ \ / ____// //_// / / // __ \
+//   / /   / / / // /    / ,<  / / / // /_/ /
+//  / /___/ /_/ // /___ / /| |/ /_/ // ____/
+// /_____/\____/ \____//_/ |_|\____//_/
+
+//     __     ____ _   __ ______ ___     ____
+//    / /    /  _// | / // ____//   |   / __ \
+//   / /     / / /  |/ // __/  / /| |  / /_/ /
+//  / /___ _/ / / /|  // /___ / ___ | / _, _/
+// /_____//___//_/ |_//_____//_/  |_|/_/ |_|
 
 // *************************************************************************
-//                  Interface of the `ZaWarudoLockupLinear` contract.
+//                  Interface of the `TokeiLockupLinear` contract.
 // *************************************************************************
 #[starknet::interface]
-trait IZaWarudoLockupLinear<TContractState> {
+trait ITokeiLockupLinear<TContractState> {
     /// Create a new stream.
     /// # Arguments
     /// * `sender` - The address streaming the assets, with the ability to cancel the stream.
@@ -55,7 +59,7 @@ trait IZaWarudoLockupLinear<TContractState> {
 }
 
 #[starknet::contract]
-mod ZaWarudoLockupLinear {
+mod TokeiLockupLinear {
     // *************************************************************************
     //                               IMPORTS
     // *************************************************************************
@@ -69,10 +73,10 @@ mod ZaWarudoLockupLinear {
     use traits::Into;
     use debug::PrintTrait;
     // Local imports.
-    use za_warudo::types::lockup_linear::{Range, Broker, LockupLinearStream};
-    use za_warudo::types::lockup::LockupAmounts;
-    use za_warudo::tokens::erc721::{ERC721, IERC721};
-    use za_warudo::libraries::helpers;
+    use tokei::types::lockup_linear::{Range, Broker, LockupLinearStream};
+    use tokei::types::lockup::LockupAmounts;
+    use tokei::tokens::erc721::{ERC721, IERC721};
+    use tokei::libraries::helpers;
 
     // *************************************************************************
     //                              STORAGE
@@ -126,7 +130,7 @@ mod ZaWarudoLockupLinear {
         // Initialize as ERC-721 contract.
         let mut state: ERC721::ContractState = ERC721::unsafe_new_contract_state();
         IERC721::initializer(
-            ref state, 'Za Warudo Lockup Linear NFT', 'ZW-LOCKUP-LIN', get_contract_address()
+            ref state, 'Tokei Lockup Linear NFT', 'ZW-LOCKUP-LIN', get_contract_address()
         );
     }
 
@@ -135,7 +139,7 @@ mod ZaWarudoLockupLinear {
     //                          EXTERNAL FUNCTIONS
     // *************************************************************************
     #[external(v0)]
-    impl ZaWarudoLockupLinear of super::IZaWarudoLockupLinear<ContractState> {
+    impl TokeiLockupLinear of super::ITokeiLockupLinear<ContractState> {
         /// Create a new stream.
         /// # Arguments
         /// * `sender` - The address streaming the assets, with the ability to cancel the stream.
@@ -158,7 +162,7 @@ mod ZaWarudoLockupLinear {
             range: Range,
             broker: Broker,
         ) -> u64 {
-            // Safe Interactions: query the protocol fee. This is safe because it's a known Za Warudo contract that does
+            // Safe Interactions: query the protocol fee. This is safe because it's a known Tokei contract that does
             // not call other unknown contracts.
             // TODO: implement.
             let protocol_fee = 0;
@@ -233,7 +237,7 @@ mod ZaWarudoLockupLinear {
     }
 
     #[external(v0)]
-    impl ZaWarudoLockupLinearERC721 of IERC721<ContractState> {
+    impl TokeiLockupLinearERC721 of IERC721<ContractState> {
         fn initializer(
             ref self: ContractState, name_: felt252, symbol_: felt252, admin: ContractAddress
         ) {}

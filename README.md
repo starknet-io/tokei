@@ -1,10 +1,10 @@
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
 <p align="center">
-  <img src="assets/logo/za-warudo.png" height="256">
+  <img src="assets/logo/tokei.png" height="256">
 </p>
 
-<h1 align="center">⏳ Za Warudo ⏳</h1>
+<h1 align="center">⏳ Tokei ⏳</h1>
 
 <p align="center">
   <strong>✨ 🐺 Starknet ERC20 token streaming protocol 💰⏳, inspired by Sablier.</strong>
@@ -12,24 +12,24 @@
 
 <p align="center">
   <a href="LICENSE">
-    <img src="https://img.shields.io/github/license/abdelhamidbakhta/za-warudo.svg?style=flat-square" alt="Project license">
+    <img src="https://img.shields.io/github/license/abdelhamidbakhta/tokei.svg?style=flat-square" alt="Project license">
   </a>
-  <a href="https://github.com/abdelhamidbakhta/za-warudo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22">
+  <a href="https://github.com/abdelhamidbakhta/tokei/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22">
     <img src="https://img.shields.io/badge/PRs-welcome-ff69b4.svg?style=flat-square" alt="Pull Requests welcome">
   </a>
-  <a href="https://abdelhamidbakhta.github.io/za-warudo/">
-    <img src="https://img.shields.io/badge/Read-Za Warudo_Book-blue" alt="Read Za Warudo Book">
+  <a href="https://abdelhamidbakhta.github.io/tokei/">
+    <img src="https://img.shields.io/badge/Read-Tokei_Book-blue" alt="Read Tokei Book">
   </a>
 </p>
 
 <!-- markdownlint-restore -->
 <!-- prettier-ignore-end -->
 
-## ⚡ About Za Warudo ⚡
+## ⚡ About Tokei ⚡
 
-Za Warudo is a token streaming protocol, inspired by Sablier, for Starknet.
+Tokei is a token streaming protocol, inspired by Sablier, for Starknet.
 
-Read the [Za Warudo Book](https://abdelhamidbakhta.github.io/za-warudo/) to learn more about the project.
+Read the [Tokei Book](https://abdelhamidbakhta.github.io/tokei/) to learn more about the project.
 
 ## 🛠️ Build
 
@@ -51,7 +51,7 @@ snforge
 
 Here are some resources to help you get started:
 
-- [Za Warudo Book](https://abdelhamidbakhta.github.io/za-warudo/)
+- [Tokei Book](https://abdelhamidbakhta.github.io/tokei/)
 - [Cairo Book](https://book.cairo-lang.org/)
 - [Starknet Book](https://book.starknet.io/)
 - [Starknet Foundry Book](https://foundry-rs.github.io/starknet-foundry/)

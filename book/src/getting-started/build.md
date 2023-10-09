@@ -12,11 +12,11 @@ Sample output:
 
 ```shell
 tree target/dev
-├── za_warudo.starknet_artifacts.json
-├── za_warudo_ERC20.casm.json
-├── za_warudo_ERC20.sierra.json
-├── za_warudo_ERC721.casm.json
-├── za_warudo_ERC721.sierra.json
-├── za_warudo_ZaWarudoLockupLinear.casm.json
-└── za_warudo_ZaWarudoLockupLinear.sierra.json
+├── tokei.starknet_artifacts.json
+├── tokei_ERC20.casm.json
+├── tokei_ERC20.sierra.json
+├── tokei_ERC721.casm.json
+├── tokei_ERC721.sierra.json
+├── tokei_TokeiLockupLinear.casm.json
+└── tokei_TokeiLockupLinear.sierra.json
 ```
