@@ -3,7 +3,7 @@
 Open a terminal and run the following command:
 
 ```shell
-snforge
+snforge test
 ```
 
 This will execute the tests in `tests` directory and print the results.

@@ -44,7 +44,7 @@ scarb build
 To test the project, run:
 
 ```bash
-snforge
+snforge test
 ```
 
 ## 📚 Resources
