@@ -1,13 +1,13 @@
 [package]
 name = "tokei"
 version = "0.1.0"
-authors = ["Abdelhamid Bakhta <@abdelhamidbakhta>"]
+authors = ["Abdelhamid Bakhta <@starknet-io>"]
 license = "MIT"
 keywords = ["starknet", "vesting"]
 description = "✨ 🐺 Starknet ERC20 token vesting smart contracts 💰⏳"
-documentation = "https://github.com/abdelhamidbakhta/tokei"
-homepage = "https://github.com/abdelhamidbakhta/tokei"
-repository = "https://github.com/abdelhamidbakhta/tokei"
+documentation = "https://github.com/starknet-io/tokei"
+homepage = "https://github.com/starknet-io/tokei"
+repository = "https://github.com/starknet-io/tokei"
 
 [[target.starknet-contract]]
 sierra = true
@@ -18,8 +18,8 @@ allowed-libfuncs-list.name = "experimental"
 sierra-replace-ids = true
 
 [dependencies]
-starknet = ">=2.1.0"
-snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry.git", tag = "v0.5.0" }
+starknet = ">=2.3.1"
+snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry.git", tag = "v0.9.1" }
 
 
 [tool.snforge]

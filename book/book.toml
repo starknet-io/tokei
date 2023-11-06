@@ -1,13 +1,13 @@
 [book]
-authors = ["@abdelhamidbakhta"]
+authors = ["@starknet-io"]
 language = "en"
 multilingual = false
 src = "src"
 title = "Tokei Book"
 
 [output.html]
-git-repository-url = "https://github.com/abdelhamidbakhta/tokei"
-edit-url-template = "https://github.com/abdelhamidbakhta/tokei/book/{path}"
+git-repository-url = "https://github.com/starknet-io/tokei"
+edit-url-template = "https://github.com/starknet-io/tokei/book/{path}"
 
 [output.html.playground]
 runnable = false

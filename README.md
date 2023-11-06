@@ -12,12 +12,12 @@
 
 <p align="center">
   <a href="LICENSE">
-    <img src="https://img.shields.io/github/license/abdelhamidbakhta/tokei.svg?style=flat-square" alt="Project license">
+    <img src="https://img.shields.io/github/license/starknet-io/tokei.svg?style=flat-square" alt="Project license">
   </a>
-  <a href="https://github.com/abdelhamidbakhta/tokei/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22">
+  <a href="https://github.com/starknet-io/tokei/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22">
     <img src="https://img.shields.io/badge/PRs-welcome-ff69b4.svg?style=flat-square" alt="Pull Requests welcome">
   </a>
-  <a href="https://abdelhamidbakhta.github.io/tokei/">
+  <a href="https://starknet-io.github.io/tokei/">
     <img src="https://img.shields.io/badge/Read-Tokei_Book-blue" alt="Read Tokei Book">
   </a>
 </p>
@@ -29,7 +29,7 @@
 
 Tokei is a token streaming protocol, inspired by Sablier, for Starknet.
 
-Read the [Tokei Book](https://abdelhamidbakhta.github.io/tokei/) to learn more about the project.
+Read the [Tokei Book](https://starknet-io.github.io/tokei/) to learn more about the project.
 
 ## 🛠️ Build
 
@@ -51,7 +51,7 @@ snforge
 
 Here are some resources to help you get started:
 
-- [Tokei Book](https://abdelhamidbakhta.github.io/tokei/)
+- [Tokei Book](https://starknet-io.github.io/tokei/)
 - [Cairo Book](https://book.cairo-lang.org/)
 - [Starknet Book](https://book.starknet.io/)
 - [Starknet Foundry Book](https://foundry-rs.github.io/starknet-foundry/)
