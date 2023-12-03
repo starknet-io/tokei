@@ -9,7 +9,7 @@ assignees: ''
 
 **Description**
 ---
-A clear and concise description of what is missing or need to be change in the DevOps experience. Explain the pain you are experiencing and with which projects. 
+A clear and concise description of what is missing or needs to be changed in the DevOps experience. Explain the pain you are experiencing and with which projects. 
 
 **Suggested Evolution**
 ---
