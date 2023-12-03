@@ -9,7 +9,7 @@ assignees: ''
 
 **Description**
 ---
-A clear and concise description of what is missing or need to be change in the documentation. Explain the pain you are experiencing and with which documentation. 
+A clear and concise description of what is missing or needs to be changed in the documentation. Explain the pain you are experiencing and with which documentation. 
 
 **Suggested Documentation**
 ---
