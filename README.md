@@ -7,7 +7,7 @@
 <h1 align="center">⏳ Tokei ⏳</h1>
 
 <p align="center">
-  <strong>✨ 🐺 Starknet ERC20 token streaming protocol 💰⏳, inspired by Sablier.</strong>
+  <strong>✨ 🐺  Starknet ERC20 token streaming protocol 💰⏳, inspired by Sablier.</strong>
 </p>
 
 <p align="center">
