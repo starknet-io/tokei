@@ -79,7 +79,6 @@ mod TokeiLockupLinear {
     use tokei::tokens::erc20::{ERC20, IERC20, IERC20Dispatcher, IERC20DispatcherTrait};
 
     use tokei::libraries::helpers;
-    use tokei::math::u60f18::U60F18;
 
     // *************************************************************************
     //                              STORAGE
