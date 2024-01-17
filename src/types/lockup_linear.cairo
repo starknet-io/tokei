@@ -29,6 +29,10 @@ struct LockupLinearStream {
     was_canceled: bool,
     /// Boolean indicating if the stream is depleted.
     is_depleted: bool,
+    /// Boolean indicating if its a stream.
+    is_stream: bool,
+    /// Boolean indicating if the stream is transferable.
+    is_transferable: bool,
     /// Struct containing the deposit, withdrawn, and refunded amounts, all denoted in units of the
     /// asset's decimals.
     amounts: LockupAmounts,
@@ -52,4 +56,13 @@ struct Broker {
     account: ContractAddress,
     /// The broker's percentage fee from the total amount.
     fee: u128,
+}
+
+/// Represents the durations for the cliff and total periods.
+#[derive(Drop, starknet::Store, Serde)]
+struct Durations {
+    /// The duration of the cliff period.
+    cliff: u64,
+    /// The total duration of the stream.
+    total: u64,
 }

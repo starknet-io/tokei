@@ -36,6 +36,30 @@ struct CreateAmounts {
     broker_fee: u128,
 }
 
+/// Represent Stream status.
+/// Enum representing the status of a stream.
+#[derive(Serde, Copy, Drop, starknet::Store, PartialEq)]
+enum Status {
+    PENDING,
+    STREAMING,
+    SETTLED,
+    CANCELED,
+    DEPLETED,
+}
+
+/// Represent Status into felt252.
+impl StatusIntoFelt252 of Into<Status, felt252> {
+    fn into(self: Status) -> felt252 {
+        match self {
+            Status::PENDING(()) => 0,
+            Status::STREAMING(()) => 1,
+            Status::SETTLED(()) => 2,
+            Status::CANCELED(()) => 3,
+            Status::DEPLETED(()) => 4
+        }
+    }
+}
+
 /// Implementation of `Zeroable` trait for `CreateAmounts`.
 impl CreateAmountsZeroable of Zeroable<CreateAmounts> {
     fn zero() -> CreateAmounts {

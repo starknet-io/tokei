@@ -55,6 +55,7 @@ fn given_normal_conditions_when_create_with_range_then_expected_results() {
     let total_amount = 1000;
     let asset = token;
     let cancelable = true;
+    let transferable = true;
     let start = 10;
     let cliff = 100;
     let end = 1000;
@@ -66,7 +67,9 @@ fn given_normal_conditions_when_create_with_range_then_expected_results() {
     prepare_contracts(caller_address, tokei);
     // Actual test.
     let stream_id = tokei
-        .create_with_range(sender, recipient, total_amount, asset, cancelable, range, broker,);
+        .create_with_range(
+            sender, recipient, total_amount, asset, cancelable, transferable, range, broker,
+        );
 
     // Assertions.
     assert(stream_id == 1, 'wrong stream id');
