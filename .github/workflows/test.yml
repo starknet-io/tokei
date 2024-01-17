@@ -14,6 +14,9 @@ jobs:
         with:
           scarb-version: "2.3.1"
       - name: Install starknet foundry
-        run: curl -L https://raw.githubusercontent.com/foundry-rs/starknet-foundry/master/scripts/install.sh | sh -s -- -v ${STARKNET_FOUNDRY_VERSION}
+        run: |
+          curl -L https://raw.githubusercontent.com/foundry-rs/starknet-foundry/master/scripts/install.sh | sh -s -- -v ${STARKNET_FOUNDRY_VERSION}
+          echo "/home/runner/.local/bin" >> $GITHUB_PATH
+
       - name: Run cairo tests
         run: snforge test
