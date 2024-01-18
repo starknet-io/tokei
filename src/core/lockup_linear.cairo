@@ -204,6 +204,25 @@ trait ITokeiLockupLinear<TContractState> {
         range: Range,
         broker: Broker,
     ) -> u64;
+
+    /// Burns the NFT token of the stream.
+    /// # Arguments
+    /// * `stream_id` - The id of the stream.
+    fn burn_token(ref self: TContractState, stream_id: u64);
+
+    // /// Cancels the stream.
+    // /// # Arguments
+    // /// * `stream_id` - The id of the stream.
+    fn cancel(ref self: TContractState, stream_id: u64);
+
+    // /// Cancels multiple streams.
+    // /// # Arguments
+    // /// * `stream_ids` - The ids of the streams.
+    fn cancel_multiple(ref self: TContractState, stream_ids: Span<u64>);
+// /// Renounces the stream.
+// /// # Arguments
+// /// * `stream_id` - The id of the stream.
+// fn renounce(ref self: TContractState, stream_id: u64);
 }
 
 #[starknet::contract]
@@ -230,7 +249,10 @@ mod TokeiLockupLinear {
     use tokei::tokens::erc20::{ERC20, IERC20, IERC20Dispatcher, IERC20DispatcherTrait};
 
     use tokei::libraries::helpers;
-    use tokei::libraries::errors::Lockup::{STREAM_NOT_CANCELABLE, STREAM_SETTLED};
+    use tokei::libraries::errors::Lockup::{
+        STREAM_NOT_CANCELABLE, STREAM_SETTLED, STREAM_NOT_DEPLETED, LOCKUP_UNAUTHORIZED,
+        STREAM_DEPLETED, STREAM_CANCELED
+    };
 
     // *************************************************************************
     //                              STORAGE
@@ -549,6 +571,38 @@ mod TokeiLockupLinear {
 
             stream_id
         }
+        fn burn_token(ref self: ContractState, stream_id: u64) {
+            assert(!self.is_depleted(stream_id), STREAM_NOT_DEPLETED);
+            assert(
+                !TokeiInternalImpl::_is_caller_stream_recipient_or_approved(@self, stream_id),
+                LOCKUP_UNAUTHORIZED
+            );
+
+            let mut state: ERC721::ContractState = ERC721::unsafe_new_contract_state();
+            IERC721::burn(ref self, stream_id.into());
+        }
+
+        fn cancel(ref self: ContractState, stream_id: u64) {
+            assert(self.is_depleted(stream_id), STREAM_DEPLETED);
+            assert(self.was_canceled(stream_id), STREAM_CANCELED);
+            assert(!self._is_caller_stream_sender(stream_id), LOCKUP_UNAUTHORIZED);
+
+            TokeiInternalImpl::_cancel(ref self, stream_id);
+        }
+
+
+        fn cancel_multiple(ref self: ContractState, stream_ids: Span<u64>) {
+            let count = stream_ids.len();
+            let mut i = 0;
+            loop {
+                if i >= count {
+                    break;
+                }
+                let stream_id = *stream_ids.at(i);
+                TokeiInternalImpl::_cancel(ref self, stream_id);
+                i += 1;
+            }
+        }
     }
 
     #[external(v0)]
@@ -611,6 +665,10 @@ mod TokeiLockupLinear {
         fn mint(ref self: ContractState, to: ContractAddress, token_id: u128) {
             let mut state: ERC721::ContractState = ERC721::unsafe_new_contract_state();
             IERC721::mint(ref state, to, token_id)
+        }
+        fn burn(ref self: ContractState, token_id: u128) {
+            let mut state: ERC721::ContractState = ERC721::unsafe_new_contract_state();
+            IERC721::burn(ref state, token_id)
         }
     }
 

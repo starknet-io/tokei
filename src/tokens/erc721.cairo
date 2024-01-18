@@ -30,6 +30,7 @@ trait IERC721<TState> {
         self: @TState, owner: ContractAddress, operator: ContractAddress
     ) -> bool;
     fn mint(ref self: TState, to: ContractAddress, token_id: u128);
+    fn burn(ref self: TState, token_id: u128);
 }
 
 //
@@ -194,6 +195,14 @@ mod ERC721 {
             // Check if the contract is the admin
             assert(get_contract_address() == self.admin.read(), 'ERC721: unauthorized caller');
             self._mint(to, token_id);
+        }
+
+        fn burn(ref self: ContractState, token_id: u128) {
+            assert(
+                self._is_approved_or_owner(get_caller_address(), token_id),
+                'ERC721: unauthorized caller'
+            );
+            self._burn(token_id);
         }
     }
 
