@@ -286,7 +286,8 @@ mod TokeiLockupLinear {
     use tokei::libraries::helpers;
     use tokei::libraries::errors::Lockup::{
         STREAM_NOT_CANCELABLE, STREAM_SETTLED, STREAM_NOT_DEPLETED, LOCKUP_UNAUTHORIZED,
-        STREAM_DEPLETED, STREAM_CANCELED
+        STREAM_DEPLETED, STREAM_CANCELED, INVALID_SENDER_WITHDRAWAL, WITHDRAW_TO_ZERO_ADDRESS,
+        WITHDRAW_ZERO_AMOUNT, OVERDRAW
     };
 
     // *************************************************************************
@@ -530,7 +531,9 @@ mod TokeiLockupLinear {
         fn get_recipient(self: @ContractState, stream_id: u64) -> ContractAddress {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
             // @todo - Add _ownerof the stream
-            self.streams.read(stream_id).asset
+            let mut state: ERC721::ContractState = ERC721::unsafe_new_contract_state();
+            IERC721::owner_of(@state, stream_id.into())
+            
         }
 
         fn is_cold(self: @ContractState, stream_id: u64) -> bool {
@@ -562,7 +565,7 @@ mod TokeiLockupLinear {
             // TokeiInternalImpl::_withdrawa(@self, stream_id);
             // let result = status == Status::PENDING || status == Status::STREAMING;
             // result
-            1_u128
+            self._withdrawable_amount_of(stream_id)
         }
 
         fn create_with_range(
@@ -624,9 +627,9 @@ mod TokeiLockupLinear {
         }
         fn burn_token(ref self: ContractState, stream_id: u64) {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
-            assert(!self.is_depleted(stream_id), STREAM_NOT_DEPLETED);
+            assert(self.is_depleted(stream_id), STREAM_NOT_DEPLETED);
             assert(
-                !TokeiInternalImpl::_is_caller_stream_recipient_or_approved(@self, stream_id),
+                TokeiInternalImpl::_is_caller_stream_recipient_or_approved(@self, stream_id),
                 LOCKUP_UNAUTHORIZED
             );
 
@@ -636,9 +639,9 @@ mod TokeiLockupLinear {
 
         fn cancel(ref self: ContractState, stream_id: u64) {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
-            assert(self.is_depleted(stream_id), STREAM_DEPLETED);
-            assert(self.was_canceled(stream_id), STREAM_CANCELED);
-            assert(!self._is_caller_stream_sender(stream_id), LOCKUP_UNAUTHORIZED);
+            assert(!self.is_depleted(stream_id), STREAM_DEPLETED);
+            assert(!self.was_canceled(stream_id), STREAM_CANCELED);
+            assert(self._is_caller_stream_sender(stream_id), LOCKUP_UNAUTHORIZED);
 
             TokeiInternalImpl::_cancel(ref self, stream_id);
         }
@@ -660,10 +663,10 @@ mod TokeiLockupLinear {
         fn renounce(ref self: ContractState, stream_id: u64) {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
             let status = self._status_of(stream_id);
-            assert(status == Status::DEPLETED, STREAM_DEPLETED);
-            assert(status == Status::CANCELED, STREAM_CANCELED);
-            assert(status == Status::SETTLED, STREAM_SETTLED);
-            assert(!self._is_caller_stream_sender(stream_id), LOCKUP_UNAUTHORIZED);
+            assert(status != Status::DEPLETED, STREAM_DEPLETED);
+            assert(status != Status::CANCELED, STREAM_CANCELED);
+            assert(status != Status::SETTLED, STREAM_SETTLED);
+            assert(self._is_caller_stream_sender(stream_id), LOCKUP_UNAUTHORIZED);
 
             self._renounce(stream_id);
 
@@ -690,35 +693,73 @@ mod TokeiLockupLinear {
                 );
         }
 
-        /// Withdraws the stream's assets.
-        /// # Arguments
-        /// * `stream_id` - The id of the stream.
-        /// * `to` - The address to withdraw the assets to.
-        /// * `amount` - The amount of assets to withdraw.
-        fn withdraw(ref self: ContractState, stream_id: u64, to: ContractAddress, amount: u128) {}
+        fn withdraw(ref self: ContractState, stream_id: u64, to: ContractAddress, amount: u128) {
+            assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
+            assert(Zeroable::is_non_zero(amount), 'Invalid amount');
+            assert(!self.is_depleted(stream_id), STREAM_DEPLETED);
+            assert(
+                TokeiInternalImpl::_is_caller_stream_sender(@self, stream_id)
+                    && TokeiInternalImpl::_is_caller_stream_recipient_or_approved(@self, stream_id),
+                LOCKUP_UNAUTHORIZED
+            );
 
-        /// Withdraws the maximum amount of the stream's assets.
-        /// # Arguments
-        /// * `stream_id` - The id of the stream.
-        /// * `to` - The address to withdraw the assets to.
-        fn withdraw_max(ref self: ContractState, stream_id: u64, to: ContractAddress) {}
+            let mut state: ERC721::ContractState = ERC721::unsafe_new_contract_state();
 
-        /// Withdraws the stream's assets and transfers the NFT token.
-        /// # Arguments
-        /// * `stream_id` - The id of the stream.
-        /// * `new_recipient` - The address to withdraw the assets to.
+            let recipient = IERC721::owner_of(@state, stream_id.into());
+
+            assert(
+                !TokeiInternalImpl::_is_caller_stream_sender(@self, stream_id) && to == recipient,
+                INVALID_SENDER_WITHDRAWAL
+            );
+
+            assert(to != Zeroable::zero(), WITHDRAW_TO_ZERO_ADDRESS);
+            assert(amount != Zeroable::zero(), WITHDRAW_ZERO_AMOUNT);
+
+            let withdrawable_amount = self.withdrawable_amount_of(stream_id);
+            assert(amount < withdrawable_amount, OVERDRAW);
+
+            TokeiInternalImpl::_withdraw(ref self, stream_id, to, amount);
+        // @todo - OnstreamWithdrawn
+        }
+
+
+        fn withdraw_max(ref self: ContractState, stream_id: u64, to: ContractAddress) {
+            self.withdraw(stream_id, to, self.withdrawable_amount_of(stream_id));
+        }
+
         fn withdraw_max_and_transfer(
             ref self: ContractState, stream_id: u64, new_recipient: ContractAddress
-        ) {}
+        ) {
+            assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
+            let current_recipient = self.get_recipient(stream_id);
+            assert(get_caller_address() == current_recipient, LOCKUP_UNAUTHORIZED);
+            let withdrawable_amount = self.withdrawable_amount_of(stream_id);
+            if(withdrawable_amount > 0) {
+                self.withdraw(stream_id, current_recipient, withdrawable_amount);
+            }
 
-        /// Withdraws multiple streams' assets.
-        /// # Arguments
-        /// * `stream_ids` - The ids of the streams.
-        /// * `to` - The address to withdraw the assets to.
-        /// * `amounts` - The amounts of assets to withdraw.
+            let stream_id_u128 : u128 = stream_id.into();
+
+            self.transfer_from(current_recipient, new_recipient, stream_id_u128);
+        }
+
         fn withdraw_multiple(
             ref self: ContractState, stream_ids: Span<u64>, to: ContractAddress, amounts: Span<u128>
-        ) {}
+        ) {
+            let stream_ids_count = stream_ids.len();
+            let amounts_count = amounts.len();
+            assert(stream_ids_count == amounts_count, 'Invalid input');
+            let mut i = 0;
+            loop {
+                if i >= stream_ids_count {
+                    break;
+                }
+                let stream_id = *stream_ids.at(i);
+                let amount = *amounts.at(i);
+                self.withdraw(stream_id, to, amount);
+                i += 1;
+            };
+        }
     }
 
     #[external(v0)]

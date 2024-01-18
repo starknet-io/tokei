@@ -7,6 +7,10 @@ mod Lockup {
     const STREAM_NOT_DEPLETED: felt252 = 'stream has not depleted';
     const STREAM_DEPLETED: felt252 = 'stream has depleted';
     const LOCKUP_UNAUTHORIZED: felt252 = 'lockup_unauthorized';
+    const INVALID_SENDER_WITHDRAWAL: felt252 = 'invalid sender withdrawal';
+    const WITHDRAW_TO_ZERO_ADDRESS: felt252 = 'withdraw to zero address';
+    const WITHDRAW_ZERO_AMOUNT: felt252 = 'withdraw zero amount';
+    const OVERDRAW : felt252 = 'Amount more than available';
 
     fn protocol_fee_too_high(protocol_fee: u128, max_fee: u128) {
         panic(array![PROTOCOL_FEE_TOO_HIGH, protocol_fee.into(), max_fee.into()])
