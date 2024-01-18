@@ -280,6 +280,11 @@ trait ITokeiLockupLinear<TContractState> {
     /// # Arguments
     /// * `new_admin` - The new admin.
     fn transfer_admin(ref self: TContractState, new_admin: ContractAddress);
+
+    /// Claims the protocol revenues.
+    /// # Arguments
+    /// * `asset` - The asset to claim the protocol revenues for.
+    fn claim_protocol_revenues(ref self: TContractState, asset: ContractAddress);
 }
 
 #[starknet::contract]
@@ -326,6 +331,8 @@ mod TokeiLockupLinear {
         flash_fee: u128,
         is_flash_asset: LegacyMap<ContractAddress, bool>,
         protocol_fee: LegacyMap<ContractAddress, u128>,
+        //Base
+        protocol_revenues: LegacyMap<ContractAddress, u128>,
     }
 
     const MAX_FEE: u128 = 100000000000000000;
@@ -634,9 +641,7 @@ mod TokeiLockupLinear {
 
         fn token_uri(self: @ContractState, token_id: u128) -> felt252 {
             assert(Zeroable::is_non_zero(token_id), 'Invalid stream id');
-            // TokeiInternalImpl::_token_uri(@self, token_id)
-            // @todo - Complete require minted function
-            '1'
+            self.token_uri(token_id)
         }
 
         fn withdrawable_amount_of(self: @ContractState, stream_id: u64) -> u128 {
@@ -891,6 +896,17 @@ mod TokeiLockupLinear {
             self.admin.write(new_admin);
 
             self.emit(TransferAdmin { old_admin: old_admin, new_admin: new_admin, });
+        }
+
+        fn claim_protocol_revenues(ref self: ContractState, asset: ContractAddress) {
+            assert(get_caller_address() == self.admin.read(), LOCKUP_UNAUTHORIZED);
+            let protocol_revenues = self.protocol_revenues.read(asset);
+            assert(protocol_revenues > 0, 'No protocol revenues to claim');
+
+            IERC20Dispatcher { contract_address: asset }
+                .transfer(self.admin.read(), protocol_revenues.into(),);
+
+            self.protocol_revenues.write(asset, 0);
         }
     }
 
@@ -1300,7 +1316,7 @@ mod TokeiLockupLinear {
                 || IERC721::get_approved(@state, stream_id_u128) == get_caller_address()
                 || IERC721::is_approved_for_all(@state, recipient, get_caller_address());
         }
-    // @todo - Implement Internal functions (_afterTokenTransfer,_beforeTokenTransfer,,_cancel ,,,)
+    // @todo - Implement Internal functions (_afterTokenTransfer,_beforeTokenTransfer)
     // Implemented Internal functions (_isCallerStreamRecipientOrApproved,_is_caller_stream_sender,_streamed_amount_of,_withdrawable_amount_of,_status_of,_calculate_streamed_amount,_withdraw,_renounce)
     }
 }
