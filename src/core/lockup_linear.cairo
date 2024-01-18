@@ -219,10 +219,45 @@ trait ITokeiLockupLinear<TContractState> {
     // /// # Arguments
     // /// * `stream_ids` - The ids of the streams.
     fn cancel_multiple(ref self: TContractState, stream_ids: Span<u64>);
-// /// Renounces the stream.
-// /// # Arguments
-// /// * `stream_id` - The id of the stream.
-// fn renounce(ref self: TContractState, stream_id: u64);
+    /// Renounces the stream.
+    /// # Arguments
+    /// * `stream_id` - The id of the stream.
+    fn renounce(ref self: TContractState, stream_id: u64);
+
+    /// Sets the NFT descriptor.
+    /// # Arguments
+    /// * `nft_descriptor` - The NFT descriptor.
+    fn set_nft_descriptor(ref self: TContractState, nft_descriptor: ContractAddress);
+
+    /// Withdraws the stream's assets.
+    /// # Arguments
+    /// * `stream_id` - The id of the stream.
+    /// * `to` - The address to withdraw the assets to.
+    /// * `amount` - The amount of assets to withdraw.
+    fn withdraw(ref self: TContractState, stream_id: u64, to: ContractAddress, amount: u128);
+
+    /// Withdraws the maximum amount of the stream's assets.
+    /// # Arguments
+    /// * `stream_id` - The id of the stream.
+    /// * `to` - The address to withdraw the assets to.
+    fn withdraw_max(ref self: TContractState, stream_id: u64, to: ContractAddress);
+
+    /// Withdraws the stream's assets and transfers the NFT token.
+    /// # Arguments
+    /// * `stream_id` - The id of the stream.
+    /// * `new_recipient` - The address to withdraw the assets to.
+    fn withdraw_max_and_transfer(
+        ref self: TContractState, stream_id: u64, new_recipient: ContractAddress
+    );
+
+    /// Withdraws multiple streams' assets.
+    /// # Arguments
+    /// * `stream_ids` - The ids of the streams.
+    /// * `to` - The address to withdraw the assets to.
+    /// * `amounts` - The amounts of assets to withdraw.
+    fn withdraw_multiple(
+        ref self: TContractState, stream_ids: Span<u64>, to: ContractAddress, amounts: Span<u128>
+    );
 }
 
 #[starknet::contract]
@@ -262,6 +297,7 @@ mod TokeiLockupLinear {
         admin: ContractAddress,
         next_stream_id: u64,
         streams: LegacyMap<u64, LockupLinearStream>,
+        nft_descriptor: ContractAddress,
     }
 
     const MAX_FEE: u128 = 100000000000000000;
@@ -274,6 +310,8 @@ mod TokeiLockupLinear {
     #[derive(Drop, starknet::Event)]
     enum Event {
         LockupLinearStreamCreated: LockupLinearStreamCreated,
+        RenounceLockupStream: RenounceLockupStream,
+        SetNFTDescriptor: SetNFTDescriptor,
     }
 
 
@@ -288,6 +326,18 @@ mod TokeiLockupLinear {
         cancelable: bool,
         range: Range,
         broker: ContractAddress,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct RenounceLockupStream {
+        stream_id: u64
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct SetNFTDescriptor {
+        admin: ContractAddress,
+        old_nft_descriptor: ContractAddress,
+        new_nft_descriptor: ContractAddress,
     }
 
     // *************************************************************************
@@ -500,6 +550,7 @@ mod TokeiLockupLinear {
         }
 
         fn token_uri(self: @ContractState, token_id: u128) -> felt252 {
+            assert(Zeroable::is_non_zero(token_id), 'Invalid stream id');
             // TokeiInternalImpl::_token_uri(@self, token_id)
             // @todo - Complete require minted function
             '1'
@@ -572,6 +623,7 @@ mod TokeiLockupLinear {
             stream_id
         }
         fn burn_token(ref self: ContractState, stream_id: u64) {
+            assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
             assert(!self.is_depleted(stream_id), STREAM_NOT_DEPLETED);
             assert(
                 !TokeiInternalImpl::_is_caller_stream_recipient_or_approved(@self, stream_id),
@@ -583,6 +635,7 @@ mod TokeiLockupLinear {
         }
 
         fn cancel(ref self: ContractState, stream_id: u64) {
+            assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
             assert(self.is_depleted(stream_id), STREAM_DEPLETED);
             assert(self.was_canceled(stream_id), STREAM_CANCELED);
             assert(!self._is_caller_stream_sender(stream_id), LOCKUP_UNAUTHORIZED);
@@ -601,8 +654,71 @@ mod TokeiLockupLinear {
                 let stream_id = *stream_ids.at(i);
                 TokeiInternalImpl::_cancel(ref self, stream_id);
                 i += 1;
-            }
+            };
         }
+
+        fn renounce(ref self: ContractState, stream_id: u64) {
+            assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
+            let status = self._status_of(stream_id);
+            assert(status == Status::DEPLETED, STREAM_DEPLETED);
+            assert(status == Status::CANCELED, STREAM_CANCELED);
+            assert(status == Status::SETTLED, STREAM_SETTLED);
+            assert(!self._is_caller_stream_sender(stream_id), LOCKUP_UNAUTHORIZED);
+
+            self._renounce(stream_id);
+
+            self.emit(RenounceLockupStream { stream_id });
+
+            let mut state: ERC721::ContractState = ERC721::unsafe_new_contract_state();
+            let recipient = IERC721::owner_of(@state, stream_id.into());
+        // @todo - Lockuprecipient onstreamRenounced
+
+        }
+
+        fn set_nft_descriptor(ref self: ContractState, nft_descriptor: ContractAddress) {
+            assert(Zeroable::is_non_zero(nft_descriptor), 'Invalid nft descriptor');
+            assert(get_caller_address() == self.admin.read(), LOCKUP_UNAUTHORIZED);
+            self.nft_descriptor.write(nft_descriptor);
+
+            self
+                .emit(
+                    SetNFTDescriptor {
+                        admin: self.admin.read(),
+                        old_nft_descriptor: self.nft_descriptor.read(),
+                        new_nft_descriptor: nft_descriptor,
+                    }
+                );
+        }
+
+        /// Withdraws the stream's assets.
+        /// # Arguments
+        /// * `stream_id` - The id of the stream.
+        /// * `to` - The address to withdraw the assets to.
+        /// * `amount` - The amount of assets to withdraw.
+        fn withdraw(ref self: ContractState, stream_id: u64, to: ContractAddress, amount: u128) {}
+
+        /// Withdraws the maximum amount of the stream's assets.
+        /// # Arguments
+        /// * `stream_id` - The id of the stream.
+        /// * `to` - The address to withdraw the assets to.
+        fn withdraw_max(ref self: ContractState, stream_id: u64, to: ContractAddress) {}
+
+        /// Withdraws the stream's assets and transfers the NFT token.
+        /// # Arguments
+        /// * `stream_id` - The id of the stream.
+        /// * `new_recipient` - The address to withdraw the assets to.
+        fn withdraw_max_and_transfer(
+            ref self: ContractState, stream_id: u64, new_recipient: ContractAddress
+        ) {}
+
+        /// Withdraws multiple streams' assets.
+        /// # Arguments
+        /// * `stream_ids` - The ids of the streams.
+        /// * `to` - The address to withdraw the assets to.
+        /// * `amounts` - The amounts of assets to withdraw.
+        fn withdraw_multiple(
+            ref self: ContractState, stream_ids: Span<u64>, to: ContractAddress, amounts: Span<u128>
+        ) {}
     }
 
     #[external(v0)]
