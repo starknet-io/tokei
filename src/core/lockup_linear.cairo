@@ -940,7 +940,16 @@ mod TokeiLockupLinear {
             // Return the stream id.
             stream_id
         }
-    // @todo - Implement Internal functions (,_cancel ,,,)
-    // Implemented Internal functions (_is_caller_stream_sender,_streamed_amount_of,_withdrawable_amount_of,_status_of,_calculate_streamed_amount,_withdraw,_renounce)
+
+        fn _is_caller_stream_recipient_or_approved(self: @ContractState, stream_id: u64) -> bool {
+            let mut state: ERC721::ContractState = ERC721::unsafe_new_contract_state();
+            let stream_id_u128: u128 = stream_id.into();
+            let recipient = IERC721::owner_of(@state, stream_id_u128);
+            return get_caller_address() == recipient
+                || IERC721::get_approved(@state, stream_id_u128) == get_caller_address()
+                || IERC721::is_approved_for_all(@state, recipient, get_caller_address());
+        }
+    // @todo - Implement Internal functions (_afterTokenTransfer,_beforeTokenTransfer,,_cancel ,,,)
+    // Implemented Internal functions (_isCallerStreamRecipientOrApproved,_is_caller_stream_sender,_streamed_amount_of,_withdrawable_amount_of,_status_of,_calculate_streamed_amount,_withdraw,_renounce)
     }
 }
