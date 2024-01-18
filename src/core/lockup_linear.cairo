@@ -258,6 +258,28 @@ trait ITokeiLockupLinear<TContractState> {
     fn withdraw_multiple(
         ref self: TContractState, stream_ids: Span<u64>, to: ContractAddress, amounts: Span<u128>
     );
+
+    //Comptroller functions
+    /// Sets the flash fee.
+    /// # Arguments
+    /// * `new_flash_fee` - The new flash fee.
+    fn set_flash_fee(ref self: TContractState, new_flash_fee: u128);
+
+    /// Sets the protocol fee.
+    /// # Arguments
+    /// * `asset` - The asset to set the protocol fee for.
+    /// * `new_protocol_fee` - The new protocol fee.
+    fn set_protocol_fee(ref self: TContractState, asset: ContractAddress, new_protocol_fee: u128);
+
+    /// Toggle flash assets.
+    /// # Arguments
+    /// * `asset` - The asset to toggle.
+    fn toggle_flash_assets(ref self: TContractState, asset: ContractAddress);
+
+    /// Transfers the admin.
+    /// # Arguments
+    /// * `new_admin` - The new admin.
+    fn transfer_admin(ref self: TContractState, new_admin: ContractAddress);
 }
 
 #[starknet::contract]
@@ -267,6 +289,7 @@ mod TokeiLockupLinear {
     // *************************************************************************
 
     // Core lib imports.
+    use tokei::core::lockup_linear::ITokeiLockupLinear;
     use core::starknet::event::EventEmitter;
     use core::result::ResultTrait;
     use starknet::{
@@ -299,6 +322,10 @@ mod TokeiLockupLinear {
         next_stream_id: u64,
         streams: LegacyMap<u64, LockupLinearStream>,
         nft_descriptor: ContractAddress,
+        //Comptroller
+        flash_fee: u128,
+        is_flash_asset: LegacyMap<ContractAddress, bool>,
+        protocol_fee: LegacyMap<ContractAddress, u128>,
     }
 
     const MAX_FEE: u128 = 100000000000000000;
@@ -313,6 +340,12 @@ mod TokeiLockupLinear {
         LockupLinearStreamCreated: LockupLinearStreamCreated,
         RenounceLockupStream: RenounceLockupStream,
         SetNFTDescriptor: SetNFTDescriptor,
+        TransferAdmin: TransferAdmin,
+        SetFlashFee: SetFlashFee,
+        SetProtocolFee: SetProtocolFee,
+        ToggleFlashAsset: ToggleFlashAsset,
+        CancelLockupStream: CancelLockupStream,
+        WithdrawFromLockupStream: WithdrawFromLockupStream,
     }
 
 
@@ -341,6 +374,52 @@ mod TokeiLockupLinear {
         new_nft_descriptor: ContractAddress,
     }
 
+    #[derive(Drop, starknet::Event)]
+    struct TransferAdmin {
+        old_admin: ContractAddress,
+        new_admin: ContractAddress,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct SetFlashFee {
+        admin: ContractAddress,
+        old_flash_fee: u128,
+        new_flash_fee: u128,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct SetProtocolFee {
+        admin: ContractAddress,
+        asset: ContractAddress,
+        old_protocol_fee: u128,
+        new_protocol_fee: u128,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct ToggleFlashAsset {
+        admin: ContractAddress,
+        asset: ContractAddress,
+        new_flag: bool,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct CancelLockupStream {
+        stream_id: u64,
+        sender: ContractAddress,
+        recipient: ContractAddress,
+        asset: ContractAddress,
+        sender_amount: u128,
+        recipient_amount: u128,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct WithdrawFromLockupStream {
+        stream_id: u64,
+        to: ContractAddress,
+        asset: ContractAddress,
+        amount: u128,
+    }
+
     // *************************************************************************
     //                              CONSTRUCTOR
     // *************************************************************************
@@ -361,6 +440,9 @@ mod TokeiLockupLinear {
         IERC721::initializer(
             ref state, 'Tokei Lockup Linear NFT', 'ZW-LOCKUP-LIN', get_contract_address()
         );
+
+        self.emit(TransferAdmin { old_admin: Zeroable::zero(), new_admin: initial_admin, });
+    // @todo - nft_descriptor write
     }
 
 
@@ -530,10 +612,8 @@ mod TokeiLockupLinear {
 
         fn get_recipient(self: @ContractState, stream_id: u64) -> ContractAddress {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
-            // @todo - Add _ownerof the stream
             let mut state: ERC721::ContractState = ERC721::unsafe_new_contract_state();
             IERC721::owner_of(@state, stream_id.into())
-            
         }
 
         fn is_cold(self: @ContractState, stream_id: u64) -> bool {
@@ -561,10 +641,6 @@ mod TokeiLockupLinear {
 
         fn withdrawable_amount_of(self: @ContractState, stream_id: u64) -> u128 {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
-            // @todo - internal function withdrawal amount of
-            // TokeiInternalImpl::_withdrawa(@self, stream_id);
-            // let result = status == Status::PENDING || status == Status::STREAMING;
-            // result
             self._withdrawable_amount_of(stream_id)
         }
 
@@ -734,11 +810,11 @@ mod TokeiLockupLinear {
             let current_recipient = self.get_recipient(stream_id);
             assert(get_caller_address() == current_recipient, LOCKUP_UNAUTHORIZED);
             let withdrawable_amount = self.withdrawable_amount_of(stream_id);
-            if(withdrawable_amount > 0) {
+            if (withdrawable_amount > 0) {
                 self.withdraw(stream_id, current_recipient, withdrawable_amount);
             }
 
-            let stream_id_u128 : u128 = stream_id.into();
+            let stream_id_u128: u128 = stream_id.into();
 
             self.transfer_from(current_recipient, new_recipient, stream_id_u128);
         }
@@ -759,6 +835,62 @@ mod TokeiLockupLinear {
                 self.withdraw(stream_id, to, amount);
                 i += 1;
             };
+        }
+
+        fn set_flash_fee(ref self: ContractState, new_flash_fee: u128) {
+            assert(get_caller_address() == self.admin.read(), LOCKUP_UNAUTHORIZED);
+            let old_fee = self.flash_fee.read();
+            self.flash_fee.write(new_flash_fee);
+
+            self
+                .emit(
+                    SetFlashFee {
+                        admin: self.admin.read(),
+                        old_flash_fee: old_fee,
+                        new_flash_fee: new_flash_fee,
+                    }
+                );
+        }
+
+
+        fn set_protocol_fee(
+            ref self: ContractState, asset: ContractAddress, new_protocol_fee: u128
+        ) {
+            assert(get_caller_address() == self.admin.read(), LOCKUP_UNAUTHORIZED);
+            let old_protocol_fee = self.protocol_fee.read(asset);
+            self.protocol_fee.write(asset, new_protocol_fee);
+
+            self
+                .emit(
+                    SetProtocolFee {
+                        admin: self.admin.read(),
+                        asset: asset,
+                        old_protocol_fee: old_protocol_fee,
+                        new_protocol_fee: new_protocol_fee,
+                    }
+                );
+        }
+
+
+        fn toggle_flash_assets(ref self: ContractState, asset: ContractAddress) {
+            assert(get_caller_address() == self.admin.read(), LOCKUP_UNAUTHORIZED);
+            let old_flag = self.is_flash_asset.read(asset);
+            self.is_flash_asset.write(asset, !old_flag);
+
+            self
+                .emit(
+                    ToggleFlashAsset {
+                        admin: self.admin.read(), asset: asset, new_flag: !old_flag,
+                    }
+                );
+        }
+
+        fn transfer_admin(ref self: ContractState, new_admin: ContractAddress) {
+            assert(get_caller_address() == self.admin.read(), LOCKUP_UNAUTHORIZED);
+            let old_admin = self.admin.read();
+            self.admin.write(new_admin);
+
+            self.emit(TransferAdmin { old_admin: old_admin, new_admin: new_admin, });
         }
     }
 
@@ -941,12 +1073,7 @@ mod TokeiLockupLinear {
 
             let asset = stream.asset;
             IERC20Dispatcher { contract_address: asset }.transfer(to, amount.into());
-        // self.emit( Withdrawn {
-        //     stream_id,
-        //     to,
-        //     amount,
-        // });
-        //@todo - Emit the Withdrawn event.
+            self.emit(WithdrawFromLockupStream { stream_id, to, asset, amount, });
         }
 
         fn _renounce(ref self: ContractState, stream_id: u64) {
@@ -1028,12 +1155,21 @@ mod TokeiLockupLinear {
             self.streams.write(stream_id, stream_updated);
 
             let sender = stream.sender;
-            let recipient = stream
-                .asset; // @todo -  This is incorrect it should be _ownerof(stream_id)
+            let recipient = self.get_recipient(stream_id);
 
             IERC20Dispatcher { contract_address: stream.asset }
                 .transfer(sender, sender_amount.into());
-        // @todo - Emit the Canceled event.
+            self
+                .emit(
+                    CancelLockupStream {
+                        stream_id,
+                        sender,
+                        recipient,
+                        asset: stream.asset,
+                        sender_amount,
+                        recipient_amount,
+                    }
+                );
         // @todo - Emit Metadataupdated event.
 
         }
