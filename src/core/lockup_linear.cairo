@@ -341,15 +341,7 @@ mod TokeiLockupLinear {
         /// # Arguments
         /// * `stream_id` - The id of the stream.
         fn get_stream(ref self: ContractState, stream_id: u64) -> LockupLinearStream {
-            // @todo - Edit the is_cancelable field to false.
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
-            // if(TokeiInternalImpl::_status_of(self, stream_id) == Status::SETTLED) {
-            //     // self.streams.read(stream_id).is_cancelable = false;
-            //     self.streams.read(stream_id)
-            // } else {
-            //     self.streams.read(stream_id)
-            // }
-
             let stream = self.streams.read(stream_id);
 
             if (TokeiInternalImpl::_status_of(@self, stream_id) == Status::SETTLED) {
