@@ -114,6 +114,31 @@ trait ITokeiLockupLinear<TContractState> {
     /// * `stream_id` - The id of the stream.
     fn refundable_amount_of(self: @TContractState, stream_id: u64) -> u128;
 
+    /// Returns the recipient address of the stream.
+    /// # Arguments
+    /// * `stream_id` - The id of the stream.
+    fn get_recipient(self: @TContractState, stream_id: u64) -> ContractAddress;
+
+    /// Returns a bool if the stream was canceled, settled, or depleted.
+    /// # Arguments
+    /// * `stream_id` - The id of the stream.
+    fn is_cold(self: @TContractState, stream_id: u64) -> bool;
+
+    /// Returns a bool if the stream is streaming or pending.
+    /// # Arguments
+    /// * `stream_id` - The id of the stream.
+    fn is_warm(self: @TContractState, stream_id: u64) -> bool;
+
+    /// Returns the token URI of the stream.
+    /// # Arguments
+    /// * `stream_id` - The id of the stream.
+    fn token_uri(self: @TContractState, token_id: u128) -> felt252;
+
+    /// Returns the withdrawable amount of the stream.
+    /// # Arguments
+    /// * `stream_id` - The id of the stream.
+    fn withdrawable_amount_of(self: @TContractState, stream_id: u64) -> u128;
+
     /// Returns the status of the stream.
     /// # Arguments
     /// * `stream_id` - The id of the stream.
@@ -428,6 +453,43 @@ mod TokeiLockupLinear {
         fn was_canceled(self: @ContractState, stream_id: u64) -> bool {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
             self.streams.read(stream_id).was_canceled
+        }
+
+        fn get_recipient(self: @ContractState, stream_id: u64) -> ContractAddress {
+            assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
+            // @todo - Add _ownerof the stream
+            self.streams.read(stream_id).asset
+        }
+
+        fn is_cold(self: @ContractState, stream_id: u64) -> bool {
+            assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
+            let status = TokeiInternalImpl::_status_of(self, stream_id);
+            let result = status == Status::CANCELED
+                || status == Status::DEPLETED
+                || status == Status::SETTLED;
+            result
+        }
+
+        fn is_warm(self: @ContractState, stream_id: u64) -> bool {
+            assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
+            let status = TokeiInternalImpl::_status_of(self, stream_id);
+            let result = status == Status::PENDING || status == Status::STREAMING;
+            result
+        }
+
+        fn token_uri(self: @ContractState, token_id: u128) -> felt252 {
+            // TokeiInternalImpl::_token_uri(@self, token_id)
+            // @todo - Complete require minted function
+            '1'
+        }
+
+        fn withdrawable_amount_of(self: @ContractState, stream_id: u64) -> u128 {
+            assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
+            // @todo - internal function withdrawal amount of
+            // TokeiInternalImpl::_withdrawa(@self, stream_id);
+            // let result = status == Status::PENDING || status == Status::STREAMING;
+            // result
+            1_u128
         }
 
         fn create_with_range(
