@@ -65,7 +65,7 @@ mod ERC721 {
     use option::OptionTrait;
     use starknet::{get_caller_address, ContractAddress, get_contract_address};
     use zeroable::Zeroable;
-    use super::IERC721;
+    use super::{IERC721, IERC721Metadata};
     use debug::PrintTrait;
 
     #[storage]
@@ -136,6 +136,7 @@ mod ERC721 {
         }
 
         fn owner_of(self: @ContractState, token_id: u128) -> ContractAddress {
+            assert(self._exists(token_id), 'ERC721: invalid token ID');
             self._owner_of(token_id)
         }
 
@@ -203,6 +204,22 @@ mod ERC721 {
                 'ERC721: unauthorized caller'
             );
             self._burn(token_id);
+        }
+    }
+
+    #[external(v0)]
+    impl ERC721MetadataImpl of IERC721Metadata<ContractState> {
+        fn name(self: @ContractState) -> felt252 {
+            self._name.read()
+        }
+
+        fn symbol(self: @ContractState) -> felt252 {
+            self._symbol.read()
+        }
+
+        fn token_uri(self: @ContractState, token_id: u128) -> felt252 {
+            assert(self._exists(token_id), 'ERC721: invalid token ID');
+            self._token_uri.read(token_id)
         }
     }
 

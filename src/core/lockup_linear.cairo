@@ -142,12 +142,12 @@ trait ITokeiLockupLinear<TContractState> {
     /// Returns the status of the stream.
     /// # Arguments
     /// * `stream_id` - The id of the stream.
-    // fn status_of(self : @TContractState, stream_id : u64) -> Status;
+    fn status_of(self: @TContractState, stream_id: u64) -> Status;
 
     /// Returns the amount of tokens streamed.
     /// # Arguments
     /// * `stream_id` - The id of the stream.
-    // fn streamed_amount_of(self : @TContractState, stream_id : u64) -> u128;
+    fn streamed_amount_of(self: @TContractState, stream_id: u64) -> u128;
 
     /// Returns if the stream was canceled.
     /// # Arguments
@@ -308,7 +308,7 @@ mod TokeiLockupLinear {
     // Local imports.
     use tokei::types::lockup_linear::{Range, Broker, LockupLinearStream, Durations};
     use tokei::types::lockup::{Status, LockupAmounts};
-    use tokei::tokens::erc721::{ERC721, IERC721};
+    use tokei::tokens::erc721::{ERC721, IERC721, IERC721Metadata};
     use tokei::tokens::erc20::{ERC20, IERC20, IERC20Dispatcher, IERC20DispatcherTrait};
 
     use tokei::libraries::helpers;
@@ -317,6 +317,23 @@ mod TokeiLockupLinear {
         STREAM_DEPLETED, STREAM_CANCELED, INVALID_SENDER_WITHDRAWAL, WITHDRAW_TO_ZERO_ADDRESS,
         WITHDRAW_ZERO_AMOUNT, OVERDRAW
     };
+
+    // @todo - Implement erc721 with openzeppelin component
+    // use openzeppelin::token::erc721::erc721::ERC721Component;
+    // use openzeppelin::token::erc721::erc721::ERC721Component::InternalTrait;
+    // use openzeppelin::introspection::src5::SRC5Component;
+
+    // *************************************************************************
+    //                              COMPONENTS
+    // *************************************************************************
+    // component!(path: ERC721Component, storage: erc721, event: ERC721Event);
+    // component!(path: SRC5Component, storage: src5, event: SRC5Event);
+
+    // #[abi(embed_v0)]
+    // impl SRC5Impl = SRC5Component::SRC5Impl<ContractState>;
+    // #[abi(embed_v0)]
+    // impl ERC721MetadataImpl = ERC721Component::ERC721MetadataImpl<ContractState>;
+    // impl ERC721InternalImpl = ERC721Component::InternalImpl<ContractState>;
 
     // *************************************************************************
     //                              STORAGE
@@ -333,6 +350,11 @@ mod TokeiLockupLinear {
         protocol_fee: LegacyMap<ContractAddress, u128>,
         //Base
         protocol_revenues: LegacyMap<ContractAddress, u128>,
+    //Component
+    // #[substorage(v0)]
+    // src5: SRC5Component::Storage,
+    // #[substorage(v0)]
+    // erc721: ERC721Component::Storage,
     }
 
     const MAX_FEE: u128 = 100000000000000000;
@@ -353,6 +375,11 @@ mod TokeiLockupLinear {
         ToggleFlashAsset: ToggleFlashAsset,
         CancelLockupStream: CancelLockupStream,
         WithdrawFromLockupStream: WithdrawFromLockupStream,
+    //Component
+    // #[flat]
+    // SRC5Event: SRC5Component::Event,
+    // #[flat]
+    // ERC721Event: ERC721Component::Event,
     }
 
 
@@ -447,6 +474,7 @@ mod TokeiLockupLinear {
         IERC721::initializer(
             ref state, 'Tokei Lockup Linear NFT', 'ZW-LOCKUP-LIN', get_contract_address()
         );
+        // self.erc721.initializer('Tokei Lockup Linear NFT', 'ZW-LOCKUP-LIN');
 
         self.emit(TransferAdmin { old_admin: Zeroable::zero(), new_admin: initial_admin, });
     // @todo - nft_descriptor write
@@ -472,7 +500,7 @@ mod TokeiLockupLinear {
         /// * `stream_id` - The id of the stream.
         fn get_cliff_time(self: @ContractState, stream_id: u64) -> u64 {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
-            self.streams.read(stream_id).start_time
+            self.streams.read(stream_id).cliff_time
         }
 
         /// Returns the deposited amount of the stream.
@@ -497,7 +525,7 @@ mod TokeiLockupLinear {
         fn get_range(self: @ContractState, stream_id: u64) -> Range {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
             let stream = self.streams.read(stream_id);
-            Range { start: stream.start_time, cliff: stream.start_time, end: stream.end_time, }
+            Range { start: stream.start_time, cliff: stream.cliff_time, end: stream.end_time, }
         }
 
         /// Returns the refundable amount of the stream.
@@ -506,6 +534,16 @@ mod TokeiLockupLinear {
         fn get_refunded_amount(self: @ContractState, stream_id: u64) -> u128 {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
             self.streams.read(stream_id).amounts.refunded
+        }
+
+        fn status_of(self: @ContractState, stream_id: u64) -> Status {
+            assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
+            TokeiInternalImpl::_status_of(self, stream_id)
+        }
+
+        fn streamed_amount_of(self: @ContractState, stream_id: u64) -> u128 {
+            assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
+            TokeiInternalImpl::_streamed_amount_of(self, stream_id)
         }
 
         /// Returns the sender address of the stream.
@@ -524,7 +562,7 @@ mod TokeiLockupLinear {
             self.streams.read(stream_id).start_time
         }
 
-        /// Returns the stream state of the stream.
+        /// Returns the stream state for the given stream id.
         /// # Arguments
         /// * `stream_id` - The id of the stream.
         fn get_stream(ref self: ContractState, stream_id: u64) -> LockupLinearStream {
@@ -536,6 +574,7 @@ mod TokeiLockupLinear {
                     sender: stream.sender,
                     asset: stream.asset,
                     start_time: stream.start_time,
+                    cliff_time: stream.cliff_time,
                     end_time: stream.end_time,
                     is_cancelable: false,
                     was_canceled: stream.was_canceled,
@@ -553,7 +592,7 @@ mod TokeiLockupLinear {
 
                 self.streams.read(stream_id)
             } else {
-                self.streams.read(stream_id)
+                stream
             }
         }
 
@@ -600,6 +639,7 @@ mod TokeiLockupLinear {
         /// Returns the refundable amount of the stream.
         /// # Arguments
         /// * `stream_id` - The id of the stream.
+        // @todo - Fn check - Should it be `wasCanceled` or is it supposed to be !is_depleted check
         fn refundable_amount_of(self: @ContractState, stream_id: u64) -> u128 {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
             if (self.streams.read(stream_id).is_cancelable
@@ -610,7 +650,6 @@ mod TokeiLockupLinear {
                 0
             }
         }
-
 
         fn was_canceled(self: @ContractState, stream_id: u64) -> bool {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
@@ -641,7 +680,9 @@ mod TokeiLockupLinear {
 
         fn token_uri(self: @ContractState, token_id: u128) -> felt252 {
             assert(Zeroable::is_non_zero(token_id), 'Invalid stream id');
-            self.token_uri(token_id)
+            let mut state: ERC721::ContractState = ERC721::unsafe_new_contract_state();
+            IERC721Metadata::token_uri(@state, token_id)
+        //@todo from the nftdescriptor
         }
 
         fn withdrawable_amount_of(self: @ContractState, stream_id: u64) -> u128 {
@@ -722,7 +763,11 @@ mod TokeiLockupLinear {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
             assert(!self.is_depleted(stream_id), STREAM_DEPLETED);
             assert(!self.was_canceled(stream_id), STREAM_CANCELED);
-            assert(self._is_caller_stream_sender(stream_id), LOCKUP_UNAUTHORIZED);
+            assert(
+                self._is_caller_stream_sender(stream_id)
+                    && get_caller_address() != self.get_recipient(stream_id),
+                LOCKUP_UNAUTHORIZED
+            );
 
             TokeiInternalImpl::_cancel(ref self, stream_id);
         }
@@ -1051,6 +1096,7 @@ mod TokeiLockupLinear {
                 sender: stream.sender,
                 asset: stream.asset,
                 start_time: stream.start_time,
+                cliff_time: stream.cliff_time,
                 end_time: stream.end_time,
                 is_cancelable: stream.is_cancelable,
                 was_canceled: stream.was_canceled,
@@ -1072,6 +1118,7 @@ mod TokeiLockupLinear {
                     sender: stream.sender,
                     asset: stream.asset,
                     start_time: stream.start_time,
+                    cliff_time: stream.cliff_time,
                     end_time: stream.end_time,
                     is_cancelable: false,
                     was_canceled: stream.was_canceled,
@@ -1100,6 +1147,7 @@ mod TokeiLockupLinear {
                 sender: stream.sender,
                 asset: stream.asset,
                 start_time: stream.start_time,
+                cliff_time: stream.cliff_time,
                 end_time: stream.end_time,
                 is_cancelable: stream.is_cancelable,
                 was_canceled: stream.was_canceled,
@@ -1134,6 +1182,7 @@ mod TokeiLockupLinear {
                     sender: stream.sender,
                     asset: stream.asset,
                     start_time: stream.start_time,
+                    cliff_time: stream.cliff_time,
                     end_time: stream.end_time,
                     is_cancelable: false,
                     was_canceled: true,
@@ -1155,6 +1204,7 @@ mod TokeiLockupLinear {
                 sender: stream.sender,
                 asset: stream.asset,
                 start_time: stream.start_time,
+                cliff_time: stream.cliff_time,
                 end_time: stream.end_time,
                 is_cancelable: false,
                 was_canceled: true,
@@ -1258,6 +1308,7 @@ mod TokeiLockupLinear {
                 sender,
                 asset,
                 start_time: range.start,
+                cliff_time: range.cliff,
                 end_time: range.end,
                 is_cancelable: cancelable,
                 was_canceled: false,

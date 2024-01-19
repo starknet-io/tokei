@@ -21,6 +21,8 @@ struct LockupLinearStream {
     asset: ContractAddress,
     /// The Unix timestamp indicating the stream's start.
     start_time: u64,
+    /// The Unix timestamp indicating the stream's cliff period's end.
+    cliff_time: u64,
     /// The Unix timestamp indicating the stream's end.
     end_time: u64,
     /// Boolean indicating if the stream is cancelable.
