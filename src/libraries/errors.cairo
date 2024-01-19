@@ -10,7 +10,14 @@ mod Lockup {
     const INVALID_SENDER_WITHDRAWAL: felt252 = 'invalid sender withdrawal';
     const WITHDRAW_TO_ZERO_ADDRESS: felt252 = 'withdraw to zero address';
     const WITHDRAW_ZERO_AMOUNT: felt252 = 'withdraw zero amount';
-    const OVERDRAW : felt252 = 'Amount more than available';
+    const OVERDRAW: felt252 = 'Amount more than available';
+    const DEPOSIT_AMOUNT_ZERO: felt252 = 'deposit amount is zero';
+    const START_TIME_GREAT_THAN_CLIFF_TIME: felt252 = 'start time > cliff time';
+
+    const TOTAL_AMOUNT_TOO_LOW: felt252 = 'total amount too low';
+    const CLIFF_TIME_LESS_THAN_END_TIME: felt252 = 'cliff time < end time';
+    const CURRENT_TIME_GREATER_THAN_END_TIME: felt252 = 'current time > end time';
+    const NO_PROTOCOL_REVENUE: felt252 = 'No protocol revenues to claim';
 
     fn protocol_fee_too_high(protocol_fee: u128, max_fee: u128) {
         panic(array![PROTOCOL_FEE_TOO_HIGH, protocol_fee.into(), max_fee.into()])

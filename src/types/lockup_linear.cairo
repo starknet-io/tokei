@@ -41,7 +41,7 @@ struct LockupLinearStream {
 }
 
 /// Represents a time range for linear lockups.
-#[derive(Drop, starknet::Store, Serde)]
+#[derive(Copy, Drop, starknet::Store, Serde)]
 struct Range {
     /// The timestamp for the stream's start.
     start: u64,
@@ -52,7 +52,7 @@ struct Range {
 }
 
 /// Represents the broker parameters passed to the create functions. Both can be set to zero.
-#[derive(Drop, starknet::Store, Serde)]
+#[derive(Copy, Drop, starknet::Store, Serde)]
 struct Broker {
     /// The address receiving the broker's fee.
     account: ContractAddress,
@@ -61,7 +61,7 @@ struct Broker {
 }
 
 /// Represents the durations for the cliff and total periods.
-#[derive(Drop, starknet::Store, Serde)]
+#[derive(Copy, Drop, starknet::Store, Serde)]
 struct Durations {
     /// The duration of the cliff period.
     cliff: u64,
