@@ -76,6 +76,8 @@ mod TokeiLockupLinear {
     use tokei::types::lockup_linear::{Range, Broker, LockupLinearStream};
     use tokei::types::lockup::LockupAmounts;
     use tokei::tokens::erc721::{ERC721, IERC721};
+    use tokei::tokens::erc20::{ERC20, IERC20, IERC20Dispatcher, IERC20DispatcherTrait};
+
     use tokei::libraries::helpers;
 
     // *************************************************************************
@@ -87,6 +89,8 @@ mod TokeiLockupLinear {
         next_stream_id: u64,
         streams: LegacyMap<u64, LockupLinearStream>,
     }
+
+    const MAX_FEE: u128 = 100000000000000000;
 
     // *************************************************************************
     // EVENTS
@@ -165,25 +169,27 @@ mod TokeiLockupLinear {
             // Safe Interactions: query the protocol fee. This is safe because it's a known Tokei contract that does
             // not call other unknown contracts.
             // TODO: implement.
-            let protocol_fee = 0;
+
+            let caller = get_caller_address();
+            let this = get_contract_address();
+
+            // Checks: validate the user-provided parameters.
+            // Sanity checks
+
+            assert(sender != Zeroable::zero(), 'Invalid Sender Address');
+            assert(recipient != Zeroable::zero(), 'Invalid Recipient Address');
+            assert(broker.account != Zeroable::zero(), 'Invalid broker Address');
+            assert(asset != Zeroable::zero(), 'Invalid asset Address');
+            assert(total_amount != Zeroable::zero(), 'Invalid total Amount');
 
             // TODO: Handle MAX_FEE as a constant, with handlign of fixed point numbers.
-            let MAX_FEE = 100;
-
-            // Checks: check the fees and calculate the fee amounts.
-            let create_amounts = helpers::check_and_calculate_fees(
-                total_amount, protocol_fee, broker.fee, MAX_FEE
-            );
+            // let MAX_FEE = 100000000000000000;
 
             // Read the next stream id from storage.
             let stream_id = self.next_stream_id.read();
 
             // Checks: check the fees and calculate the fee amounts.
-            // TODO: implement.
             let deposited_amount = total_amount - broker.fee;
-
-            // Checks: validate the user-provided parameters.
-            // TODO: implement.
 
             let amounts: LockupAmounts = LockupAmounts {
                 deposited: deposited_amount, withdrawn: 0, refunded: 0,
@@ -210,10 +216,17 @@ mod TokeiLockupLinear {
             IERC721::mint(ref state, recipient, stream_id.into());
 
             // Interactions: transfer the deposit and the protocol fee.
-            // TODO: implement.
+            // Casting u128 to u256 for the transfer from function
+            let deposit_u256: u256 = amounts.deposited.into();
+
+            IERC20Dispatcher { contract_address: asset }.transfer_from(caller, this, deposit_u256);
 
             // Interactions: pay the broker fee, if not zero.
-            // TODO: implement.
+            if (broker.fee > 0) {
+                let broker_fee_u256: u256 = broker.fee.into();
+                IERC20Dispatcher { contract_address: asset }
+                    .transfer_from(caller, broker.account, broker_fee_u256);
+            }
 
             // Emit an event for  the newly created stream.
             self
@@ -235,6 +248,10 @@ mod TokeiLockupLinear {
             stream_id
         }
     }
+
+    #[generate_trait]
+    impl TokeinInternalImpl of TokeiInternalTrait {}
+
 
     #[external(v0)]
     impl TokeiLockupLinearERC721 of IERC721<ContractState> {
