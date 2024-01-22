@@ -60,7 +60,11 @@ const Home: NextPage<MyPageProps> = ({}) => {
                 fontFamily={"PressStart2P"}
                 fontSize={{ base: "19px", md: "23px", lg: "27px" }}
               >
-                {CONFIG_WEBSITE.title}✨💰⏳
+                {CONFIG_WEBSITE.title}✨
+              </Text>
+              <Text>
+              {CONFIG_WEBSITE.description}
+
               </Text>
 
               <Box width={{ base: "100%" }}>

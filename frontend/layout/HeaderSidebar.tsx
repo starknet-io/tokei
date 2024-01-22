@@ -33,6 +33,7 @@ import { ToggleColor } from "../components/button/color/ToggleColor";
 import { useAccount } from "@starknet-react/core";
 import { CONFIG_WEBSITE } from "../constants";
 import { LinkItemProps } from "../types";
+import { IoCreate } from "react-icons/io5";
 
 
 interface NavItemProps extends FlexProps {
@@ -57,7 +58,7 @@ interface SidebarProps extends BoxProps {
 
 const LinkItems: Array<LinkItemProps> = [
   { name: "Home", icon: FiHome, href: "/" },
-  // { name: "Profile", icon: FiUser, href: "/my_profile" },
+  { name: "Create", icon: IoCreate, href: "/create" },
 ];
 
 const SidebarContent = ({ onClose, ...rest }: SidebarProps) => {

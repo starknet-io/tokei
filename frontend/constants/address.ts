@@ -1,17 +1,26 @@
+import { constants } from "starknet";
 
+
+export const DEFAULT_NETWORK= constants.NetworkName.SN_GOERLI
 interface ContractAddressByChain {
   erc721Factory?: string;
   erc20Factory?: string;
-  mintErc721Factory?: string;
-  mintErc20Factory?: string;
+  lockupLinearFactory?:string;
 }
 
-interface ChainAddresses {
+interface ChainAddressesName {
   [chainId: string | number]: ContractAddressByChain;
 }
 
-export const CONTRACT_DEPLOYED: ChainAddresses = {
+export const CONTRACT_DEPLOYED_STARKNET: ChainAddressesName = {
   1: {},
+  [constants.NetworkName.SN_GOERLI]: {
+
+  },
+  [constants.NetworkName.SN_MAIN]: {
+
+
+  },
 
 };
 

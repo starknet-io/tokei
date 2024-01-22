@@ -1,6 +1,6 @@
 export const CONFIG_WEBSITE = {
-  title: "Starknet Starter-pack",
-  description: "Starknet Starter-pack",
+  title: "Tokei Platform",
+  description: "Starknet ERC20 token streaming protocol 💰⏳, inspired by Sablier.",
   page: {
     portal:"/",
     explorer:"https://starkscan.co"
@@ -34,3 +34,5 @@ export const CONFIG_SOCIAL = {
   },
 };
 
+
+export const ADDRESS_LENGTH=66
