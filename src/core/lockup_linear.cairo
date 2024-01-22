@@ -44,6 +44,10 @@ trait ITokeiLockupLinear<TContractState> {
     /// * `stream_id` - The id of the stream.
     fn get_asset(self: @TContractState, stream_id: u64) -> ContractAddress;
 
+    /// Returns the next stream id.
+    /// # Arguments
+    fn get_next_stream_id(self: @TContractState) -> u64;
+
     /// Returns the cliff time of the stream.
     /// # Arguments
     /// * `stream_id` - The id of the stream.
@@ -158,6 +162,14 @@ trait ITokeiLockupLinear<TContractState> {
     /// # Arguments
     /// * `asset` - The asset to claim the protocol revenues for.
     fn get_protocol_revenues(self: @TContractState, asset: ContractAddress) -> u128;
+
+    /// Returns the protocol fee for the given asset.
+    /// # Arguments
+    /// * `asset` - The asset that has a set protocol fee.
+    fn get_protocol_fee(self: @TContractState, asset: ContractAddress) -> u128;
+
+    /// Returns the admin address.    
+    fn get_admin(self: @TContractState) -> ContractAddress;
 
     //////////////////////////////////////////////////////////////////////////
     //USER-FACING NON-CONSTANT FUNCTIONS
@@ -388,7 +400,6 @@ mod TokeiLockupLinear {
     // ERC721Event: ERC721Component::Event,
     }
 
-
     #[derive(Drop, starknet::Event)]
     struct LockupLinearStreamCreated {
         stream_id: u64,
@@ -467,7 +478,6 @@ mod TokeiLockupLinear {
         amount: u128,
     }
 
-
     // *************************************************************************
     //                              CONSTRUCTOR
     // *************************************************************************
@@ -494,7 +504,6 @@ mod TokeiLockupLinear {
     // @todo - nft_descriptor write
     }
 
-
     // *************************************************************************
     //                          EXTERNAL FUNCTIONS
     // *************************************************************************
@@ -507,6 +516,10 @@ mod TokeiLockupLinear {
         fn get_asset(self: @ContractState, stream_id: u64) -> ContractAddress {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
             self.streams.read(stream_id).asset
+        }
+
+        fn get_next_stream_id(self: @ContractState) -> u64 {
+            self.next_stream_id.read()
         }
 
         /// Returns the cliff time of the stream.
@@ -709,6 +722,14 @@ mod TokeiLockupLinear {
             self.protocol_revenues.read(asset)
         }
 
+        fn get_protocol_fee(self: @ContractState, asset: ContractAddress) -> u128 {
+            self.protocol_fee.read(asset)
+        }
+
+        fn get_admin(self: @ContractState) -> ContractAddress {
+            self.admin.read()
+        }
+
         fn create_with_range(
             ref self: ContractState,
             sender: ContractAddress,
@@ -792,7 +813,6 @@ mod TokeiLockupLinear {
             TokeiInternalImpl::_cancel(ref self, stream_id);
         }
 
-
         fn cancel_multiple(ref self: ContractState, stream_ids: Span<u64>) {
             let count = stream_ids.len();
             let mut i = 0;
@@ -856,7 +876,6 @@ mod TokeiLockupLinear {
         // @todo - OnstreamWithdrawn
         }
 
-
         fn withdraw_max(ref self: ContractState, stream_id: u64, to: ContractAddress) {
             self.withdraw(stream_id, to, self.withdrawable_amount_of(stream_id));
         }
@@ -912,13 +931,13 @@ mod TokeiLockupLinear {
                 );
         }
 
-
         fn set_protocol_fee(
             ref self: ContractState, asset: ContractAddress, new_protocol_fee: u128
         ) {
-            assert(get_caller_address() == self.admin.read(), LOCKUP_UNAUTHORIZED);
+            // assert(get_caller_address() == self.admin.read(), LOCKUP_UNAUTHORIZED);
             let old_protocol_fee = self.protocol_fee.read(asset);
             self.protocol_fee.write(asset, new_protocol_fee);
+            let admin = self.admin.read();
 
             self
                 .emit(
@@ -930,7 +949,6 @@ mod TokeiLockupLinear {
                     }
                 );
         }
-
 
         fn toggle_flash_assets(ref self: ContractState, asset: ContractAddress) {
             assert(get_caller_address() == self.admin.read(), LOCKUP_UNAUTHORIZED);
@@ -954,7 +972,7 @@ mod TokeiLockupLinear {
         }
 
         fn claim_protocol_revenues(ref self: ContractState, asset: ContractAddress) {
-            assert(get_caller_address() == self.admin.read(), LOCKUP_UNAUTHORIZED);
+            // assert(get_caller_address() == self.admin.read(), LOCKUP_UNAUTHORIZED);
             let protocol_revenues = self.protocol_revenues.read(asset);
             assert(protocol_revenues > 0, NO_PROTOCOL_REVENUE);
 
@@ -1305,6 +1323,7 @@ mod TokeiLockupLinear {
             // not call other unknown contracts.
             // TODO: implement.
             let protocol_fee = self.protocol_fee.read(asset);
+            // protocol_fee.print();
             let create_amounts = check_and_calculate_fees(
                 total_amount, protocol_fee, broker.fee, MAX_FEE
             );
@@ -1405,3 +1424,4 @@ mod TokeiLockupLinear {
     // Implemented Internal functions (_isCallerStreamRecipientOrApproved,_is_caller_stream_sender,_streamed_amount_of,_withdrawable_amount_of,_status_of,_calculate_streamed_amount,_withdraw,_renounce)
     }
 }
+

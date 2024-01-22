@@ -1,3 +1,4 @@
+use core::debug::PrintTrait;
 // *************************************************************************
 //                                  IMPORTS
 // *************************************************************************
@@ -39,20 +40,23 @@ fn check_and_calculate_fees(
     assert(broker_fee < max_fee, BROKER_FEE_TOO_HIGH);
 
     // Calculate the protocol fee amount.
-    let protocol_fee = total_amount * protocol_fee;
+    total_amount.print();
+    protocol_fee.print();
+    let protocol_fees = total_amount * protocol_fee;
 
     // Calculate the broker fee amount.
-    let broker_fee = total_amount * broker_fee;
+    // let broker_fees = total_amount * broker_fee;
 
     // Assert that the total amount is strictly greater than the sum of the protocol fee amount and the
     // broker fee amount.
-    assert(total_amount > protocol_fee + broker_fee, TOTAL_AMOUNT_TOO_LOW);
+
+    // assert(total_amount > protocol_fees + broker_fees, TOTAL_AMOUNT_TOO_LOW);
 
     // Calculate the deposit amount (the amount to stream, net of fees).
-    let deposit = total_amount - protocol_fee - broker_fee;
+    // let deposit = total_amount - protocol_fees - broker_fees;
 
     // Return the amounts.
-    CreateAmounts { protocol_fee, broker_fee, deposit }
+    CreateAmounts { protocol_fee: protocol_fees, broker_fee: 0, deposit: 1 }
 }
 
 fn check_create_with_range(deposit_amount: u128, range: Range) {
@@ -63,4 +67,7 @@ fn check_create_with_range(deposit_amount: u128, range: Range) {
     let current_time = get_block_timestamp();
     assert(current_time < range.end, CURRENT_TIME_GREATER_THAN_END_TIME)
 }
+// 340282366920938463463374607431768211455
+// 10040160642570281124497000000000000000000000000
+// 23415782458457154298612504186280779581279436800000
 

@@ -1,7 +1,6 @@
 /// Core module.
 mod core {
     mod lockup_linear;
-// mod notworking;
 }
 
 /// Module containing types for the system.
@@ -22,3 +21,11 @@ mod tokens {
     mod erc20;
     mod erc721;
 }
+
+#[cfg(test)]
+mod tests {
+    mod test_lockup_linear;
+    mod utils;
+    mod test_base;
+}
+
