@@ -11,7 +11,7 @@ mod Base_Test {
     use tokei::tests::utils::defaults::Defaults::{PROTOCOL_FEES};
     use tokei::tests::utils::defaults::Defaults;
 
-    use tokei::tests::utils::utils::Utils::{pow_128, ADMIN};
+    use tokei::tests::utils::utils::Utils::{pow_256, ADMIN};
     use tokei::core::lockup_linear::{
         ITokeiLockupLinearDispatcher, ITokeiLockupLinearDispatcherTrait
     };

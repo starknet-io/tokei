@@ -13,7 +13,7 @@ use starknet::ContractAddress;
 use tokei::types::lockup::LockupAmounts;
 
 /// Represent a Lockup Linear Stream.
-#[derive(Drop, starknet::Store, Serde)]
+#[derive(Drop, starknet::Store, Serde, PartialEq)]
 struct LockupLinearStream {
     /// The address streaming the assets, with the ability to cancel the stream.
     sender: ContractAddress,
@@ -41,7 +41,7 @@ struct LockupLinearStream {
 }
 
 /// Represents a time range for linear lockups.
-#[derive(Copy, Drop, starknet::Store, Serde)]
+#[derive(Copy, Drop, starknet::Store, Serde, PartialEq)]
 struct Range {
     /// The timestamp for the stream's start.
     start: u64,
@@ -57,7 +57,7 @@ struct Broker {
     /// The address receiving the broker's fee.
     account: ContractAddress,
     /// The broker's percentage fee from the total amount.
-    fee: u128,
+    fee: u256,
 }
 
 /// Represents the durations for the cliff and total periods.

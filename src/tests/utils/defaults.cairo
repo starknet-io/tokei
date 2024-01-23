@@ -8,22 +8,22 @@ mod Defaults {
     use tokei::tests::utils::constants::Constants;
     use tokei::tests::utils::types::Users;
     use tokei::tests::utils::utils::Utils::{
-        pow_128, ADMIN, BROKER, RECIPIENT, ASSET, ALICE, setup, teardown, prepare_contracts,
+        pow_256, ADMIN, BROKER, RECIPIENT, ASSET, ALICE, setup, teardown, prepare_contracts,
         deploy_setup_erc20, deploy_tokei
     };
 
 
-    const BROKER_FEE: u128 = 3_000_000_000_000_000;
-    const BROKER_FEE_AMOUNT: u128 = 30_120_481_927_710_843_373_000;
-    const CLIFF_AMOUNT: u128 = 2_500_000_000_000_000_000_000;
+    const BROKER_FEE: u256 = 3; //0.03%
+    const BROKER_FEE_AMOUNT: u256 = 30_120_481_927_710_843_373_000;
+    const CLIFF_AMOUNT: u256 = 2_500_000_000_000_000_000_000;
     const CLIFF_DURATION: u64 = 2500;
-    const DEPOSIT_AMOUNT: u128 = 10_000_000_000_000_000_000_000;
-    const PROTOCOL_FEES: u128 = 1000000000000000;
-    const PROTOCOL_FEE_AMOUNT: u128 = 10_040_160_642_570_281_124_000;
-    const REFUND_AMOUNT: u128 = 7_500_000_000_000_000_000_000;
-    const TOTAL_AMOUNT: u128 = 10_040_160_642_570_281_124_497_000_000_000;
-    const TOTAL_DURATION: u64 = 10000;
-    const WITHDRAW_AMOUNT: u128 = 2_600_000_000_000_000_000_000;
+    const DEPOSIT_AMOUNT: u256 = 10_000_000_000_000_000_000_000;
+    const PROTOCOL_FEES: u256 = 1; //0.01%
+    const PROTOCOL_FEE_AMOUNT: u256 = 10_040_160_642_570_281_124_000;
+    const REFUND_AMOUNT: u256 = 7_500_000_000_000_000_000_000;
+    const TOTAL_AMOUNT: u256 = 10_000;
+    const TOTAL_DURATION: u64 = 4000;
+    const WITHDRAW_AMOUNT: u256 = 2_600_000_000_000_000_000_000;
 
 
     fn setup_1() -> (u64, u64, u64) {
@@ -77,7 +77,7 @@ mod Defaults {
     }
 
     fn create_with_durations() -> (
-        ContractAddress, ContractAddress, u128, ContractAddress, bool, bool, Durations, Broker
+        ContractAddress, ContractAddress, u256, ContractAddress, bool, bool, Durations, Broker
     ) {
         // let asset = contract_address_const::<'asset'>();
         let broker = broker();
@@ -91,7 +91,7 @@ mod Defaults {
     }
 
     fn create_with_range() -> (
-        ContractAddress, ContractAddress, u128, ContractAddress, bool, bool, Range, Broker
+        ContractAddress, ContractAddress, u256, ContractAddress, bool, bool, Range, Broker
     ) {
         // let asset = contract_address_const::<'asset'>();
         let broker = broker();

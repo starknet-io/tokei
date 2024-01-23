@@ -15,7 +15,7 @@ mod Utils {
     };
 
 
-    fn pow_128(self: u128, mut exponent: u8) -> u128 {
+    fn pow_256(self: u256, mut exponent: u8) -> u256 {
         if self.is_zero() {
             return 0;
         }
@@ -132,7 +132,7 @@ mod Utils {
             }
 
             let address = *recipients.at(i);
-            let amount = 10000 * pow_128(10, 18);
+            let amount = 10000 * pow_256(10, 18);
 
             IERC20Dispatcher { contract_address: token_adrr }.transfer(address, amount.into());
             stop_prank(CheatTarget::One(token_adrr));
@@ -155,13 +155,13 @@ mod Utils {
             }
 
             let address = *recipients.at(i);
-            let amount = 10000 * pow_128(10, 18);
+            let amount = 1000000;
             start_prank(CheatTarget::One(token_adrr), owner);
             IERC20Dispatcher { contract_address: token_adrr }.transfer(address, amount.into());
             stop_prank(CheatTarget::One(token_adrr));
 
             start_prank(CheatTarget::One(token_adrr), address);
-            let amount = 10000 * pow_128(10, 18);
+            let amount = 1000000;
 
             IERC20Dispatcher { contract_address: token_adrr }.approve(tokei_addr, amount.into());
 
