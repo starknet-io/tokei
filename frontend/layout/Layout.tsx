@@ -42,9 +42,8 @@ export default function Layout({ children }: ILayout) {
     <Box
       width={"100%"}
       maxWidth={"100%"}
-      bg={useColorModeValue("gray.100", "gray.800")}
-
-      color={useColorModeValue("gray.700", "gray.100")}
+//       bg={useColorModeValue("gray.200", "gray.800")}
+//       color={useColorModeValue("gray.700", "gray.100")}
       scrollBehavior={"smooth"}
     >
       {process.env.NODE_ENV == "production" && (

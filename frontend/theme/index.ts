@@ -53,8 +53,8 @@ const theme = extendTheme({
   styles: {
     global: (props: StyleFunctionProps) => ({
       body: {
-        color: mode("gray.800", "gray.900")(props),
-        bg: mode("white", "gray.700")(props),
+        color: mode("gray.700", "gray.200")(props),
+        bg: mode("gray.200", "gray.800")(props),
         lineHeight: "base",
       },
     }),

@@ -9,6 +9,7 @@ import {
   ModalHeader,
   ModalCloseButton,
   useColorModeValue,
+  ButtonProps,
 } from "@chakra-ui/react";
 import { useAccount, useConnect, useDisconnect } from "@starknet-react/core";
 import { CONFIG_WEBSITE } from "../../../constants";
@@ -19,7 +20,7 @@ interface IAdminPanelGroup {
   chatId?: string;
   onClose: () => void;
   onOpen: () => void;
-  rest?: any;
+  restButton?: ButtonProps;
 }
 
 const ConnectModal = ({
@@ -27,6 +28,7 @@ const ConnectModal = ({
   chatId,
   onClose,
   onOpen,
+  restButton
 }: IAdminPanelGroup) => {
   const account = useAccount();
   const color = useColorModeValue("gray.800", "gray.300");
@@ -40,7 +42,8 @@ const ConnectModal = ({
       <Button
         onClick={onOpen}
         bg={{ base: "brand.primary" }}
-        //  width={"100%"}
+         width={"100%"}
+         {...restButton}
       >
         {!address ? "Connect wallet" : "Wallet"}
       </Button>

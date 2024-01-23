@@ -6,7 +6,6 @@ import { ButtonLink, ButtonLinkBasic } from "../components/button";
 import { CONFIG_WEBSITE } from "../constants";
 const ErrorPage: NextPage = () => {
 
-
   return (
     <>
       <HeaderSEO></HeaderSEO>
@@ -15,14 +14,6 @@ const ErrorPage: NextPage = () => {
         width={"100%"}
         minH={{ base: "70vh" }}
       >
-
-
-        <Text 
-        
-        textAlign={"center"}
-        >
-
-        </Text>
         <Text>{CONFIG_WEBSITE.title}</Text>
         <Box>
           <Box

@@ -370,7 +370,7 @@ const HeaderSidebar = ({ children }: IHeaderSidebar) => {
   return (
     <Box
       minH="100vh"
-      bg={useColorModeValue("gray.100", "black.300")}
+      // bg={useColorModeValue("gray.100", "black.300")}
     >
       <SidebarContent
         onClose={() => onClose}

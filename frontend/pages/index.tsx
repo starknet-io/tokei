@@ -1,28 +1,20 @@
-import type { GetServerSideProps, NextPage, NextPageContext } from "next";
+import type { NextPage } from "next";
 import {
   Box,
-  Button,
   Image,
   Text,
   useColorModeValue,
   useDisclosure,
 } from "@chakra-ui/react";
 import HeaderSEO from "../components/HeaderSEO";
-import { useAccount, useConnect, useDisconnect } from "@starknet-react/core";
-import { ExternalStylizedButtonLink } from "../components/button/NavItem";
 import { CONFIG_WEBSITE } from "../constants";
 import ConnectModal from "../components/modal/login";
+import { ButtonLink } from "../components/button";
+import AccountView from "../components/starknet/AccountView";
 
-interface MyPageProps {}
-
-const Home: NextPage<MyPageProps> = ({}) => {
-  const accountStarknet = useAccount();
-
-  const { connect, connectors } = useConnect();
-  const { disconnect } = useDisconnect();
+const Home: NextPage = ({}) => {
   const color = useColorModeValue("gray.900", "gray.300");
   const bg = useColorModeValue("gray.700", "gray.500");
-  const address = accountStarknet?.account?.address;
   const {
     isOpen,
     onOpen: onOpenConnectModal,
@@ -52,9 +44,7 @@ const Home: NextPage<MyPageProps> = ({}) => {
             px={{ base: "1em" }}
             color={color}
           >
-            <Box textAlign={"left"}
-            py={{base:"0.5em"}}
-            >
+            <Box textAlign={"left"} py={{ base: "0.5em" }}>
               <Image src="/assets/starknet_logo.svg"></Image>
               <Text
                 fontFamily={"PressStart2P"}
@@ -62,47 +52,36 @@ const Home: NextPage<MyPageProps> = ({}) => {
               >
                 {CONFIG_WEBSITE.title}✨
               </Text>
-              <Text>
-              {CONFIG_WEBSITE.description}
+              <Text>{CONFIG_WEBSITE.description}</Text>
 
-              </Text>
+              <Box 
+              // display={{ md: "flex" }} 
+              gap="1em"
+              >
+                <AccountView></AccountView>
 
-              <Box width={{ base: "100%" }}>
-                <ConnectModal
-                  modalOpen={isOpen}
-                  onClose={onCloseConnectModal}
-                  onOpen={onOpenConnectModal}
-                />
+                <Box width={{ base: "100%" }} py={{ base: "0.5em" }}>
+                  <ConnectModal
+                    modalOpen={isOpen}
+                    onClose={onCloseConnectModal}
+                    onOpen={onOpenConnectModal}
+                    restButton={{
+                      // width: { base: "150%" },
+                      width: { base: "150px", md: "220px" },
+
+                      // width: { base: "150px" },
+                    }}
+                  />
+                  <ButtonLink
+                    restButton={{
+                      width: { base: "150px", md: "220px" },
+                    }}
+                    href="/create"
+                    title="Create stream"
+                  ></ButtonLink>
+                </Box>
               </Box>
             </Box>
-            {accountStarknet?.account && (
-              <Box
-                textAlign={"left"}
-                display={{ base: "grid" }}
-                gap={{ base: "0.5em", md: "1em" }}
-              >
-                <Text>Address:</Text>
-                <Text width={{ base: "270px", md: "100%" }}>
-                  {" "}
-                  {accountStarknet?.account?.address}
-                </Text>
-                <ExternalStylizedButtonLink
-                  href={`${CONFIG_WEBSITE.page?.explorer}/contract/${address}`}
-                  width={"150px"}
-                >
-                  Explorer
-                </ExternalStylizedButtonLink>
-
-                <Button
-                  width={"150px"}
-                  onClick={() => {
-                    disconnect();
-                  }}
-                >
-                  Disconnect wallet
-                </Button>
-              </Box>
-            )}
           </Box>
         </Box>
       </Box>

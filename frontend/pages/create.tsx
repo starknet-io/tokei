@@ -8,10 +8,6 @@ import { useAccount, useConnect, useDisconnect } from "@starknet-react/core";
 import CreateStreamForm from "../components/form/create";
 
 const Create: NextPage = ({}) => {
-  const accountStarknet = useAccount();
-  const { connect, connectors } = useConnect();
-  const { disconnect } = useDisconnect();
-  const address = accountStarknet?.account?.address;
   return (
     <>
       <HeaderSEO></HeaderSEO>
