@@ -8,9 +8,11 @@ import { mode } from "@chakra-ui/theme-tools";
 // 2. Extend the theme to include custom colors, fonts, etc
 const colors = {
   brand: {
-    primary: "#4FA89B",
+    primary: "#DDBD22",
     secondary: "#4f89a8",
-    complement: "#a84f5c",
+    complement: "#2242DD",
+    // callToAction:"#22DDBD"
+    callToAction:"#22DDBD"
   },
 
   blue: {

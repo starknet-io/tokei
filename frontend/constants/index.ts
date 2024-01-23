@@ -2,7 +2,7 @@ export const CONFIG_WEBSITE = {
   title: "Tokei Platform",
   description: "Starknet ERC20 token streaming protocol 💰⏳, inspired by Sablier.",
   page: {
-    portal:"/",
+    portal:"https://starknet-io.github.io/tokei/",
     explorer:"https://starkscan.co"
   }
 
@@ -31,6 +31,9 @@ export const CONFIG_SOCIAL = {
   },
   youtube: {
     link: "https://www.youtube.com/@Starknet",
+  },
+  github: {
+    link: "https://github.com/starknet-io/tokei",
   },
 };
 

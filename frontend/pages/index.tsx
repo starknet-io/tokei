@@ -11,6 +11,7 @@ import { CONFIG_WEBSITE } from "../constants";
 import ConnectModal from "../components/modal/login";
 import { ButtonLink } from "../components/button";
 import AccountView from "../components/starknet/AccountView";
+import { StreamViewContainer} from "../layout/sections/StreamViewContainer";
 
 const Home: NextPage = ({}) => {
   const color = useColorModeValue("gray.900", "gray.300");
@@ -82,6 +83,8 @@ const Home: NextPage = ({}) => {
                 </Box>
               </Box>
             </Box>
+
+            <StreamViewContainer></StreamViewContainer>
           </Box>
         </Box>
       </Box>

@@ -20,14 +20,19 @@ import {
 } from "@chakra-ui/react";
 
 import { ReactNode } from "react";
-import {  FaYoutube } from "react-icons/fa";
+import { FaYoutube } from "react-icons/fa";
 import React from "react";
-import {  MdWeb } from "react-icons/md";
-import { BsFacebook, BsInstagram, BsTelegram, BsTwitter } from "react-icons/bs";
+import { MdWeb } from "react-icons/md";
+import {
+  BsFacebook,
+  BsGithub,
+  BsInstagram,
+  BsTelegram,
+  BsTwitter,
+} from "react-icons/bs";
 import { CONFIG_SOCIAL, CONFIG_WEBSITE } from "../constants";
 import { IoLogoInstagram, IoSwapHorizontal } from "react-icons/io5";
 import IconComponent from "../components/view/IconComponent";
-
 
 interface ILogoProps {
   imgSrc?: string;
@@ -118,7 +123,6 @@ export default function FooterLarge() {
                   alt={CONFIG_WEBSITE.title}
                   size="150px"
                 />
-
               </Box>
             </Stack>
 
@@ -126,13 +130,11 @@ export default function FooterLarge() {
               {" "}
               {CONFIG_WEBSITE.title} - © {new Date().getFullYear()}.
             </Text>
-            <Text>
-              All rights reserved
-            </Text>
+            <Text>All rights reserved</Text>
           </Stack>
           <Box justifyContent={"center"} paddingTop={"1em"}>
             <Text textAlign={{ base: "left", md: "center" }}>
-            Socials: {CONFIG_WEBSITE.title} 
+              Socials: {CONFIG_WEBSITE.title}
             </Text>
             <Stack
               direction={"row"}
@@ -150,6 +152,14 @@ export default function FooterLarge() {
                 <MdWeb></MdWeb>
               </SocialButton>
 
+              <SocialButton
+                href={CONFIG_SOCIAL.github.link}
+                title={`${CONFIG_WEBSITE.title}  Github`}
+                label="Github Tokei Platform"
+                isExternal={true}
+              >
+                <BsGithub></BsGithub>
+              </SocialButton>
 
               <SocialButton
                 isExternal={true}
@@ -159,10 +169,9 @@ export default function FooterLarge() {
               >
                 <BsTwitter></BsTwitter>
               </SocialButton>
-              <SocialButton
+              {/* <SocialButton
                 isExternal={true}
                 title={`${CONFIG_WEBSITE.title?.toString()} Youtube Channel`}
-
                 label="Youtube"
                 href={CONFIG_SOCIAL.youtube.link}
               >
@@ -171,7 +180,6 @@ export default function FooterLarge() {
               <SocialButton
                 isExternal={true}
                 title={`${CONFIG_WEBSITE.title?.toString()} Telegram Channel`}
-
                 label="Telegram"
                 href={CONFIG_SOCIAL.telegram.community}
               >
@@ -194,7 +202,7 @@ export default function FooterLarge() {
                 href={CONFIG_SOCIAL.instagram.link}
               >
                 <IoLogoInstagram></IoLogoInstagram>
-              </SocialButton>
+              </SocialButton> */}
             </Stack>
           </Box>
         </Box>

@@ -194,6 +194,7 @@ const CreateStreamForm = ({}: ICreateStream) => {
         py={{ base: "1em", md: "2em" }}
         display={{ md: "flex" }}
         height={"100%"}
+        justifyContent={'space-around'}
         // gridTemplateColumns={'1fr 1fr'}
         gap={{ base: "0.5em", md: "1em" }}
         alignContent={"baseline"}
@@ -374,9 +375,9 @@ const CreateStreamForm = ({}: ICreateStream) => {
         </Box>
       </Box>
 
-      <Box textAlign={"left"}>
+      <Box textAlign={"center"}>
         <Button
-          bg={useColorModeValue("brand.primary", "brand.complement")}
+          bg={useColorModeValue("brand.primary", "brand.primary")}
           disabled={isDisabled}
           onClick={() => {
             prepareHandleCreateStream()
