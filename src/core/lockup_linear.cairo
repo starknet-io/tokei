@@ -168,6 +168,12 @@ trait ITokeiLockupLinear<TContractState> {
     /// * `asset` - The asset that has a set protocol fee.
     fn get_protocol_fee(self: @TContractState, asset: ContractAddress) -> u256;
 
+    /// Returns the NFT descriptor address.
+    fn get_nft_descriptor(self: @TContractState) -> ContractAddress;
+
+    /// Returns the flash fee
+    fn get_flash_fee(self: @TContractState) -> u256;
+
     /// Returns the admin address.    
     fn get_admin(self: @TContractState) -> ContractAddress;
 
@@ -729,6 +735,14 @@ mod TokeiLockupLinear {
             self.protocol_fee.read(asset)
         }
 
+        fn get_nft_descriptor(self: @ContractState) -> ContractAddress {
+            self.nft_descriptor.read()
+        }
+
+        fn get_flash_fee(self: @ContractState) -> u256 {
+            self.flash_fee.read()
+        }
+
         fn get_admin(self: @ContractState) -> ContractAddress {
             self.admin.read()
         }
@@ -844,7 +858,7 @@ mod TokeiLockupLinear {
 
         fn set_nft_descriptor(ref self: ContractState, nft_descriptor: ContractAddress) {
             assert(Zeroable::is_non_zero(nft_descriptor), 'Invalid nft descriptor');
-            // assert(get_caller_address() == self.admin.read(), LOCKUP_UNAUTHORIZED);
+            assert(get_caller_address() == self.admin.read(), LOCKUP_UNAUTHORIZED);
             let old_nft_descriptor = self.nft_descriptor.read();
             self.nft_descriptor.write(nft_descriptor);
 
@@ -940,7 +954,7 @@ mod TokeiLockupLinear {
             ref self: ContractState, asset: ContractAddress, new_protocol_fee: u256
         ) {
        
-            // assert(get_caller_address() == self.admin.read(), LOCKUP_UNAUTHORIZED);
+            assert(get_caller_address() == self.admin.read(), LOCKUP_UNAUTHORIZED);
             let old_protocol_fee = self.protocol_fee.read(asset);
             self.protocol_fee.write(asset, new_protocol_fee);
             

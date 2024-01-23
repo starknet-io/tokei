@@ -70,7 +70,7 @@ mod ERC721 {
 
     #[storage]
     struct Storage {
-        admin: ContractAddress,
+        nft_admin: ContractAddress,
         _name: felt252,
         _symbol: felt252,
         _owners: LegacyMap<u128, ContractAddress>,
@@ -127,7 +127,7 @@ mod ERC721 {
         ) {
             self._name.write(name_);
             self._symbol.write(symbol_);
-            self.admin.write(admin);
+            self.nft_admin.write(admin);
         }
 
         fn balance_of(self: @ContractState, account: ContractAddress) -> u128 {
@@ -194,7 +194,7 @@ mod ERC721 {
 
         fn mint(ref self: ContractState, to: ContractAddress, token_id: u128) {
             // Check if the contract is the admin
-            assert(get_contract_address() == self.admin.read(), 'ERC721: unauthorized caller');
+            assert(get_contract_address() == self.nft_admin.read(), 'ERC721: unauthorized caller');
             self._mint(to, token_id);
         }
 

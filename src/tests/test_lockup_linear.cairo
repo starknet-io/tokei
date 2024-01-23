@@ -38,6 +38,42 @@ use tokei::types::lockup::LockupAmounts;
 use tokei::tokens::erc721::{IERC721SafeDispatcher, IERC721SafeDispatcherTrait};
 
 /// TODO: Implement actual test and change the name of this function.
+
+fn create_with_duration() -> (ITokeiLockupLinearDispatcher, IERC20Dispatcher, u64) {
+    let (tokei) = setup(ADMIN());
+    let (token_dispatcher, token) = deploy_setup_erc20(
+        'Ethereum', 'ETH', 100000000, ADMIN()
+    );
+    let recipient_address = RECIPIENT();
+    let approve_token_to = array![ALICE(),BOB(),CHARLIE()];
+    give_tokens_and_approve(
+        approve_token_to, token, token_dispatcher, ADMIN(), tokei.contract_address
+    );
+
+    let (alice, recipient, total_amount, _, cancelable, transferable, range, broker) =
+        Defaults::create_with_durations();
+    start_prank(CheatTarget::One(tokei.contract_address),  ADMIN());
+    tokei.set_protocol_fee(token, PROTOCOL_FEES);
+    stop_prank(CheatTarget::One(tokei.contract_address));
+    let initial_protocol_revenues = tokei.get_protocol_revenues(token);
+    start_prank(CheatTarget::One(tokei.contract_address), ALICE());
+    start_warp(CheatTarget::One(tokei.contract_address), 1000);
+
+    let stream_id = tokei
+        .create_with_duration(
+            ALICE(),
+            recipient_address,
+            total_amount,
+            token,
+            cancelable,
+            transferable,
+            range,
+            broker,
+        );
+    stop_warp(CheatTarget::One(tokei.contract_address));
+    stop_prank(CheatTarget::One(tokei.contract_address));
+    (tokei, token_dispatcher, stream_id)
+}
 #[test]
 fn test_set_protocol_fee() {
     let (tokei) = setup(ADMIN());
@@ -51,6 +87,26 @@ fn test_set_protocol_fee() {
 
     assert(fee == 1, 'Incorrect fee');
 }
+
+#[test]
+fn test_set_nft_descriptor() {
+    let tokei_contract = declare('TokeiLockupLinear');
+        let mut constructor_calldata = array![ADMIN().into()];
+        let random_addr = contract_address_const::<'random'>();
+        let tokei_addr = tokei_contract.deploy(@constructor_calldata).unwrap();
+        // let tokei_address = deploy_tokei(caller_address);
+
+        // Create a role store dispatcher.
+        let tokei = ITokeiLockupLinearDispatcher { contract_address: tokei_addr };
+    start_prank(CheatTarget::One(tokei_addr), ADMIN());
+    tokei.set_nft_descriptor(random_addr);
+    let fee = tokei.get_nft_descriptor();
+    stop_prank(CheatTarget::One(tokei_addr));
+
+    assert(1 == 1, 'Incorrect fee');
+}
+
+
 
 
 #[test]
@@ -109,33 +165,7 @@ fn given_normal_conditions_when_create_with_range_then_expected_results() {
     // *********************************************************************************************
     teardown(tokei);
 }
-// #[test]
-// fn test_create_default_stream_with_range() {
-//     let (tokei) = setup(ADMIN());
-//     let recipient_address = contract_address_const::<0>();
-//     let (_, _, total_amount, _, cancelable, transferable, range, broker) =
-//         Defaults::create_with_range();
-//     start_prank(CheatTarget::One(tokei.contract_address), ALICE());
 
-//     tokei.set_protocol_fee(ASSET(), PROTOCOL_FEES);
-
-//     let value = tokei.get_protocol_fee(ASSET());
-
-//     let stream_id = tokei
-//         .create_with_range(
-//             ALICE(),
-//             recipient_address,
-//             total_amount,
-//             ASSET(),
-//             cancelable,
-//             transferable,
-//             range,
-//             broker,
-//         );
-//     stop_prank(CheatTarget::One(tokei.contract_address));
-
-//     assert(2 == 2, 'Invalid StreamId');
-// }
 
 #[test]
 fn test_create_stream_with_range() {
@@ -160,9 +190,13 @@ fn test_create_stream_with_range() {
 
     let balance = token_dispatcher.balance_of(ALICE());
 
-    start_prank(CheatTarget::One(tokei.contract_address), ALICE());
+    
 
+    start_prank(CheatTarget::One(tokei.contract_address), ADMIN());
     tokei.set_protocol_fee(token, PROTOCOL_FEES);
+    stop_prank(CheatTarget::One(tokei.contract_address));
+
+    start_prank(CheatTarget::One(tokei.contract_address), ALICE());
 
     let initial_protocol_revenues = tokei.get_protocol_revenues(token);
 
@@ -207,39 +241,7 @@ fn test_create_stream_with_range() {
     assert(stream_id == expected_stream_id, 'Invalid StreamId');
 }
 
-fn create_with_duration() -> (ITokeiLockupLinearDispatcher, IERC20Dispatcher, u64) {
-    let (tokei) = setup(ADMIN());
-    let (token_dispatcher, token) = deploy_setup_erc20(
-        'Ethereum', 'ETH', 100000000, ADMIN()
-    );
-    let recipient_address = RECIPIENT();
-    let approve_token_to = array![ALICE(),BOB(),CHARLIE()];
-    give_tokens_and_approve(
-        approve_token_to, token, token_dispatcher, ADMIN(), tokei.contract_address
-    );
 
-    let (alice, recipient, total_amount, _, cancelable, transferable, range, broker) =
-        Defaults::create_with_durations();
-    tokei.set_protocol_fee(token, PROTOCOL_FEES);
-    let initial_protocol_revenues = tokei.get_protocol_revenues(token);
-    start_prank(CheatTarget::One(tokei.contract_address), ALICE());
-    start_warp(CheatTarget::One(tokei.contract_address), 1000);
-
-    let stream_id = tokei
-        .create_with_duration(
-            ALICE(),
-            recipient_address,
-            total_amount,
-            token,
-            cancelable,
-            transferable,
-            range,
-            broker,
-        );
-    stop_warp(CheatTarget::One(tokei.contract_address));
-    stop_prank(CheatTarget::One(tokei.contract_address));
-    (tokei, token_dispatcher, stream_id)
-}
 
 #[test]
 fn test_create_with_duration() {
@@ -255,7 +257,9 @@ fn test_create_with_duration() {
 
     let (alice, recipient, total_amount, _, cancelable, transferable, range, broker) =
         Defaults::create_with_durations();
+    start_prank(CheatTarget::One(tokei.contract_address), ADMIN());
     tokei.set_protocol_fee(token, PROTOCOL_FEES);
+    stop_prank(CheatTarget::One(tokei.contract_address));
     let initial_protocol_revenues = tokei.get_protocol_revenues(token);
 
     start_prank(CheatTarget::One(tokei.contract_address), ALICE());
@@ -335,6 +339,172 @@ fn test_create_with_duration() {
 
     assert(tokei.get_next_stream_id() == 2, 'Invalid next stream id');
 }
+
+
+
+#[test]
+#[should_panic(expected: ('deposit amount is zero',))]
+fn test_create_with_duration_when_amount_is_zero() {
+    let (tokei) = setup(ADMIN());
+    let (token_dispatcher, token) = deploy_setup_erc20(
+        'Ethereum', 'ETH', BoundedInt::max(), ADMIN()
+    );
+    let recipient_address = RECIPIENT();
+    let approve_token_to = array![ALICE()];
+    give_tokens_and_approve(
+        approve_token_to, token, token_dispatcher, ADMIN(), tokei.contract_address
+    );
+
+    let total_amount = 0;
+
+    let (alice, recipient, _, _, cancelable, transferable, range, broker) =
+        Defaults::create_with_durations();
+        start_prank(CheatTarget::One(tokei.contract_address), ADMIN());
+    tokei.set_protocol_fee(token, PROTOCOL_FEES);
+    stop_prank(CheatTarget::One(tokei.contract_address));
+    let initial_protocol_revenues = tokei.get_protocol_revenues(token);
+
+    start_prank(CheatTarget::One(tokei.contract_address), ALICE());
+    start_warp(CheatTarget::One(tokei.contract_address), 100);
+
+    let stream_id = tokei
+        .create_with_duration(
+            ALICE(),
+            recipient_address,
+            total_amount,
+            token,
+            cancelable,
+            transferable,
+            range,
+            broker,
+        );
+
+    let streamed_amount_of = tokei.streamed_amount_of(stream_id);
+
+    stop_warp(CheatTarget::One(tokei.contract_address));
+    stop_prank(CheatTarget::One(tokei.contract_address));
+}
+
+#[test]
+#[should_panic(expected: ('start time > cliff time',))]
+fn test_create_with_duration_when_cliff_is_less_than_start() {
+    let (tokei) = setup(ADMIN());
+    let (token_dispatcher, token) = deploy_setup_erc20(
+        'Ethereum', 'ETH', BoundedInt::max(), ADMIN()
+    );
+    let recipient_address = RECIPIENT();
+    let approve_token_to = array![ALICE()];
+    give_tokens_and_approve(
+        approve_token_to, token, token_dispatcher, ADMIN(), tokei.contract_address
+    );
+
+    let (_, _, total_amount, _, cancelable, transferable, _, broker) =
+        Defaults::create_with_range();
+    start_prank(CheatTarget::One(tokei.contract_address), ADMIN());
+    tokei.set_protocol_fee(token, PROTOCOL_FEES);
+    stop_prank(CheatTarget::One(tokei.contract_address));
+    let initial_protocol_revenues = tokei.get_protocol_revenues(token);
+
+    let range = Range { start : 1000, cliff: 100, end: 6000, };
+
+    start_prank(CheatTarget::One(tokei.contract_address), ALICE());
+    start_warp(CheatTarget::One(tokei.contract_address), 1000);
+
+    let stream_id = tokei
+        .create_with_range(
+            ALICE(),
+            recipient_address,
+            total_amount,
+            token,
+            cancelable,
+            transferable,
+            range,
+            broker,
+        );
+
+    let streamed_amount_of = tokei.streamed_amount_of(stream_id);
+
+    stop_warp(CheatTarget::One(tokei.contract_address));
+    stop_prank(CheatTarget::One(tokei.contract_address));
+}
+
+#[test]
+fn test_all_the_getters_with_respect_to_stream(){
+    let (tokei) = setup(ADMIN());
+    let (token_dispatcher, token) = deploy_setup_erc20(
+        'Ethereum', 'ETH', BoundedInt::max(), ADMIN()
+    );
+    let recipient_address = RECIPIENT();
+    let approve_token_to = array![ALICE()];
+    give_tokens_and_approve(
+        approve_token_to, token, token_dispatcher, ADMIN(), tokei.contract_address
+    );
+
+    let (alice, recipient, total_amount, _, cancelable, transferable, range, broker) =
+        Defaults::create_with_durations();
+    start_prank(CheatTarget::One(tokei.contract_address), ADMIN());
+    tokei.set_protocol_fee(token, PROTOCOL_FEES);
+    stop_prank(CheatTarget::One(tokei.contract_address));
+    let initial_protocol_revenues = tokei.get_protocol_revenues(token);
+
+    start_prank(CheatTarget::One(tokei.contract_address), ALICE());
+    start_warp(CheatTarget::One(tokei.contract_address), 100);
+
+    let stream_id = tokei
+        .create_with_duration(
+            ALICE(),
+            recipient_address,
+            total_amount,
+            token,
+            cancelable,
+            transferable,
+            range,
+            broker,
+        );
+
+    let get_start_time = tokei.get_start_time(stream_id);
+    assert(get_start_time == 100, 'Incorrect start time');
+    let get_asset = tokei.get_asset(stream_id);
+    assert(get_asset == token, 'Incorrect asset');
+    let get_recipient = tokei.get_recipient(stream_id);
+    assert(get_recipient == recipient_address, 'Incorrect recipient');
+    let get_cliff_time = tokei.get_cliff_time(stream_id);
+    assert(get_cliff_time == 100 + 2500, 'Incorrect cliff time');
+    let get_deposited_amount = tokei.get_deposited_amount(stream_id);
+    assert(get_deposited_amount == 9997, 'Incorrect deposited amount');
+    let get_end_time = tokei.get_end_time(stream_id);
+    assert(get_end_time == 100 + 4000, 'Incorrect end time');
+    let get_range = tokei.get_range(stream_id);
+    assert(get_range.start == 100, 'Incorrect start');
+    assert(get_range.cliff == 100 + 2500 , 'Incorrect cliff');
+    assert(get_range.end == 100 + 4000, 'Incorrect end');
+
+    let get_refunded_amount = tokei.get_refunded_amount(stream_id);
+    assert(get_refunded_amount == 0, 'Incorrect refunded amount');
+    let get_sender = tokei.get_sender(stream_id);
+    assert(get_sender == ALICE(), 'Incorrect sender');
+    let get_withdrawn_amount = tokei.get_withdrawn_amount(stream_id);
+    assert(get_withdrawn_amount == 0, 'Incorrect withdrawn amount');
+    let is_cancelable = tokei.is_cancelable(stream_id);
+    assert(is_cancelable == true, 'Incorrect cancelable');
+    let is_transferable = tokei.is_transferable(stream_id);
+    assert(is_transferable == true, 'Incorrect transferable');
+    let is_depleted = tokei.is_depleted(stream_id);
+    assert(is_depleted == false, 'Incorrect depleted');
+    let is_stream = tokei.is_stream(stream_id);
+    assert(is_stream == true, 'Incorrect stream');
+    let refundable_amount_of = tokei.refundable_amount_of(stream_id);
+    assert(refundable_amount_of == 9997, 'Incorrect refundable amount');
+    let get_refunded_amount = tokei.get_refunded_amount(stream_id);
+    assert(get_refunded_amount == 0, 'Incorrect refunded amount');
+    let is_cold = tokei.is_cold(stream_id);
+    assert(is_cold == false, 'Incorrect cold');
+    let is_warm = tokei.is_warm(stream_id);
+    assert(is_warm == true, 'Incorrect warm');
+    let was_canceled = tokei.was_canceled(stream_id);
+    assert(was_canceled == false, 'Incorrect was canceled');
+}
+
 
 #[test]
 fn test_get_cliff_time() {
@@ -650,7 +820,9 @@ fn test_withdraw_max_and_transfer_when_not_transferable() {
 
     let (alice, recipient, total_amount, _, cancelable, _, range, broker) =
         Defaults::create_with_durations();
+    start_prank(CheatTarget::One(tokei.contract_address), ADMIN());
     tokei.set_protocol_fee(token, PROTOCOL_FEES);
+    stop_prank(CheatTarget::One(tokei.contract_address));
     let initial_protocol_revenues = tokei.get_protocol_revenues(token);
     start_prank(CheatTarget::One(tokei.contract_address), ALICE());
     start_warp(CheatTarget::One(tokei.contract_address), 1000);
@@ -840,7 +1012,7 @@ fn test_burn_token_when_not_depleted() {
 fn test_cancel() {
     let (tokei, token, stream_id) = create_with_duration();
     let before_balance_of_sender = token.balance_of(ALICE());
-    before_balance_of_sender.print();
+
     start_warp(CheatTarget::One(tokei.contract_address), 4100);
 
     let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
@@ -860,7 +1032,7 @@ fn test_cancel() {
 fn test_cancel_should_panic() {
     let (tokei, token, stream_id) = create_with_duration();
     let before_balance_of_sender = token.balance_of(ALICE());
-    before_balance_of_sender.print();
+
     start_warp(CheatTarget::One(tokei.contract_address), 7000);
 
     let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
@@ -900,6 +1072,45 @@ fn test_renounce_by_recipient() {
 
     assert(tokei.is_cancelable(stream_id) == false, 'Invalid stream');
 
+}
+
+#[test]
+fn test_transfer_admin() {
+    let (tokei, token, stream_id) = create_with_duration();
+
+    start_prank(CheatTarget::One(tokei.contract_address), ADMIN());
+    tokei.transfer_admin(BOB());
+
+    assert(tokei.get_admin() == BOB(), 'Invalid admin');
+}
+
+
+#[test]
+#[should_panic(expected: ('lockup_unauthorized',))]
+fn test_set_protocol_fee_panic() {
+    let (tokei, token, stream_id) = create_with_duration();
+
+    start_prank(CheatTarget::One(tokei.contract_address), BOB());
+    tokei.set_protocol_fee(token.contract_address, 100);
+}
+
+#[test]
+fn test_set_flash_fee() {
+    let (tokei, token, stream_id) = create_with_duration();
+
+    start_prank(CheatTarget::One(tokei.contract_address), ADMIN());
+    tokei.set_flash_fee(token.contract_address, 100);
+
+    assert(tokei.get_flash_fee(token.contract_address) == 100, 'Invalid protocol fee');
+}
+
+#[test]
+#[should_panic(expected: ('lockup_unauthorized',))]
+fn test_set_flash_fee_panic() {
+    let (tokei, token, stream_id) = create_with_duration();
+
+    start_prank(CheatTarget::One(tokei.contract_address), BOB());
+    tokei.set_flash_fee(token.contract_address, 100);
 }
 
 
