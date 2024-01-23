@@ -936,7 +936,7 @@ mod TokeiLockupLinear {
         }
 
         fn set_flash_fee(ref self: ContractState, new_flash_fee: u256) {
-            // assert(get_caller_address() == self.admin.read(), LOCKUP_UNAUTHORIZED);
+            assert(get_caller_address() == self.admin.read(), LOCKUP_UNAUTHORIZED);
             let old_fee = self.flash_fee.read();
             self.flash_fee.write(new_flash_fee);
 
@@ -992,7 +992,7 @@ mod TokeiLockupLinear {
         }
 
         fn claim_protocol_revenues(ref self: ContractState, asset: ContractAddress) {
-            // assert(get_caller_address() == self.admin.read(), LOCKUP_UNAUTHORIZED);
+            assert(get_caller_address() == self.admin.read(), LOCKUP_UNAUTHORIZED);
             let protocol_revenues = self.protocol_revenues.read(asset);
             assert(protocol_revenues > 0, NO_PROTOCOL_REVENUE);
 

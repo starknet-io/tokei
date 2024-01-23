@@ -938,6 +938,13 @@ fn test_withdraw_multiple() {
     assert(balance == expected_balance, 'Invalid balance');
     assert(tokei.get_protocol_revenues(token.contract_address) == 3, 'Invalid protocol revenue');
 
+    start_prank(CheatTarget::One(tokei.contract_address), ADMIN());
+    let admin_balance_before = token.balance_of( ADMIN());
+    tokei.claim_protocol_revenues(token.contract_address);
+    let admin_balance_after = token.balance_of( ADMIN());
+    let expected_admin_balance = admin_balance_before + 3;
+    assert(admin_balance_after == expected_admin_balance, 'Invalid admin balance');
+
 
 }
 
@@ -1099,9 +1106,9 @@ fn test_set_flash_fee() {
     let (tokei, token, stream_id) = create_with_duration();
 
     start_prank(CheatTarget::One(tokei.contract_address), ADMIN());
-    tokei.set_flash_fee(token.contract_address, 100);
+    tokei.set_flash_fee(100);
 
-    assert(tokei.get_flash_fee(token.contract_address) == 100, 'Invalid protocol fee');
+    assert(tokei.get_flash_fee() == 100, 'Invalid protocol fee');
 }
 
 #[test]
@@ -1110,7 +1117,7 @@ fn test_set_flash_fee_panic() {
     let (tokei, token, stream_id) = create_with_duration();
 
     start_prank(CheatTarget::One(tokei.contract_address), BOB());
-    tokei.set_flash_fee(token.contract_address, 100);
+    tokei.set_flash_fee(100);
 }
 
 
