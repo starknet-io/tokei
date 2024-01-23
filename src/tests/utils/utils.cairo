@@ -56,6 +56,10 @@ mod Utils {
         'bob'.try_into().unwrap()
     }
 
+    fn CHARLIE() -> ContractAddress {
+        'charlie'.try_into().unwrap()
+    }
+
     fn ADMIN() -> ContractAddress {
         'admin'.try_into().unwrap()
     }
@@ -112,7 +116,8 @@ mod Utils {
         // Setup the contracts.
         let (tokei_addr, tokei,) = deploy_tokei(caller_address);
         // Prank the caller address.
-        prepare_contracts(caller_address, tokei,);
+        // prepare_contracts(ADMIN(), tokei,);
+        // tokei.set_protocol_fee(1);
         // Return the caller address and the contract interfaces.
         (tokei,)
     }

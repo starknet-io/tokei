@@ -807,11 +807,13 @@ mod TokeiLockupLinear {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
             assert(!self.is_depleted(stream_id), STREAM_DEPLETED);
             assert(!self.was_canceled(stream_id), STREAM_CANCELED);
-            assert(
-                self._is_caller_stream_sender(stream_id)
-                    && get_caller_address() != self.get_recipient(stream_id),
-                LOCKUP_UNAUTHORIZED
-            );
+            let value = TokeiInternalImpl::_is_caller_stream_sender(@self, stream_id);
+            assert(value || get_caller_address() == self.get_recipient(stream_id), LOCKUP_UNAUTHORIZED);
+            // assert(
+            //     self._is_caller_stream_sender(stream_id)
+            //         && get_caller_address() != self.get_recipient(stream_id),
+            //     LOCKUP_UNAUTHORIZED
+            // );
 
             TokeiInternalImpl::_cancel(ref self, stream_id);
         }
@@ -842,7 +844,7 @@ mod TokeiLockupLinear {
 
         fn set_nft_descriptor(ref self: ContractState, nft_descriptor: ContractAddress) {
             assert(Zeroable::is_non_zero(nft_descriptor), 'Invalid nft descriptor');
-            assert(get_caller_address() == self.admin.read(), LOCKUP_UNAUTHORIZED);
+            // assert(get_caller_address() == self.admin.read(), LOCKUP_UNAUTHORIZED);
             let old_nft_descriptor = self.nft_descriptor.read();
             self.nft_descriptor.write(nft_descriptor);
 
@@ -864,14 +866,16 @@ mod TokeiLockupLinear {
 
             let value = TokeiInternalImpl::_is_caller_stream_sender(@self, stream_id);
 
-                assert(value ||
-                    TokeiInternalImpl::_is_caller_stream_recipient_or_approved(@self, stream_id),
-                    LOCKUP_UNAUTHORIZED);
-          
+            assert(
+                value
+                    || TokeiInternalImpl::_is_caller_stream_recipient_or_approved(@self, stream_id),
+                LOCKUP_UNAUTHORIZED
+            );
+
             let mut state: ERC721::ContractState = ERC721::unsafe_new_contract_state();
             let recipient = IERC721::owner_of(@state, stream_id.into());
             assert(to == recipient, INVALID_SENDER_WITHDRAWAL);
-           
+
             TokeiInternalImpl::_withdraw(ref self, stream_id, to, amount);
         // @todo - OnstreamWithdrawn
         }
@@ -884,13 +888,14 @@ mod TokeiLockupLinear {
             ref self: ContractState, stream_id: u64, new_recipient: ContractAddress
         ) {
             let current_recipient = self.get_recipient(stream_id);
+            assert(self.is_transferable(stream_id), 'Stream is not transferable');
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
             assert(Zeroable::is_non_zero(new_recipient), 'Invalid new_recipient');
             assert(get_caller_address() == current_recipient, LOCKUP_UNAUTHORIZED);
             let withdrawable_amount = self.withdrawable_amount_of(stream_id);
             if (withdrawable_amount > 0) {
                 // @todo change this from_withdraw to withdraw
-                self._withdraw(stream_id, current_recipient, withdrawable_amount);
+                self.withdraw(stream_id, current_recipient, withdrawable_amount);
             }
 
             let stream_id_u128: u128 = stream_id.into();
@@ -917,7 +922,7 @@ mod TokeiLockupLinear {
         }
 
         fn set_flash_fee(ref self: ContractState, new_flash_fee: u256) {
-            assert(get_caller_address() == self.admin.read(), LOCKUP_UNAUTHORIZED);
+            // assert(get_caller_address() == self.admin.read(), LOCKUP_UNAUTHORIZED);
             let old_fee = self.flash_fee.read();
             self.flash_fee.write(new_flash_fee);
 
@@ -934,10 +939,11 @@ mod TokeiLockupLinear {
         fn set_protocol_fee(
             ref self: ContractState, asset: ContractAddress, new_protocol_fee: u256
         ) {
+       
             // assert(get_caller_address() == self.admin.read(), LOCKUP_UNAUTHORIZED);
             let old_protocol_fee = self.protocol_fee.read(asset);
             self.protocol_fee.write(asset, new_protocol_fee);
-            let admin = self.admin.read();
+            
 
             self
                 .emit(
@@ -1066,7 +1072,6 @@ mod TokeiLockupLinear {
         fn _calculate_streamed_amount(self: @ContractState, stream_id: u64) -> u256 {
             let cliff_time = self.streams.read(stream_id).cliff_time; //2600
             let current_time = get_block_timestamp(); //3000
-         
 
             // If the cliff time is in the future, return zero.
             if (current_time < cliff_time) {
@@ -1075,7 +1080,7 @@ mod TokeiLockupLinear {
 
             // If the end time is not in the future, return the deposited amount.
             let end_time = self.streams.read(stream_id).end_time; //10000
-       
+
             if (current_time >= end_time) {
                 return self.streams.read(stream_id).amounts.deposited;
             }
@@ -1083,18 +1088,16 @@ mod TokeiLockupLinear {
             let start_time = self.streams.read(stream_id).start_time; //100
 
             let elapsed_time = current_time - start_time; //2900
-    
-            let total_time = end_time - start_time; //9900
 
+            let total_time = end_time - start_time; //9900
 
             // Divide the elapsed time by the stream's total duration.
             let elapsed_time_percentage = scaled_down_div(elapsed_time, total_time);
-  
+
             let deposited_amount = self.streams.read(stream_id).amounts.deposited;
             // Convert the percentage to a felt252 and then to a u128.
             let elapsed_time_percentage_felt: felt252 = elapsed_time_percentage.into();
             let elapsed_time_percentage_u256: u256 = elapsed_time_percentage_felt.into();
-        
 
             // Multiply the deposited amount by the percentage.
             let _streamed_amount = deposited_amount * elapsed_time_percentage_u256;
@@ -1104,7 +1107,6 @@ mod TokeiLockupLinear {
             // without asserting to avoid locking funds in case of a bug. If this situation occurs, the withdrawn
             // amount is considered to be the streamed amount, and the stream is effectively frozen.
             if (streamed_amount > deposited_amount) {
-            
                 // self.streams.read(stream_id).amounts.withdrawn.print();
                 return self.streams.read(stream_id).amounts.withdrawn;
             }
@@ -1136,7 +1138,7 @@ mod TokeiLockupLinear {
 
         fn _withdraw(ref self: ContractState, stream_id: u64, to: ContractAddress, amount: u256) {
             let withdrawable_amount = self._withdrawable_amount_of(stream_id);
-            assert(amount < withdrawable_amount, OVERDRAW);
+            assert(amount <= withdrawable_amount, OVERDRAW);
             let stream = self.streams.read(stream_id);
             let stream_updated = LockupLinearStream {
                 sender: stream.sender,
@@ -1157,8 +1159,8 @@ mod TokeiLockupLinear {
             };
             self.streams.write(stream_id, stream_updated);
 
-            let amounts = stream.amounts;
-
+            let amounts = self.streams.read(stream_id).amounts;
+        
             if (amounts.withdrawn >= amounts.deposited - amounts.refunded) {
                 let _stream_updated = LockupLinearStream {
                     sender: stream.sender,
@@ -1211,9 +1213,10 @@ mod TokeiLockupLinear {
             self.streams.write(stream_id, stream_updated);
 
             self.emit(RenounceLockupStream { stream_id });
-            let mut state: ERC721::ContractState = ERC721::unsafe_new_contract_state();
-            let recipient = IERC721::owner_of(@state, stream_id.into());
+            
         // @todo - Lockuprecipient onstreamRenounced
+        // let mut state: ERC721::ContractState = ERC721::unsafe_new_contract_state();
+        // let recipient = IERC721::owner_of(@state, stream_id.into());
 
         }
 
@@ -1228,9 +1231,9 @@ mod TokeiLockupLinear {
 
             let sender_amount = amounts.deposited - streamed_amount;
             let recipient_amount = streamed_amount - amounts.withdrawn;
-
+            let stream = self.streams.read(stream_id);
             if (recipient_amount == 0) {
-                let stream = self.streams.read(stream_id);
+                
                 let stream_updated = LockupLinearStream {
                     sender: stream.sender,
                     asset: stream.asset,
@@ -1250,8 +1253,7 @@ mod TokeiLockupLinear {
                 };
 
                 self.streams.write(stream_id, stream_updated);
-            }
-            let stream = self.streams.read(stream_id);
+            } else {
 
             let stream_updated = LockupLinearStream {
                 sender: stream.sender,
@@ -1272,6 +1274,8 @@ mod TokeiLockupLinear {
             };
 
             self.streams.write(stream_id, stream_updated);
+            }
+            
 
             let sender = stream.sender;
             let recipient = self.get_recipient(stream_id);

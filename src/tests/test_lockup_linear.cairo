@@ -23,8 +23,8 @@ use snforge_std::{
 };
 
 use tokei::tests::utils::utils::Utils::{
-    pow_256, ADMIN, ASSET, ALICE, setup, teardown, prepare_contracts, deploy_setup_erc20,
-    deploy_tokei, give_tokens_and_approve, BOB
+    pow_256, ADMIN, ASSET, ALICE,CHARLIE, setup, teardown, prepare_contracts, deploy_setup_erc20,
+    deploy_tokei, give_tokens_and_approve, BOB,
 };
 use tokei::tests::utils::defaults::Defaults::{PROTOCOL_FEES, RECIPIENT, BROKER};
 use tokei::tests::utils::defaults::Defaults;
@@ -33,7 +33,7 @@ use tokei::tokens::erc20::{IERC20Dispatcher, IERC20DispatcherTrait};
 
 // Local imports.
 use tokei::core::lockup_linear::{ITokeiLockupLinearDispatcher, ITokeiLockupLinearDispatcherTrait};
-use tokei::types::lockup_linear::{Range, Broker, LockupLinearStream};
+use tokei::types::lockup_linear::{Range, Broker,Durations, LockupLinearStream};
 use tokei::types::lockup::LockupAmounts;
 use tokei::tokens::erc721::{IERC721SafeDispatcher, IERC721SafeDispatcherTrait};
 
@@ -41,8 +41,13 @@ use tokei::tokens::erc721::{IERC721SafeDispatcher, IERC721SafeDispatcherTrait};
 #[test]
 fn test_set_protocol_fee() {
     let (tokei) = setup(ADMIN());
-    tokei.set_protocol_fee(ASSET(), PROTOCOL_FEES);
-    let fee = tokei.get_protocol_fee(ASSET());
+    let (token_dispatcher, token) = deploy_setup_erc20(
+        'Ethereum', 'ETH', BoundedInt::max(), ADMIN()
+    );
+    start_prank(CheatTarget::One(tokei.contract_address), ADMIN());
+    tokei.set_protocol_fee(token, PROTOCOL_FEES);
+    let fee = tokei.get_protocol_fee(token);
+    stop_prank(CheatTarget::One(tokei.contract_address));
 
     assert(fee == 1, 'Incorrect fee');
 }
@@ -205,10 +210,10 @@ fn test_create_stream_with_range() {
 fn create_with_duration() -> (ITokeiLockupLinearDispatcher, IERC20Dispatcher, u64) {
     let (tokei) = setup(ADMIN());
     let (token_dispatcher, token) = deploy_setup_erc20(
-        'Ethereum', 'ETH', BoundedInt::max(), ADMIN()
+        'Ethereum', 'ETH', 100000000, ADMIN()
     );
     let recipient_address = RECIPIENT();
-    let approve_token_to = array![ALICE()];
+    let approve_token_to = array![ALICE(),BOB(),CHARLIE()];
     give_tokens_and_approve(
         approve_token_to, token, token_dispatcher, ADMIN(), tokei.contract_address
     );
@@ -269,8 +274,6 @@ fn test_create_with_duration() {
         );
 
     let streamed_amount_of = tokei.streamed_amount_of(stream_id);
-    'streamed_amount_of'.print();
-    streamed_amount_of.print();
 
     stop_warp(CheatTarget::One(tokei.contract_address));
     stop_prank(CheatTarget::One(tokei.contract_address));
@@ -304,8 +307,7 @@ fn test_create_with_duration() {
 
     let protocol_revenue = tokei.get_protocol_revenues(token);
     let actual_status = tokei.is_warm(stream_id);
-    'actual_status'.print();
-    actual_status.print();
+
     assert(protocol_revenue == expected_protocol_revenue, 'Invalid protocol revenue');
 
     // Check that the stream nft was minted to the recipient.
@@ -318,8 +320,7 @@ fn test_create_with_duration() {
     assert(stream_id == 1, 'wrong stream id');
     start_warp(CheatTarget::One(tokei.contract_address), 10000);
     let streamed_amount_of = tokei.streamed_amount_of(stream_id);
-    'streamed_amount_of'.print();
-    streamed_amount_of.print();
+
     // stop_warp(CheatTarget::One(tokei.contract_address));
 
     assert(
@@ -439,9 +440,6 @@ fn test_streamed_amount_of_cliff_time_in_present() {
     start_warp(CheatTarget::One(tokei.contract_address), 4000);
 
     let actual_streamed_amount = tokei.streamed_amount_of(stream_id);
-    'actual_streamed_amount'.print();
-    actual_streamed_amount.print();
-    // stop_warp(CheatTarget::One(tokei.contract_address));
 
     let expected_streamed_amount = 7497;
 
@@ -454,9 +452,7 @@ fn test_streamed_amount_of_cliff_time_in_present_1() {
     start_warp(CheatTarget::One(tokei.contract_address), 5000);
 
     let actual_streamed_amount = tokei.streamed_amount_of(stream_id);
-    'actual_streamed_amount'.print();
-    actual_streamed_amount.print();
-    // stop_warp(CheatTarget::One(tokei.contract_address));
+
 
     let expected_streamed_amount = 9997;
 
@@ -469,8 +465,6 @@ fn test_withdrawable_amount_of_cliff_time() {
     start_warp(CheatTarget::One(tokei.contract_address), 5000);
 
     let withdrawable_amount_of = tokei.withdrawable_amount_of(stream_id);
-    'actual_streamed_amount'.print();
-    withdrawable_amount_of.print();
 
     assert(withdrawable_amount_of == 9997, 'Invalid withdrawable amount');
 }
@@ -481,18 +475,35 @@ fn test_withdraw_by_recipient() {
     start_warp(CheatTarget::One(tokei.contract_address), 5000);
 
     let withdrawable_amount_of = tokei.withdrawable_amount_of(stream_id);
-    'actual_streamed_amount'.print();
-    withdrawable_amount_of.print();
 
     assert(withdrawable_amount_of == 9997, 'Invalid withdrawable amount');
     let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
 
     start_prank(CheatTarget::One(tokei.contract_address), RECIPIENT());
 
-    tokei.withdraw(stream_id, RECIPIENT(), 9996);
+    tokei.withdraw(stream_id, RECIPIENT(), withdrawable_amount_of);
 
     let balance = token.balance_of(RECIPIENT());
-    let expected_balance = 9996_u256;
+    let expected_balance = 9997_u256;
+    assert(balance == expected_balance, 'Invalid balance');
+}
+
+#[test]
+fn test_withdraw_by_recipient_before_total_time() {
+    let (tokei, token, stream_id) = create_with_duration();
+    start_warp(CheatTarget::One(tokei.contract_address), 3600);
+
+    let withdrawable_amount_of = tokei.withdrawable_amount_of(stream_id);
+
+    assert(withdrawable_amount_of == 6498, 'Invalid withdrawable amount');
+    let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+
+    start_prank(CheatTarget::One(tokei.contract_address), RECIPIENT());
+
+    tokei.withdraw(stream_id, RECIPIENT(), withdrawable_amount_of);
+
+    let balance = token.balance_of(RECIPIENT());
+    let expected_balance = 6498;
     assert(balance == expected_balance, 'Invalid balance');
 }
 
@@ -502,8 +513,6 @@ fn test_withdraw_by_approved_caller() {
     start_warp(CheatTarget::One(tokei.contract_address), 5000);
 
     let withdrawable_amount_of = tokei.withdrawable_amount_of(stream_id);
-    'actual_streamed_amount'.print();
-    withdrawable_amount_of.print();
 
     assert(withdrawable_amount_of == 9997, 'Invalid withdrawable amount');
     let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
@@ -515,10 +524,10 @@ fn test_withdraw_by_approved_caller() {
 
     start_prank(CheatTarget::One(tokei.contract_address), BOB());
 
-    tokei.withdraw(stream_id, RECIPIENT(), 9996);
+    tokei.withdraw(stream_id, RECIPIENT(), withdrawable_amount_of);
 
     let balance = token.balance_of(RECIPIENT());
-    let expected_balance = 9996_u256;
+    let expected_balance = 9997_u256;
     assert(balance == expected_balance, 'Invalid balance');
 }
 
@@ -528,26 +537,15 @@ fn test_withdraw_by_caller() {
     start_warp(CheatTarget::One(tokei.contract_address), 5000);
 
     let withdrawable_amount_of = tokei.withdrawable_amount_of(stream_id);
-    'actual_streamed_amount'.print();
-    withdrawable_amount_of.print();
-
     assert(withdrawable_amount_of == 9997, 'Invalid withdrawable amount');
     let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
 
-    // start_prank(CheatTarget::One(tokei.contract_address), RECIPIENT());
-    // stream_nft.approve(ALICE(), stream_id.into());
-
-    // let val = stream_nft.get_approved(stream_id.into());
-    // 'val'.print();
-    // val.unwrap().print();
-    // stop_prank(CheatTarget::One(tokei.contract_address));
-
     start_prank(CheatTarget::One(tokei.contract_address), ALICE());
 
-    tokei.withdraw(stream_id, RECIPIENT(), 9996);
+    tokei.withdraw(stream_id, RECIPIENT(), withdrawable_amount_of);
 
     let balance = token.balance_of(RECIPIENT());
-    let expected_balance = 9996_u256;
+    let expected_balance = 9997_u256;
     assert(balance == expected_balance, 'Invalid balance');
 }
 #[test]
@@ -558,21 +556,18 @@ fn test_withdraw_by_approved_caller_to_other_address_than_recipient() {
 
     let withdrawable_amount_of = tokei.withdrawable_amount_of(stream_id);
 
-
     assert(withdrawable_amount_of == 9997, 'Invalid withdrawable amount');
     let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
     start_prank(CheatTarget::One(tokei.contract_address), RECIPIENT());
     stream_nft.approve(BOB(), stream_id.into());
-   
-    let addr = stream_nft.owner_of(stream_id.into());
 
+    let addr = stream_nft.owner_of(stream_id.into());
 
     stop_prank(CheatTarget::One(tokei.contract_address));
 
     start_prank(CheatTarget::One(tokei.contract_address), BOB());
 
-    tokei.withdraw(stream_id, BOB(), 9996);
-
+    tokei.withdraw(stream_id, BOB(), withdrawable_amount_of);
 }
 
 #[test]
@@ -583,21 +578,332 @@ fn test_withdraw_by_unapproved_caller() {
 
     let withdrawable_amount_of = tokei.withdrawable_amount_of(stream_id);
 
-
     assert(withdrawable_amount_of == 9997, 'Invalid withdrawable amount');
     let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
 
     start_prank(CheatTarget::One(tokei.contract_address), BOB());
 
-    tokei.withdraw(stream_id, RECIPIENT(), 9996);
+    tokei.withdraw(stream_id, RECIPIENT(), withdrawable_amount_of);
 
     let balance = token.balance_of(RECIPIENT());
-    let expected_balance = 9996_u256;
+    let expected_balance = 9997_u256;
     assert(balance == expected_balance, 'Invalid balance');
 }
 
+#[test]
+fn test_withdraw_max() {
+    let (tokei, token, stream_id) = create_with_duration();
+    start_warp(CheatTarget::One(tokei.contract_address), 5000);
 
-// #[should_panic(expected: ('NO ACTIVE LOCK OR NOT OWNER',))]
+    let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+
+    start_prank(CheatTarget::One(tokei.contract_address), ALICE());
+
+    tokei.withdraw_max(stream_id, RECIPIENT());
+
+    let balance = token.balance_of(RECIPIENT());
+    let expected_balance = 9997_u256;
+    assert(balance == expected_balance, 'Invalid balance');
+}
+
+#[test]
+fn test_withdraw_max_and_transfer() {
+    let (tokei, token, stream_id) = create_with_duration();
+    start_warp(CheatTarget::One(tokei.contract_address), 5000);
+
+    let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+
+    let recipient_nft_balance_before = stream_nft.balance_of(RECIPIENT());
+    assert(recipient_nft_balance_before.unwrap() == 1, 'Invalid nft balance');
+    let bob_nft_balance_before = stream_nft.balance_of(BOB());
+    assert(bob_nft_balance_before.unwrap() == 0, 'Invalid nft balance');
+
+    start_prank(CheatTarget::One(tokei.contract_address), RECIPIENT());
+
+    tokei.withdraw_max_and_transfer(stream_id, BOB());
+
+    let balance = token.balance_of( RECIPIENT());
+    let expected_balance = 9997_u256;
+    assert(balance == expected_balance, 'Invalid balance');
+
+    let recipient_nft_balance_after = stream_nft.balance_of(RECIPIENT());
+    assert(recipient_nft_balance_after.unwrap() == 0, 'Invalid nft balance');
+
+    let bob_nft_balance_after = stream_nft.balance_of(BOB());
+    assert(bob_nft_balance_after.unwrap() == 1, 'Invalid nft balance');
+
+}
+
+#[test]
+#[should_panic(expected: ('Stream is not transferable',))]
+fn test_withdraw_max_and_transfer_when_not_transferable() {
+    let transferable = false;
+    let (tokei) = setup(ADMIN());
+    let (token_dispatcher, token) = deploy_setup_erc20(
+        'Ethereum', 'ETH', 100000000, ADMIN()
+    );
+    let recipient_address = RECIPIENT();
+    let approve_token_to = array![ALICE()];
+    give_tokens_and_approve(
+        approve_token_to, token, token_dispatcher, ADMIN(), tokei.contract_address
+    );
+
+    let (alice, recipient, total_amount, _, cancelable, _, range, broker) =
+        Defaults::create_with_durations();
+    tokei.set_protocol_fee(token, PROTOCOL_FEES);
+    let initial_protocol_revenues = tokei.get_protocol_revenues(token);
+    start_prank(CheatTarget::One(tokei.contract_address), ALICE());
+    start_warp(CheatTarget::One(tokei.contract_address), 1000);
+
+    let stream_id = tokei
+        .create_with_duration(
+            ALICE(),
+            recipient_address,
+            total_amount,
+            token,
+            cancelable,
+            transferable,
+            range,
+            broker,
+        );
+    stop_warp(CheatTarget::One(tokei.contract_address));
+    stop_prank(CheatTarget::One(tokei.contract_address));
+  
+
+    start_warp(CheatTarget::One(tokei.contract_address), 5000);
+
+    let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+
+    let recipient_nft_balance_before = stream_nft.balance_of(RECIPIENT());
+    assert(recipient_nft_balance_before.unwrap() == 1, 'Invalid nft balance');
+    let bob_nft_balance_before = stream_nft.balance_of(BOB());
+    assert(bob_nft_balance_before.unwrap() == 0, 'Invalid nft balance');
+
+    start_prank(CheatTarget::One(tokei.contract_address), RECIPIENT());
+
+    tokei.withdraw_max_and_transfer(stream_id, BOB());
+
+}
+
+#[test]
+fn test_withdraw_multiple() {
+    let (_, _, _, _, _, _, _, broker) =
+        Defaults::create_with_durations();
+ 
+    let total_amount_2 = 10000;
+    let cancelable_2 = true;
+    let transferable_2 = true;
+    let durations_2 = Durations { cliff: 2500, total: 6000, };
+
+    let total_amount_3 = 12000;
+    let cancelable_3 = false;
+    let transferable_3 = false;
+    let durations_3 = Durations { cliff: 4000, total: 6500, };
+
+    let reciever = contract_address_const::<'reciever'>();
+
+
+
+     let (tokei, token, stream_id_1) = create_with_duration();
+    
+
+    start_prank(CheatTarget::One(tokei.contract_address), BOB());
+    start_warp(CheatTarget::One(tokei.contract_address), 1000);
+
+    let stream_id_2 = tokei
+        .create_with_duration(
+            BOB(),
+            RECIPIENT(),
+            total_amount_2,
+            token.contract_address,
+            cancelable_2,
+            transferable_2,
+            durations_2,
+            broker,
+        );
+
+        
+        stop_prank(CheatTarget::One(tokei.contract_address));
+
+        start_prank(CheatTarget::One(tokei.contract_address), CHARLIE());
+        let stream_id_3 = tokei.create_with_duration(
+            CHARLIE(),
+            RECIPIENT(),
+            total_amount_3,
+            token.contract_address,
+            cancelable_3,
+            transferable_3,
+            durations_3,
+            broker,
+        );
+
+        stop_warp(CheatTarget::One(tokei.contract_address));
+        
+    start_warp(CheatTarget::One(tokei.contract_address), 10000);
+    let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+
+    let recipient_nft_balance_before = stream_nft.balance_of(RECIPIENT());
+    assert(recipient_nft_balance_before.unwrap() == 3, 'Invalid nft balance');
+
+
+    start_prank(CheatTarget::One(tokei.contract_address), RECIPIENT());
+    stream_nft.approve(reciever, stream_id_1.into());
+    stream_nft.approve(reciever, stream_id_2.into());
+    stream_nft.approve(reciever, stream_id_3.into());
+    stop_prank(CheatTarget::One(tokei.contract_address));
+
+    start_prank(CheatTarget::One(tokei.contract_address), reciever);
+    let stream_ids = array![stream_id_1, stream_id_2, stream_id_3];
+    let amounts = array![9997, 6000, 11000];
+    tokei.withdraw_multiple(
+        stream_ids.span(),
+        RECIPIENT(),
+        amounts.span(),
+    );
+
+    let balance = token.balance_of( RECIPIENT());
+    let expected_balance = 26997_u256;
+    assert(balance == expected_balance, 'Invalid balance');
+    assert(tokei.get_protocol_revenues(token.contract_address) == 3, 'Invalid protocol revenue');
+
+
+}
+
+// fn test_burn_token() {
+//     let (tokei, token, stream_id) = create_with_duration();
+//     let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+
+//     start_prank(CheatTarget::One(tokei.contract_address), RECIPIENT());
+//     stream_nft.burn(stream_id.into());
+//     stop_prank(CheatTarget::One(tokei.contract_address));
+
+//     let balance = token.balance_of(RECIPIENT());
+//     let expected_balance = 9997_u256;
+//     assert(balance == expected_balance, 'Invalid balance');
+// }
+
+#[test]
+fn test_burn_token_when_depleted() {
+        
+    let (tokei, token, stream_id) = create_with_duration();
+    start_warp(CheatTarget::One(tokei.contract_address), 8000);
+
+    let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+
+    start_prank(CheatTarget::One(tokei.contract_address), RECIPIENT());
+
+    tokei.withdraw_max(stream_id, RECIPIENT());
+
+    let balance = token.balance_of(RECIPIENT());
+    let expected_balance = 9997_u256;
+    assert(balance == expected_balance, 'Invalid balance');
+    
+    let old_tokei_nft_balance = stream_nft.balance_of(RECIPIENT());
+    assert(old_tokei_nft_balance.unwrap() == 1, 'Invalid nft balance');
+
+    tokei.burn_token(stream_id);
+
+    let new_tokei_nft_balance = stream_nft.balance_of(RECIPIENT());
+    assert(new_tokei_nft_balance.unwrap() == 0, 'Invalid nft balance');
+
+}
+
+#[test]
+#[should_panic(expected: ('stream has not depleted',))]
+fn test_burn_token_when_not_depleted() {
+        
+    let (tokei, token, stream_id) = create_with_duration();
+    start_warp(CheatTarget::One(tokei.contract_address), 4100);
+
+    let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+
+    start_prank(CheatTarget::One(tokei.contract_address), RECIPIENT());
+
+    tokei.withdraw_max(stream_id, RECIPIENT());
+
+    let balance = token.balance_of(RECIPIENT());
+
+    let expected_balance = 7797_u256;
+    assert(balance == expected_balance, 'Invalid balance');
+    
+    let old_tokei_nft_balance = stream_nft.balance_of(RECIPIENT());
+    assert(old_tokei_nft_balance.unwrap() == 1, 'Invalid nft balance');
+
+    tokei.burn_token(stream_id);
+
+    let new_tokei_nft_balance = stream_nft.balance_of(RECIPIENT());
+    assert(new_tokei_nft_balance.unwrap() == 0, 'Invalid nft balance');
+
+}
+
+#[test]
+fn test_cancel() {
+    let (tokei, token, stream_id) = create_with_duration();
+    let before_balance_of_sender = token.balance_of(ALICE());
+    before_balance_of_sender.print();
+    start_warp(CheatTarget::One(tokei.contract_address), 4100);
+
+    let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+    let stream = tokei.get_stream(stream_id);
+
+    start_prank(CheatTarget::One(tokei.contract_address), RECIPIENT());
+    tokei.cancel(stream_id);
+
+    let after_balance_of_sender = token.balance_of(ALICE());
+
+    assert(before_balance_of_sender != after_balance_of_sender,'Balance did not change');
+    assert(tokei.is_cancelable(stream_id) == false, 'Invalid stream');
+}
+
+#[test]
+#[should_panic(expected: ('stream_settled',))]
+fn test_cancel_should_panic() {
+    let (tokei, token, stream_id) = create_with_duration();
+    let before_balance_of_sender = token.balance_of(ALICE());
+    before_balance_of_sender.print();
+    start_warp(CheatTarget::One(tokei.contract_address), 7000);
+
+    let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+    let stream = tokei.get_stream(stream_id);
+
+    start_prank(CheatTarget::One(tokei.contract_address), RECIPIENT());
+    tokei.cancel(stream_id);
+}
+
+#[test]
+fn test_renounce() {
+    let (tokei, token, stream_id) = create_with_duration();
+    
+
+    start_warp(CheatTarget::One(tokei.contract_address), 4100);
+
+    let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+    
+
+    start_prank(CheatTarget::One(tokei.contract_address), ALICE());
+    tokei.renounce(stream_id);
+
+    assert(tokei.is_cancelable(stream_id) == false, 'Invalid stream');
+}
+
+#[test]
+#[should_panic(expected: ('lockup_unauthorized',))]
+fn test_renounce_by_recipient() {
+     let (tokei, token, stream_id) = create_with_duration();
+  
+    start_warp(CheatTarget::One(tokei.contract_address), 4100);
+
+    let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+    
+    start_prank(CheatTarget::One(tokei.contract_address), RECIPIENT());
+    tokei.renounce(stream_id);
+
+    assert(tokei.is_cancelable(stream_id) == false, 'Invalid stream');
+
+}
+
+
+
 
 impl LockupLinearStreamPrintTrait of PrintTrait<LockupLinearStream> {
     fn print(self: LockupLinearStream) {
