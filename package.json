@@ -1,0 +1,14 @@
+{
+  "name": "tokei",
+  "version": "1.0.0",
+  "description": "<!-- prettier-ignore-start --> <!-- markdownlint-disable --> <p align=\"center\">   <img src=\"assets/logo/tokei.png\" height=\"256\"> </p>",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "starknet": "^5.27.0"
+  }
+}

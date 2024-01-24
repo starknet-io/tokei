@@ -177,7 +177,7 @@ fn test_create_stream_with_range() {
     // *************************************************************************
     //                               EXPECTED RESULTS
     let expected_stream_id = 1;
-    let expected_ALICE_balance = 990000;
+    let expected_ALICE_balance = 990001;
     let expected_Broker_balance = 3;
     let expected_protocol_revenue = 1;
     // *************************************************************************
@@ -300,7 +300,7 @@ fn test_create_with_duration() {
         is_depleted: false,
         is_stream: true,
         is_transferable: true,
-        amounts: LockupAmounts { deposited: 9997, withdrawn: 0, refunded: 0, }
+        amounts: LockupAmounts { deposited: 9996, withdrawn: 0, refunded: 0, }
     };
     // *************************************************************************
 
@@ -467,7 +467,7 @@ fn test_all_the_getters_with_respect_to_stream() {
     let get_cliff_time = tokei.get_cliff_time(stream_id);
     assert(get_cliff_time == 100 + 2500, 'Incorrect cliff time');
     let get_deposited_amount = tokei.get_deposited_amount(stream_id);
-    assert(get_deposited_amount == 9997, 'Incorrect deposited amount');
+    assert(get_deposited_amount == 9996, 'Incorrect deposited amount');
     let get_end_time = tokei.get_end_time(stream_id);
     assert(get_end_time == 100 + 4000, 'Incorrect end time');
     let get_range = tokei.get_range(stream_id);
@@ -490,7 +490,7 @@ fn test_all_the_getters_with_respect_to_stream() {
     let is_stream = tokei.is_stream(stream_id);
     assert(is_stream == true, 'Incorrect stream');
     let refundable_amount_of = tokei.refundable_amount_of(stream_id);
-    assert(refundable_amount_of == 9997, 'Incorrect refundable amount');
+    assert(refundable_amount_of == 9996, 'Incorrect refundable amount');
     let get_refunded_amount = tokei.get_refunded_amount(stream_id);
     assert(get_refunded_amount == 0, 'Incorrect refunded amount');
     let is_cold = tokei.is_cold(stream_id);
@@ -558,7 +558,7 @@ fn test_get_stream_when_status_settled() {
         is_depleted: false,
         is_stream: true,
         is_transferable: true,
-        amounts: LockupAmounts { deposited: 9997, withdrawn: 0, refunded: 0, }
+        amounts: LockupAmounts { deposited: 9996, withdrawn: 0, refunded: 0, }
     };
 
     assert(actual_stream == expected_stream, 'Invalid stream');
@@ -583,7 +583,7 @@ fn test_get_stream_when_not_settled() {
         is_depleted: false,
         is_stream: true,
         is_transferable: true,
-        amounts: LockupAmounts { deposited: 9997, withdrawn: 0, refunded: 0, }
+        amounts: LockupAmounts { deposited: 9996, withdrawn: 0, refunded: 0, }
     };
 
     assert(actual_stream == expected_stream, 'Invalid stream');
@@ -619,7 +619,7 @@ fn test_streamed_amount_of_cliff_time_in_present_1() {
 
     let actual_streamed_amount = tokei.streamed_amount_of(stream_id);
 
-    let expected_streamed_amount = 9997;
+    let expected_streamed_amount = 9996;
 
     assert(actual_streamed_amount == expected_streamed_amount, 'Invalid streamed amount');
 }
@@ -631,7 +631,7 @@ fn test_withdrawable_amount_of_cliff_time() {
 
     let withdrawable_amount_of = tokei.withdrawable_amount_of(stream_id);
 
-    assert(withdrawable_amount_of == 9997, 'Invalid withdrawable amount');
+    assert(withdrawable_amount_of == 9996, 'Invalid withdrawable amount');
 }
 
 #[test]
@@ -641,7 +641,7 @@ fn test_withdraw_by_recipient() {
 
     let withdrawable_amount_of = tokei.withdrawable_amount_of(stream_id);
 
-    assert(withdrawable_amount_of == 9997, 'Invalid withdrawable amount');
+    assert(withdrawable_amount_of == 9996, 'Invalid withdrawable amount');
     let stream_nft = ITokeiLockupLinearERC721SnakeDispatcher {
         contract_address: tokei.contract_address
     };
@@ -651,7 +651,7 @@ fn test_withdraw_by_recipient() {
     tokei.withdraw(stream_id, RECIPIENT(), withdrawable_amount_of);
 
     let balance = token.balance_of(RECIPIENT());
-    let expected_balance = 9997_u256;
+    let expected_balance = 9996_u256;
     assert(balance == expected_balance, 'Invalid balance');
 }
 
@@ -661,8 +661,7 @@ fn test_withdraw_by_recipient_before_total_time() {
     start_warp(CheatTarget::One(tokei.contract_address), 3600);
 
     let withdrawable_amount_of = tokei.withdrawable_amount_of(stream_id);
-
-    assert(withdrawable_amount_of == 6498, 'Invalid withdrawable amount');
+    assert(withdrawable_amount_of == 6497, 'Invalid withdrawable amount');
     let stream_nft = ITokeiLockupLinearERC721SnakeDispatcher {
         contract_address: tokei.contract_address
     };
@@ -672,7 +671,7 @@ fn test_withdraw_by_recipient_before_total_time() {
     tokei.withdraw(stream_id, RECIPIENT(), withdrawable_amount_of);
 
     let balance = token.balance_of(RECIPIENT());
-    let expected_balance = 6498;
+    let expected_balance = 6497;
     assert(balance == expected_balance, 'Invalid balance');
 }
 
@@ -683,7 +682,7 @@ fn test_withdraw_by_approved_caller() {
 
     let withdrawable_amount_of = tokei.withdrawable_amount_of(stream_id);
 
-    assert(withdrawable_amount_of == 9997, 'Invalid withdrawable amount');
+    assert(withdrawable_amount_of == 9996, 'Invalid withdrawable amount');
     let stream_nft = ITokeiLockupLinearERC721SnakeDispatcher {
         contract_address: tokei.contract_address
     };
@@ -698,7 +697,7 @@ fn test_withdraw_by_approved_caller() {
     tokei.withdraw(stream_id, RECIPIENT(), withdrawable_amount_of);
 
     let balance = token.balance_of(RECIPIENT());
-    let expected_balance = 9997_u256;
+    let expected_balance = 9996_u256;
     assert(balance == expected_balance, 'Invalid balance');
 }
 
@@ -708,7 +707,7 @@ fn test_withdraw_by_caller() {
     start_warp(CheatTarget::One(tokei.contract_address), 5000);
 
     let withdrawable_amount_of = tokei.withdrawable_amount_of(stream_id);
-    assert(withdrawable_amount_of == 9997, 'Invalid withdrawable amount');
+    assert(withdrawable_amount_of == 9996, 'Invalid withdrawable amount');
     let stream_nft = ITokeiLockupLinearERC721SnakeDispatcher {
         contract_address: tokei.contract_address
     };
@@ -718,7 +717,7 @@ fn test_withdraw_by_caller() {
     tokei.withdraw(stream_id, RECIPIENT(), withdrawable_amount_of);
 
     let balance = token.balance_of(RECIPIENT());
-    let expected_balance = 9997_u256;
+    let expected_balance = 9996_u256;
     assert(balance == expected_balance, 'Invalid balance');
 }
 #[test]
@@ -729,7 +728,7 @@ fn test_withdraw_by_approved_caller_to_other_address_than_recipient() {
 
     let withdrawable_amount_of = tokei.withdrawable_amount_of(stream_id);
 
-    assert(withdrawable_amount_of == 9997, 'Invalid withdrawable amount');
+    assert(withdrawable_amount_of == 9996, 'Invalid withdrawable amount');
     let stream_nft = ITokeiLockupLinearERC721SnakeDispatcher {
         contract_address: tokei.contract_address
     };
@@ -753,7 +752,7 @@ fn test_withdraw_by_unapproved_caller() {
 
     let withdrawable_amount_of = tokei.withdrawable_amount_of(stream_id);
 
-    assert(withdrawable_amount_of == 9997, 'Invalid withdrawable amount');
+    assert(withdrawable_amount_of == 9996, 'Invalid withdrawable amount');
     let stream_nft = ITokeiLockupLinearERC721SnakeDispatcher {
         contract_address: tokei.contract_address
     };
@@ -763,7 +762,7 @@ fn test_withdraw_by_unapproved_caller() {
     tokei.withdraw(stream_id, RECIPIENT(), withdrawable_amount_of);
 
     let balance = token.balance_of(RECIPIENT());
-    let expected_balance = 9997_u256;
+    let expected_balance = 9996_u256;
     assert(balance == expected_balance, 'Invalid balance');
 }
 
@@ -781,7 +780,7 @@ fn test_withdraw_max() {
     tokei.withdraw_max(stream_id, RECIPIENT());
 
     let balance = token.balance_of(RECIPIENT());
-    let expected_balance = 9997_u256;
+    let expected_balance = 9996_u256;
     assert(balance == expected_balance, 'Invalid balance');
 }
 
@@ -804,7 +803,7 @@ fn test_withdraw_max_and_transfer() {
     tokei.withdraw_max_and_transfer(stream_id, BOB());
 
     let balance = token.balance_of(RECIPIENT());
-    let expected_balance = 9997_u256;
+    let expected_balance = 9996_u256;
     assert(balance == expected_balance, 'Invalid balance');
 
     let recipient_nft_balance_after = stream_nft.balance_of(RECIPIENT());
@@ -931,11 +930,11 @@ fn test_withdraw_multiple() {
 
     start_prank(CheatTarget::One(tokei.contract_address), reciever);
     let stream_ids = array![stream_id_1, stream_id_2, stream_id_3];
-    let amounts = array![9997, 6000, 11000];
+    let amounts = array![9996, 6000, 11000];
     tokei.withdraw_multiple(stream_ids.span(), RECIPIENT(), amounts.span(),);
 
     let balance = token.balance_of(RECIPIENT());
-    let expected_balance = 26997_u256;
+    let expected_balance = 26996_u256;
     assert(balance == expected_balance, 'Invalid balance');
     assert(tokei.get_protocol_revenues(token.contract_address) == 3, 'Invalid protocol revenue');
 
@@ -946,19 +945,6 @@ fn test_withdraw_multiple() {
     let expected_admin_balance = admin_balance_before + 3;
     assert(admin_balance_after == expected_admin_balance, 'Invalid admin balance');
 }
-
-// fn test_burn_token() {
-//     let (tokei, token, stream_id) = create_with_duration();
-//     let stream_nft = ITokeiLockupLinearERC721SnakeDispatcher { contract_address: tokei.contract_address };
-
-//     start_prank(CheatTarget::One(tokei.contract_address), RECIPIENT());
-//     stream_nft.burn(stream_id.into());
-//     stop_prank(CheatTarget::One(tokei.contract_address));
-
-//     let balance = token.balance_of(RECIPIENT());
-//     let expected_balance = 9997_u256;
-//     assert(balance == expected_balance, 'Invalid balance');
-// }
 
 #[test]
 fn test_burn_token_when_depleted() {
@@ -974,7 +960,7 @@ fn test_burn_token_when_depleted() {
     tokei.withdraw_max(stream_id, RECIPIENT());
 
     let balance = token.balance_of(RECIPIENT());
-    let expected_balance = 9997_u256;
+    let expected_balance = 9996_u256;
     assert(balance == expected_balance, 'Invalid balance');
 
     let old_tokei_nft_balance = stream_nft.balance_of(RECIPIENT());
@@ -1002,7 +988,7 @@ fn test_burn_token_when_not_depleted() {
 
     let balance = token.balance_of(RECIPIENT());
 
-    let expected_balance = 7797_u256;
+    let expected_balance = 7796_u256;
     assert(balance == expected_balance, 'Invalid balance');
 
     let old_tokei_nft_balance = stream_nft.balance_of(RECIPIENT());

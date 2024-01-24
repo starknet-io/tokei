@@ -67,6 +67,7 @@ fn check_and_calculate_fees(
     assert(broker_fee < max_fee, BROKER_FEE_TOO_HIGH);
 
     // Calculate the protocol fee amount.
+    // 1 x 10^18 x 0.03 / 10000 = 3000000000000000
     let protocol_fees = total_amount.percent_mul(protocol_fee);
 
     // Calculate the broker fee amount.
@@ -78,6 +79,7 @@ fn check_and_calculate_fees(
 
     // Calculate the deposit amount (the amount to stream, net of fees).
     let deposit = total_amount - protocol_fees - broker_fees;
+
     // deposit.print();
 
     // Return the amounts.

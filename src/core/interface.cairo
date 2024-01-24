@@ -1,5 +1,6 @@
 use starknet::ContractAddress;
 
+
 #[starknet::interface]
 trait ITokeiLockupLinearERC721Snake<TContractState> {
     fn balance_of(self: @TContractState, account: ContractAddress) -> u256;

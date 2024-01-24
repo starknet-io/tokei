@@ -337,7 +337,7 @@ mod TokeiLockupLinear {
     };
 
     // External Imports
-     use openzeppelin::token::erc20::interface::{
+    use openzeppelin::token::erc20::interface::{
         IERC20, IERC20Metadata, ERC20ABIDispatcher, ERC20ABIDispatcherTrait
     };
 
@@ -803,7 +803,6 @@ mod TokeiLockupLinear {
                 LOCKUP_UNAUTHORIZED
             );
 
-   
             self.erc721._burn(stream_id.into());
         }
 
@@ -877,7 +876,6 @@ mod TokeiLockupLinear {
             assert(to == recipient, INVALID_SENDER_WITHDRAWAL);
 
             TokeiInternalImpl::_withdraw(ref self, stream_id, to, amount);
-       
         }
 
         fn withdraw_max(ref self: ContractState, stream_id: u64, to: ContractAddress) {
@@ -1224,7 +1222,6 @@ mod TokeiLockupLinear {
             self.streams.write(stream_id, stream_updated);
 
             self.emit(RenounceLockupStream { stream_id });
-
         }
 
         fn _cancel(ref self: ContractState, stream_id: u64) {
@@ -1297,8 +1294,6 @@ mod TokeiLockupLinear {
                         recipient_amount,
                     }
                 );
-
-
         }
 
         fn _withdrawable_amount_of(self: @ContractState, stream_id: u64) -> u256 {
@@ -1335,9 +1330,6 @@ mod TokeiLockupLinear {
             range: Range,
             broker: Broker,
         ) -> u64 {
-            // Safe Interactions: query the protocol fee. This is safe because it's a known Tokei contract that does
-            // not call other unknown contracts.
-            // TODO: implement.
             let protocol_fee = self.protocol_fee.read(asset);
 
             let create_amounts = check_and_calculate_fees(
@@ -1362,10 +1354,10 @@ mod TokeiLockupLinear {
             let stream_id = self.next_stream_id.read();
 
             // Checks: check the fees and calculate the fee amounts.
-            let deposited_amount = total_amount - broker.fee;
+            // let deposited_amount = total_amount - create_amounts;
 
             let amounts: LockupAmounts = LockupAmounts {
-                deposited: deposited_amount, withdrawn: 0, refunded: 0,
+                deposited: create_amounts.deposit, withdrawn: 0, refunded: 0,
             };
 
             // Effects: create the stream.
@@ -1403,7 +1395,7 @@ mod TokeiLockupLinear {
             if (broker.fee > 0) {
                 // let broker_fee_u256: u256 = .into();
                 ERC20ABIDispatcher { contract_address: asset }
-                    .transfer_from(caller, broker.account, broker.fee);
+                    .transfer_from(caller, broker.account, create_amounts.broker_fee);
             }
 
             // Emit an event for  the newly created stream.
@@ -1434,7 +1426,6 @@ mod TokeiLockupLinear {
                 || self.erc721.get_approved(stream_id_u256) == get_caller_address()
                 || self.erc721.is_approved_for_all(recipient, get_caller_address());
         }
-  
     }
 }
 
