@@ -13,7 +13,7 @@ use starknet::ContractAddress;
 use tokei::types::lockup::LockupAmounts;
 
 /// Represent a Lockup Linear Stream.
-#[derive(Copy,Drop, starknet::Store, Serde, PartialEq)]
+#[derive(Copy, Drop, starknet::Store, Serde, PartialEq)]
 struct LockupLinearStream {
     /// The address streaming the assets, with the ability to cancel the stream.
     sender: ContractAddress,

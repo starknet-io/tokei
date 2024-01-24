@@ -7,7 +7,10 @@ mod Utils {
         declare, ContractClassTrait, start_prank, stop_prank, start_spoof, CheatTarget, TxInfoMock,
         get_class_hash, ContractClass
     };
-    use tokei::tokens::erc20::{IERC20Dispatcher, IERC20DispatcherTrait};
+    // use tokei::tokens::erc20::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
+    use openzeppelin::token::erc20::interface::{
+        IERC20, IERC20Metadata, ERC20ABIDispatcher, ERC20ABIDispatcherTrait
+    };
 
     // Local imports.
     use tokei::core::lockup_linear::{
@@ -89,13 +92,13 @@ mod Utils {
 
     fn deploy_setup_erc20(
         name: felt252, symbol: felt252, initial_supply: u256, recipient: ContractAddress
-    ) -> (IERC20Dispatcher, ContractAddress) {
+    ) -> (ERC20ABIDispatcher, ContractAddress) {
         let token_contract = declare('ERC20');
         let mut calldata = array![name, symbol];
         Serde::serialize(@initial_supply, ref calldata);
         Serde::serialize(@recipient, ref calldata);
         let token_addr = token_contract.deploy(@calldata).unwrap();
-        let token_dispatcher = IERC20Dispatcher { contract_address: token_addr };
+        let token_dispatcher = ERC20ABIDispatcher { contract_address: token_addr };
 
         (token_dispatcher, token_addr)
     }
@@ -125,7 +128,7 @@ mod Utils {
     fn give_tokens(
         recipients: Array<ContractAddress>,
         token_adrr: ContractAddress,
-        token_disptacher: IERC20Dispatcher,
+        token_disptacher: ERC20ABIDispatcher,
         owner: ContractAddress
     ) {
         start_prank(CheatTarget::One(token_adrr), owner);
@@ -139,7 +142,7 @@ mod Utils {
             let address = *recipients.at(i);
             let amount = 10000 * pow_256(10, 18);
 
-            IERC20Dispatcher { contract_address: token_adrr }.transfer(address, amount.into());
+            ERC20ABIDispatcher { contract_address: token_adrr }.transfer(address, amount.into());
             stop_prank(CheatTarget::One(token_adrr));
 
             i += 1;
@@ -149,7 +152,7 @@ mod Utils {
     fn give_tokens_and_approve(
         recipients: Array<ContractAddress>,
         token_adrr: ContractAddress,
-        token_disptacher: IERC20Dispatcher,
+        token_disptacher: ERC20ABIDispatcher,
         owner: ContractAddress,
         tokei_addr: ContractAddress,
     ) {
@@ -162,13 +165,13 @@ mod Utils {
             let address = *recipients.at(i);
             let amount = 1000000;
             start_prank(CheatTarget::One(token_adrr), owner);
-            IERC20Dispatcher { contract_address: token_adrr }.transfer(address, amount.into());
+            ERC20ABIDispatcher { contract_address: token_adrr }.transfer(address, amount.into());
             stop_prank(CheatTarget::One(token_adrr));
 
             start_prank(CheatTarget::One(token_adrr), address);
             let amount = 1000000;
 
-            IERC20Dispatcher { contract_address: token_adrr }.approve(tokei_addr, amount.into());
+            ERC20ABIDispatcher { contract_address: token_adrr }.approve(tokei_addr, amount.into());
 
             stop_prank(CheatTarget::One(token_adrr));
 

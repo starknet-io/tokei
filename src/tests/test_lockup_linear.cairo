@@ -23,36 +23,37 @@ use snforge_std::{
 };
 
 use tokei::tests::utils::utils::Utils::{
-    pow_256, ADMIN, ASSET, ALICE,CHARLIE, setup, teardown, prepare_contracts, deploy_setup_erc20,
+    pow_256, ADMIN, ASSET, ALICE, CHARLIE, setup, teardown, prepare_contracts, deploy_setup_erc20,
     deploy_tokei, give_tokens_and_approve, BOB,
 };
 use tokei::tests::utils::defaults::Defaults::{PROTOCOL_FEES, RECIPIENT, BROKER};
 use tokei::tests::utils::defaults::Defaults;
 
-use tokei::tokens::erc20::{IERC20Dispatcher, IERC20DispatcherTrait};
+// use tokei::tokens::erc20::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
+use openzeppelin::token::erc20::interface::{
+        IERC20, IERC20Metadata, ERC20ABIDispatcher, ERC20ABIDispatcherTrait
+    };
 
 // Local imports.
 use tokei::core::lockup_linear::{ITokeiLockupLinearDispatcher, ITokeiLockupLinearDispatcherTrait};
-use tokei::types::lockup_linear::{Range, Broker,Durations, LockupLinearStream};
+use tokei::types::lockup_linear::{Range, Broker, Durations, LockupLinearStream};
 use tokei::types::lockup::LockupAmounts;
 use tokei::tokens::erc721::{IERC721SafeDispatcher, IERC721SafeDispatcherTrait};
 
 /// TODO: Implement actual test and change the name of this function.
 
-fn create_with_duration() -> (ITokeiLockupLinearDispatcher, IERC20Dispatcher, u64) {
+fn create_with_duration() -> (ITokeiLockupLinearDispatcher, ERC20ABIDispatcher, u64) {
     let (tokei) = setup(ADMIN());
-    let (token_dispatcher, token) = deploy_setup_erc20(
-        'Ethereum', 'ETH', 100000000, ADMIN()
-    );
+    let (token_dispatcher, token) = deploy_setup_erc20('Ethereum', 'ETH', 100000000, ADMIN());
     let recipient_address = RECIPIENT();
-    let approve_token_to = array![ALICE(),BOB(),CHARLIE()];
+    let approve_token_to = array![ALICE(), BOB(), CHARLIE()];
     give_tokens_and_approve(
         approve_token_to, token, token_dispatcher, ADMIN(), tokei.contract_address
     );
 
     let (alice, recipient, total_amount, _, cancelable, transferable, range, broker) =
         Defaults::create_with_durations();
-    start_prank(CheatTarget::One(tokei.contract_address),  ADMIN());
+    start_prank(CheatTarget::One(tokei.contract_address), ADMIN());
     tokei.set_protocol_fee(token, PROTOCOL_FEES);
     stop_prank(CheatTarget::One(tokei.contract_address));
     let initial_protocol_revenues = tokei.get_protocol_revenues(token);
@@ -91,13 +92,13 @@ fn test_set_protocol_fee() {
 #[test]
 fn test_set_nft_descriptor() {
     let tokei_contract = declare('TokeiLockupLinear');
-        let mut constructor_calldata = array![ADMIN().into()];
-        let random_addr = contract_address_const::<'random'>();
-        let tokei_addr = tokei_contract.deploy(@constructor_calldata).unwrap();
-        // let tokei_address = deploy_tokei(caller_address);
+    let mut constructor_calldata = array![ADMIN().into()];
+    let random_addr = contract_address_const::<'random'>();
+    let tokei_addr = tokei_contract.deploy(@constructor_calldata).unwrap();
+    // let tokei_address = deploy_tokei(caller_address);
 
-        // Create a role store dispatcher.
-        let tokei = ITokeiLockupLinearDispatcher { contract_address: tokei_addr };
+    // Create a role store dispatcher.
+    let tokei = ITokeiLockupLinearDispatcher { contract_address: tokei_addr };
     start_prank(CheatTarget::One(tokei_addr), ADMIN());
     tokei.set_nft_descriptor(random_addr);
     let fee = tokei.get_nft_descriptor();
@@ -105,8 +106,6 @@ fn test_set_nft_descriptor() {
 
     assert(1 == 1, 'Incorrect fee');
 }
-
-
 
 
 #[test]
@@ -190,8 +189,6 @@ fn test_create_stream_with_range() {
 
     let balance = token_dispatcher.balance_of(ALICE());
 
-    
-
     start_prank(CheatTarget::One(tokei.contract_address), ADMIN());
     tokei.set_protocol_fee(token, PROTOCOL_FEES);
     stop_prank(CheatTarget::One(tokei.contract_address));
@@ -240,7 +237,6 @@ fn test_create_stream_with_range() {
     assert(stream_nft.balance_of(recipient_address).unwrap() == 1, 'wrong stream nft balance');
     assert(stream_id == expected_stream_id, 'Invalid StreamId');
 }
-
 
 
 #[test]
@@ -341,7 +337,6 @@ fn test_create_with_duration() {
 }
 
 
-
 #[test]
 #[should_panic(expected: ('deposit amount is zero',))]
 fn test_create_with_duration_when_amount_is_zero() {
@@ -359,7 +354,7 @@ fn test_create_with_duration_when_amount_is_zero() {
 
     let (alice, recipient, _, _, cancelable, transferable, range, broker) =
         Defaults::create_with_durations();
-        start_prank(CheatTarget::One(tokei.contract_address), ADMIN());
+    start_prank(CheatTarget::One(tokei.contract_address), ADMIN());
     tokei.set_protocol_fee(token, PROTOCOL_FEES);
     stop_prank(CheatTarget::One(tokei.contract_address));
     let initial_protocol_revenues = tokei.get_protocol_revenues(token);
@@ -405,7 +400,7 @@ fn test_create_with_duration_when_cliff_is_less_than_start() {
     stop_prank(CheatTarget::One(tokei.contract_address));
     let initial_protocol_revenues = tokei.get_protocol_revenues(token);
 
-    let range = Range { start : 1000, cliff: 100, end: 6000, };
+    let range = Range { start: 1000, cliff: 100, end: 6000, };
 
     start_prank(CheatTarget::One(tokei.contract_address), ALICE());
     start_warp(CheatTarget::One(tokei.contract_address), 1000);
@@ -429,7 +424,7 @@ fn test_create_with_duration_when_cliff_is_less_than_start() {
 }
 
 #[test]
-fn test_all_the_getters_with_respect_to_stream(){
+fn test_all_the_getters_with_respect_to_stream() {
     let (tokei) = setup(ADMIN());
     let (token_dispatcher, token) = deploy_setup_erc20(
         'Ethereum', 'ETH', BoundedInt::max(), ADMIN()
@@ -476,7 +471,7 @@ fn test_all_the_getters_with_respect_to_stream(){
     assert(get_end_time == 100 + 4000, 'Incorrect end time');
     let get_range = tokei.get_range(stream_id);
     assert(get_range.start == 100, 'Incorrect start');
-    assert(get_range.cliff == 100 + 2500 , 'Incorrect cliff');
+    assert(get_range.cliff == 100 + 2500, 'Incorrect cliff');
     assert(get_range.end == 100 + 4000, 'Incorrect end');
 
     let get_refunded_amount = tokei.get_refunded_amount(stream_id);
@@ -622,7 +617,6 @@ fn test_streamed_amount_of_cliff_time_in_present_1() {
     start_warp(CheatTarget::One(tokei.contract_address), 5000);
 
     let actual_streamed_amount = tokei.streamed_amount_of(stream_id);
-
 
     let expected_streamed_amount = 9997;
 
@@ -792,7 +786,7 @@ fn test_withdraw_max_and_transfer() {
 
     tokei.withdraw_max_and_transfer(stream_id, BOB());
 
-    let balance = token.balance_of( RECIPIENT());
+    let balance = token.balance_of(RECIPIENT());
     let expected_balance = 9997_u256;
     assert(balance == expected_balance, 'Invalid balance');
 
@@ -801,7 +795,6 @@ fn test_withdraw_max_and_transfer() {
 
     let bob_nft_balance_after = stream_nft.balance_of(BOB());
     assert(bob_nft_balance_after.unwrap() == 1, 'Invalid nft balance');
-
 }
 
 #[test]
@@ -809,9 +802,7 @@ fn test_withdraw_max_and_transfer() {
 fn test_withdraw_max_and_transfer_when_not_transferable() {
     let transferable = false;
     let (tokei) = setup(ADMIN());
-    let (token_dispatcher, token) = deploy_setup_erc20(
-        'Ethereum', 'ETH', 100000000, ADMIN()
-    );
+    let (token_dispatcher, token) = deploy_setup_erc20('Ethereum', 'ETH', 100000000, ADMIN());
     let recipient_address = RECIPIENT();
     let approve_token_to = array![ALICE()];
     give_tokens_and_approve(
@@ -840,7 +831,6 @@ fn test_withdraw_max_and_transfer_when_not_transferable() {
         );
     stop_warp(CheatTarget::One(tokei.contract_address));
     stop_prank(CheatTarget::One(tokei.contract_address));
-  
 
     start_warp(CheatTarget::One(tokei.contract_address), 5000);
 
@@ -854,14 +844,12 @@ fn test_withdraw_max_and_transfer_when_not_transferable() {
     start_prank(CheatTarget::One(tokei.contract_address), RECIPIENT());
 
     tokei.withdraw_max_and_transfer(stream_id, BOB());
-
 }
 
 #[test]
 fn test_withdraw_multiple() {
-    let (_, _, _, _, _, _, _, broker) =
-        Defaults::create_with_durations();
- 
+    let (_, _, _, _, _, _, _, broker) = Defaults::create_with_durations();
+
     let total_amount_2 = 10000;
     let cancelable_2 = true;
     let transferable_2 = true;
@@ -874,10 +862,7 @@ fn test_withdraw_multiple() {
 
     let reciever = contract_address_const::<'reciever'>();
 
-
-
-     let (tokei, token, stream_id_1) = create_with_duration();
-    
+    let (tokei, token, stream_id_1) = create_with_duration();
 
     start_prank(CheatTarget::One(tokei.contract_address), BOB());
     start_warp(CheatTarget::One(tokei.contract_address), 1000);
@@ -894,11 +879,11 @@ fn test_withdraw_multiple() {
             broker,
         );
 
-        
-        stop_prank(CheatTarget::One(tokei.contract_address));
+    stop_prank(CheatTarget::One(tokei.contract_address));
 
-        start_prank(CheatTarget::One(tokei.contract_address), CHARLIE());
-        let stream_id_3 = tokei.create_with_duration(
+    start_prank(CheatTarget::One(tokei.contract_address), CHARLIE());
+    let stream_id_3 = tokei
+        .create_with_duration(
             CHARLIE(),
             RECIPIENT(),
             total_amount_3,
@@ -909,14 +894,13 @@ fn test_withdraw_multiple() {
             broker,
         );
 
-        stop_warp(CheatTarget::One(tokei.contract_address));
-        
+    stop_warp(CheatTarget::One(tokei.contract_address));
+
     start_warp(CheatTarget::One(tokei.contract_address), 10000);
     let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
 
     let recipient_nft_balance_before = stream_nft.balance_of(RECIPIENT());
     assert(recipient_nft_balance_before.unwrap() == 3, 'Invalid nft balance');
-
 
     start_prank(CheatTarget::One(tokei.contract_address), RECIPIENT());
     stream_nft.approve(reciever, stream_id_1.into());
@@ -927,25 +911,19 @@ fn test_withdraw_multiple() {
     start_prank(CheatTarget::One(tokei.contract_address), reciever);
     let stream_ids = array![stream_id_1, stream_id_2, stream_id_3];
     let amounts = array![9997, 6000, 11000];
-    tokei.withdraw_multiple(
-        stream_ids.span(),
-        RECIPIENT(),
-        amounts.span(),
-    );
+    tokei.withdraw_multiple(stream_ids.span(), RECIPIENT(), amounts.span(),);
 
-    let balance = token.balance_of( RECIPIENT());
+    let balance = token.balance_of(RECIPIENT());
     let expected_balance = 26997_u256;
     assert(balance == expected_balance, 'Invalid balance');
     assert(tokei.get_protocol_revenues(token.contract_address) == 3, 'Invalid protocol revenue');
 
     start_prank(CheatTarget::One(tokei.contract_address), ADMIN());
-    let admin_balance_before = token.balance_of( ADMIN());
+    let admin_balance_before = token.balance_of(ADMIN());
     tokei.claim_protocol_revenues(token.contract_address);
-    let admin_balance_after = token.balance_of( ADMIN());
+    let admin_balance_after = token.balance_of(ADMIN());
     let expected_admin_balance = admin_balance_before + 3;
     assert(admin_balance_after == expected_admin_balance, 'Invalid admin balance');
-
-
 }
 
 // fn test_burn_token() {
@@ -963,7 +941,6 @@ fn test_withdraw_multiple() {
 
 #[test]
 fn test_burn_token_when_depleted() {
-        
     let (tokei, token, stream_id) = create_with_duration();
     start_warp(CheatTarget::One(tokei.contract_address), 8000);
 
@@ -976,7 +953,7 @@ fn test_burn_token_when_depleted() {
     let balance = token.balance_of(RECIPIENT());
     let expected_balance = 9997_u256;
     assert(balance == expected_balance, 'Invalid balance');
-    
+
     let old_tokei_nft_balance = stream_nft.balance_of(RECIPIENT());
     assert(old_tokei_nft_balance.unwrap() == 1, 'Invalid nft balance');
 
@@ -984,13 +961,11 @@ fn test_burn_token_when_depleted() {
 
     let new_tokei_nft_balance = stream_nft.balance_of(RECIPIENT());
     assert(new_tokei_nft_balance.unwrap() == 0, 'Invalid nft balance');
-
 }
 
 #[test]
 #[should_panic(expected: ('stream has not depleted',))]
 fn test_burn_token_when_not_depleted() {
-        
     let (tokei, token, stream_id) = create_with_duration();
     start_warp(CheatTarget::One(tokei.contract_address), 4100);
 
@@ -1004,7 +979,7 @@ fn test_burn_token_when_not_depleted() {
 
     let expected_balance = 7797_u256;
     assert(balance == expected_balance, 'Invalid balance');
-    
+
     let old_tokei_nft_balance = stream_nft.balance_of(RECIPIENT());
     assert(old_tokei_nft_balance.unwrap() == 1, 'Invalid nft balance');
 
@@ -1012,7 +987,6 @@ fn test_burn_token_when_not_depleted() {
 
     let new_tokei_nft_balance = stream_nft.balance_of(RECIPIENT());
     assert(new_tokei_nft_balance.unwrap() == 0, 'Invalid nft balance');
-
 }
 
 #[test]
@@ -1030,7 +1004,7 @@ fn test_cancel() {
 
     let after_balance_of_sender = token.balance_of(ALICE());
 
-    assert(before_balance_of_sender != after_balance_of_sender,'Balance did not change');
+    assert(before_balance_of_sender != after_balance_of_sender, 'Balance did not change');
     assert(tokei.is_cancelable(stream_id) == false, 'Invalid stream');
 }
 
@@ -1052,12 +1026,10 @@ fn test_cancel_should_panic() {
 #[test]
 fn test_renounce() {
     let (tokei, token, stream_id) = create_with_duration();
-    
 
     start_warp(CheatTarget::One(tokei.contract_address), 4100);
 
     let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
-    
 
     start_prank(CheatTarget::One(tokei.contract_address), ALICE());
     tokei.renounce(stream_id);
@@ -1068,17 +1040,16 @@ fn test_renounce() {
 #[test]
 #[should_panic(expected: ('lockup_unauthorized',))]
 fn test_renounce_by_recipient() {
-     let (tokei, token, stream_id) = create_with_duration();
-  
+    let (tokei, token, stream_id) = create_with_duration();
+
     start_warp(CheatTarget::One(tokei.contract_address), 4100);
 
     let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
-    
+
     start_prank(CheatTarget::One(tokei.contract_address), RECIPIENT());
     tokei.renounce(stream_id);
 
     assert(tokei.is_cancelable(stream_id) == false, 'Invalid stream');
-
 }
 
 #[test]
@@ -1119,8 +1090,6 @@ fn test_set_flash_fee_panic() {
     start_prank(CheatTarget::One(tokei.contract_address), BOB());
     tokei.set_flash_fee(100);
 }
-
-
 
 
 impl LockupLinearStreamPrintTrait of PrintTrait<LockupLinearStream> {

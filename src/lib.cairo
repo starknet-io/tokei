@@ -1,6 +1,7 @@
 /// Core module.
 mod core {
     mod lockup_linear;
+    mod interface;
 }
 
 /// Module containing types for the system.
