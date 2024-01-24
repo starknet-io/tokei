@@ -30,45 +30,47 @@ async function main() {
     "0x075b1b684be1cd0f08a4a59a22994dedb6d3f5851e630b3f1a895459ef754e87";
   let cancelable = true;
   let transferable = true;
-  let duration_cliff = 430;
-  let duration_total = 700;
+  let duration_cliff = 430; // 430/60 = 7.16 minutes
+  let duration_total = 700; // 700/60 = 11.66 minutes
   let broker_account =
     "0x0375b883a5A4624660EF419ed58a3c7C3ba262100CA6eE7056B65d7EB745F933";
   let broker_fee = cairo.uint256(3); // 0.03%
-  let range_start = 1706127871;
-  let range_cliff = 1706128171;
-  let range_end = 1706128371;
+  let range_start = 1706132876;
+  let range_cliff = 1706133071;
+  let range_end = 1706139471;
 
   // *************************************************************************
   //                  Create_with_duration
   // *************************************************************************
-  // await create_with_duration(
-  //   sender,
-  //   recipient,
-  //   total_amount,
-  //   asset,
-  //   cancelable,
-  //   transferable,
-  //   duration_cliff,
-  //   duration_total,
-  //   broker_account,
-  //   broker_fee
-  // );
+  await create_with_duration(
+    //- Uncomment when you are using this function and comment out when you are not using it
+    sender,
+    recipient,
+    total_amount,
+    asset,
+    cancelable,
+    transferable,
+    duration_cliff,
+    duration_total,
+    broker_account,
+    broker_fee
+  );
 
   // *************************************************************************
   //                  Create_with_range
   // *************************************************************************
 
   // await create_with_range(
+  //   // - Uncomment when you are using this function and comment out when you are not using it
   //   sender,
   //   recipient,
   //   total_amount,
   //   asset,
   //   cancelable,
   //   transferable,
-  //   0,
-  //   0,
-  //   0,
+  //   range_start,
+  //   range_cliff,
+  //   range_end,
   //   broker_account,
   //   broker_fee
   // );
@@ -77,31 +79,31 @@ async function main() {
   //                 Cancel stream
   // *************************************************************************
 
-  // await cancel_stream("8");
+  // await cancel_stream("8"); //- Uncomment when you are using this function and comment out when you are not using it
 
   // *************************************************************************
   //                 Cancel Multiple stream
   // *************************************************************************
 
-  // await cancel_multiple([7, 8]);
+  // await cancel_multiple([7, 8]); //- Uncomment when you are using this function and comment out when you are not using it
 
   // *************************************************************************
   //                 Withdraw max
   // *************************************************************************
 
-  // await withdraw_max("9");
+  // await withdraw_max("9"); //- Uncomment when you are using this function and comment out when you are not using it
 
   // *************************************************************************
   //                  Withdraw multiple
   // *************************************************************************
 
-  // await withdraw_multiple([7, 9], [9000000000000000000, 8000000000000000000]);
+  // await withdraw_multiple([7, 9], [9000000000000000000, 8000000000000000000]); //- Uncomment when you are using this function and comment out when you are not using it
 
   // *************************************************************************
   //                 Withdraw max and transfer
   // *************************************************************************
 
-  // await withdraw_max_and_transfer("9", recipient);
+  // await withdraw_max_and_transfer("9", recipient); //- Uncomment when you are using this function and comment out when you are not using it
 }
 
 export async function initialize_account() {
@@ -171,7 +173,7 @@ export async function initialize_account() {
   const tokeiaddress =
     "0x0661bd47eb4c872cd316a305dc673221a8f8a27379e6aa3a97a21a542efbb76f";
 
-  console.log("✅ Tokei Contract declared with classHash =", erc20ClassHash);
+  console.log("✅ ERC20 Contract declared with classHash =", erc20ClassHash);
   console.log("✅ Tokei Contract declared with classHash =", tokeiClassHash);
 
   // *************************************************************************

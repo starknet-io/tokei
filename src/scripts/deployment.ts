@@ -44,30 +44,39 @@ async function main() {
       .toString("ascii")
   );
 
-  const ch = hash.computeSierraContractClassHash(compiledSierra);
-  console.log("Class hash calc =", ch);
-  const compCH = hash.computeCompiledClassHash(compiledCasm);
-  console.log("compiled class hash =", compCH);
+  //**************************************************************************************** */
+  // Since we already have the classhash we will be skipping this part
+  // Declare the contract
 
-  const declareResponse = await account0.declare({
-    contract: compiledSierra,
-    casm: compiledCasm,
-  });
-  const contractClassHash = declareResponse.class_hash;
+  // const ch = hash.computeSierraContractClassHash(compiledSierra);
+  // console.log("Class hash calc =", ch);
+  // const compCH = hash.computeCompiledClassHash(compiledCasm);
+  // console.log("compiled class hash =", compCH);
+  // const declareResponse = await account0.declare({
+  //   contract: compiledSierra,
+  //   casm: compiledCasm,
+  // });
+  // const contractClassHash = declareResponse.class_hash;
 
-  // Wait for the transaction to be confirmed and log the transaction receipt
-  const txR = await provider.waitForTransaction(
-    declareResponse.transaction_hash
-  );
-  console.log("tx receipt =", txR);
+  // // Wait for the transaction to be confirmed and log the transaction receipt
+  // const txR = await provider.waitForTransaction(
+  //   declareResponse.transaction_hash
+  // );
+  // console.log("tx receipt =", txR);
+
+  //**************************************************************************************** */
+
+  const contractClassHash =
+    "0x00890b38f484174605c68c956b2b5263950610e5da509fb35807afb321a3a10d";
 
   console.log("✅ Test Contract declared with classHash =", contractClassHash);
 
   console.log("Deploy of contract in progress...");
   const { transaction_hash: th2, address } = await account0.deployContract({
     classHash: contractClassHash,
+    constructorCalldata: [accountAddress],
   });
-  console.log("contract_address =", address);
+  console.log("🚀 contract_address =", address);
   // Wait for the deployment transaction to be confirmed
   await provider.waitForTransaction(th2);
 
