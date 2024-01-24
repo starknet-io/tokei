@@ -31,14 +31,18 @@ use tokei::tests::utils::defaults::Defaults;
 
 // use tokei::tokens::erc20::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
 use openzeppelin::token::erc20::interface::{
-        IERC20, IERC20Metadata, ERC20ABIDispatcher, ERC20ABIDispatcherTrait
-    };
+    IERC20, IERC20Metadata, ERC20ABIDispatcher, ERC20ABIDispatcherTrait
+};
 
 // Local imports.
 use tokei::core::lockup_linear::{ITokeiLockupLinearDispatcher, ITokeiLockupLinearDispatcherTrait};
 use tokei::types::lockup_linear::{Range, Broker, Durations, LockupLinearStream};
 use tokei::types::lockup::LockupAmounts;
-use tokei::tokens::erc721::{IERC721SafeDispatcher, IERC721SafeDispatcherTrait};
+// use tokei::tests::mocks::erc721::{ITokeiLockupLinearERC721SnakeDispatcher, ITokeiLockupLinearERC721SnakeDispatcherTrait};
+// use openzeppelin::token::erc721::interface::{ITokeiLockupLinearERC721SnakeDispatcher, ITokeiLockupLinearERC721SnakeDispatcherTrait};
+use tokei::core::interface::{
+    ITokeiLockupLinearERC721SnakeDispatcher, ITokeiLockupLinearERC721SnakeDispatcherTrait
+};
 
 /// TODO: Implement actual test and change the name of this function.
 
@@ -153,11 +157,13 @@ fn given_normal_conditions_when_create_with_range_then_expected_results() {
     // Assertions.
     assert(stream_id == 1, 'wrong stream id');
 
-    let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+    let stream_nft = ITokeiLockupLinearERC721SnakeDispatcher {
+        contract_address: tokei.contract_address
+    };
 
     // Check that the stream nft was minted to the recipient.
-    assert(stream_nft.owner_of(stream_id.into()).unwrap() == recipient, 'wrong stream nft owner');
-    assert(stream_nft.balance_of(recipient).unwrap() == 1, 'wrong stream nft balance');
+    assert(stream_nft.owner_of(stream_id.into()) == recipient, 'wrong stream nft owner');
+    assert(stream_nft.balance_of(recipient) == 1, 'wrong stream nft balance');
 
     // *********************************************************************************************
     // *                              TEARDOWN                                                     *
@@ -223,18 +229,17 @@ fn test_create_stream_with_range() {
     let Broker_balance = token_dispatcher.balance_of(broker.account);
     assert(Broker_balance == expected_Broker_balance, 'Invalid Broker balance');
 
-    let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+    let stream_nft = ITokeiLockupLinearERC721SnakeDispatcher {
+        contract_address: tokei.contract_address
+    };
 
     let protocol_revenue = tokei.get_protocol_revenues(token);
     assert(protocol_revenue == expected_protocol_revenue, 'Invalid protocol revenue');
 
     // Check that the stream nft was minted to the recipient.
-    assert(
-        stream_nft.owner_of(stream_id.into()).unwrap() == recipient_address,
-        'wrong stream nft owner'
-    );
+    assert(stream_nft.owner_of(stream_id.into()) == recipient_address, 'wrong stream nft owner');
 
-    assert(stream_nft.balance_of(recipient_address).unwrap() == 1, 'wrong stream nft balance');
+    assert(stream_nft.balance_of(recipient_address) == 1, 'wrong stream nft balance');
     assert(stream_id == expected_stream_id, 'Invalid StreamId');
 }
 
@@ -301,7 +306,9 @@ fn test_create_with_duration() {
 
     let protocol_revenue = tokei.get_protocol_revenues(token);
     assert(protocol_revenue == expected_protocol_revenue, 'Invalid protocol revenue');
-    let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+    let stream_nft = ITokeiLockupLinearERC721SnakeDispatcher {
+        contract_address: tokei.contract_address
+    };
 
     let expected_protocol_revenues = initial_protocol_revenues + PROTOCOL_FEES;
 
@@ -311,11 +318,8 @@ fn test_create_with_duration() {
     assert(protocol_revenue == expected_protocol_revenue, 'Invalid protocol revenue');
 
     // Check that the stream nft was minted to the recipient.
-    assert(
-        stream_nft.owner_of(stream_id.into()).unwrap() == recipient_address,
-        'wrong stream nft owner'
-    );
-    assert(stream_nft.balance_of(recipient_address).unwrap() == 1, 'wrong stream nft balance');
+    assert(stream_nft.owner_of(stream_id.into()) == recipient_address, 'wrong stream nft owner');
+    assert(stream_nft.balance_of(recipient_address) == 1, 'wrong stream nft balance');
     assert(actual_status == true, 'Incorrect status');
     assert(stream_id == 1, 'wrong stream id');
     start_warp(CheatTarget::One(tokei.contract_address), 10000);
@@ -328,10 +332,7 @@ fn test_create_with_duration() {
         'Invalid stream'
     );
 
-    assert(
-        stream_nft.owner_of(stream_id.into()).unwrap() == recipient_address,
-        'wrong stream nft owner'
-    );
+    assert(stream_nft.owner_of(stream_id.into()) == recipient_address, 'wrong stream nft owner');
 
     assert(tokei.get_next_stream_id() == 2, 'Invalid next stream id');
 }
@@ -641,7 +642,9 @@ fn test_withdraw_by_recipient() {
     let withdrawable_amount_of = tokei.withdrawable_amount_of(stream_id);
 
     assert(withdrawable_amount_of == 9997, 'Invalid withdrawable amount');
-    let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+    let stream_nft = ITokeiLockupLinearERC721SnakeDispatcher {
+        contract_address: tokei.contract_address
+    };
 
     start_prank(CheatTarget::One(tokei.contract_address), RECIPIENT());
 
@@ -660,7 +663,9 @@ fn test_withdraw_by_recipient_before_total_time() {
     let withdrawable_amount_of = tokei.withdrawable_amount_of(stream_id);
 
     assert(withdrawable_amount_of == 6498, 'Invalid withdrawable amount');
-    let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+    let stream_nft = ITokeiLockupLinearERC721SnakeDispatcher {
+        contract_address: tokei.contract_address
+    };
 
     start_prank(CheatTarget::One(tokei.contract_address), RECIPIENT());
 
@@ -679,7 +684,9 @@ fn test_withdraw_by_approved_caller() {
     let withdrawable_amount_of = tokei.withdrawable_amount_of(stream_id);
 
     assert(withdrawable_amount_of == 9997, 'Invalid withdrawable amount');
-    let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+    let stream_nft = ITokeiLockupLinearERC721SnakeDispatcher {
+        contract_address: tokei.contract_address
+    };
 
     start_prank(CheatTarget::One(tokei.contract_address), RECIPIENT());
     stream_nft.approve(BOB(), stream_id.into());
@@ -702,7 +709,9 @@ fn test_withdraw_by_caller() {
 
     let withdrawable_amount_of = tokei.withdrawable_amount_of(stream_id);
     assert(withdrawable_amount_of == 9997, 'Invalid withdrawable amount');
-    let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+    let stream_nft = ITokeiLockupLinearERC721SnakeDispatcher {
+        contract_address: tokei.contract_address
+    };
 
     start_prank(CheatTarget::One(tokei.contract_address), ALICE());
 
@@ -721,7 +730,9 @@ fn test_withdraw_by_approved_caller_to_other_address_than_recipient() {
     let withdrawable_amount_of = tokei.withdrawable_amount_of(stream_id);
 
     assert(withdrawable_amount_of == 9997, 'Invalid withdrawable amount');
-    let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+    let stream_nft = ITokeiLockupLinearERC721SnakeDispatcher {
+        contract_address: tokei.contract_address
+    };
     start_prank(CheatTarget::One(tokei.contract_address), RECIPIENT());
     stream_nft.approve(BOB(), stream_id.into());
 
@@ -743,7 +754,9 @@ fn test_withdraw_by_unapproved_caller() {
     let withdrawable_amount_of = tokei.withdrawable_amount_of(stream_id);
 
     assert(withdrawable_amount_of == 9997, 'Invalid withdrawable amount');
-    let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+    let stream_nft = ITokeiLockupLinearERC721SnakeDispatcher {
+        contract_address: tokei.contract_address
+    };
 
     start_prank(CheatTarget::One(tokei.contract_address), BOB());
 
@@ -759,7 +772,9 @@ fn test_withdraw_max() {
     let (tokei, token, stream_id) = create_with_duration();
     start_warp(CheatTarget::One(tokei.contract_address), 5000);
 
-    let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+    let stream_nft = ITokeiLockupLinearERC721SnakeDispatcher {
+        contract_address: tokei.contract_address
+    };
 
     start_prank(CheatTarget::One(tokei.contract_address), ALICE());
 
@@ -775,12 +790,14 @@ fn test_withdraw_max_and_transfer() {
     let (tokei, token, stream_id) = create_with_duration();
     start_warp(CheatTarget::One(tokei.contract_address), 5000);
 
-    let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+    let stream_nft = ITokeiLockupLinearERC721SnakeDispatcher {
+        contract_address: tokei.contract_address
+    };
 
     let recipient_nft_balance_before = stream_nft.balance_of(RECIPIENT());
-    assert(recipient_nft_balance_before.unwrap() == 1, 'Invalid nft balance');
+    assert(recipient_nft_balance_before == 1, 'Invalid nft balance');
     let bob_nft_balance_before = stream_nft.balance_of(BOB());
-    assert(bob_nft_balance_before.unwrap() == 0, 'Invalid nft balance');
+    assert(bob_nft_balance_before == 0, 'Invalid nft balance');
 
     start_prank(CheatTarget::One(tokei.contract_address), RECIPIENT());
 
@@ -791,10 +808,10 @@ fn test_withdraw_max_and_transfer() {
     assert(balance == expected_balance, 'Invalid balance');
 
     let recipient_nft_balance_after = stream_nft.balance_of(RECIPIENT());
-    assert(recipient_nft_balance_after.unwrap() == 0, 'Invalid nft balance');
+    assert(recipient_nft_balance_after == 0, 'Invalid nft balance');
 
     let bob_nft_balance_after = stream_nft.balance_of(BOB());
-    assert(bob_nft_balance_after.unwrap() == 1, 'Invalid nft balance');
+    assert(bob_nft_balance_after == 1, 'Invalid nft balance');
 }
 
 #[test]
@@ -834,12 +851,14 @@ fn test_withdraw_max_and_transfer_when_not_transferable() {
 
     start_warp(CheatTarget::One(tokei.contract_address), 5000);
 
-    let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+    let stream_nft = ITokeiLockupLinearERC721SnakeDispatcher {
+        contract_address: tokei.contract_address
+    };
 
     let recipient_nft_balance_before = stream_nft.balance_of(RECIPIENT());
-    assert(recipient_nft_balance_before.unwrap() == 1, 'Invalid nft balance');
+    assert(recipient_nft_balance_before == 1, 'Invalid nft balance');
     let bob_nft_balance_before = stream_nft.balance_of(BOB());
-    assert(bob_nft_balance_before.unwrap() == 0, 'Invalid nft balance');
+    assert(bob_nft_balance_before == 0, 'Invalid nft balance');
 
     start_prank(CheatTarget::One(tokei.contract_address), RECIPIENT());
 
@@ -897,10 +916,12 @@ fn test_withdraw_multiple() {
     stop_warp(CheatTarget::One(tokei.contract_address));
 
     start_warp(CheatTarget::One(tokei.contract_address), 10000);
-    let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+    let stream_nft = ITokeiLockupLinearERC721SnakeDispatcher {
+        contract_address: tokei.contract_address
+    };
 
     let recipient_nft_balance_before = stream_nft.balance_of(RECIPIENT());
-    assert(recipient_nft_balance_before.unwrap() == 3, 'Invalid nft balance');
+    assert(recipient_nft_balance_before == 3, 'Invalid nft balance');
 
     start_prank(CheatTarget::One(tokei.contract_address), RECIPIENT());
     stream_nft.approve(reciever, stream_id_1.into());
@@ -928,7 +949,7 @@ fn test_withdraw_multiple() {
 
 // fn test_burn_token() {
 //     let (tokei, token, stream_id) = create_with_duration();
-//     let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+//     let stream_nft = ITokeiLockupLinearERC721SnakeDispatcher { contract_address: tokei.contract_address };
 
 //     start_prank(CheatTarget::One(tokei.contract_address), RECIPIENT());
 //     stream_nft.burn(stream_id.into());
@@ -944,7 +965,9 @@ fn test_burn_token_when_depleted() {
     let (tokei, token, stream_id) = create_with_duration();
     start_warp(CheatTarget::One(tokei.contract_address), 8000);
 
-    let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+    let stream_nft = ITokeiLockupLinearERC721SnakeDispatcher {
+        contract_address: tokei.contract_address
+    };
 
     start_prank(CheatTarget::One(tokei.contract_address), RECIPIENT());
 
@@ -955,12 +978,12 @@ fn test_burn_token_when_depleted() {
     assert(balance == expected_balance, 'Invalid balance');
 
     let old_tokei_nft_balance = stream_nft.balance_of(RECIPIENT());
-    assert(old_tokei_nft_balance.unwrap() == 1, 'Invalid nft balance');
+    assert(old_tokei_nft_balance == 1, 'Invalid nft balance');
 
     tokei.burn_token(stream_id);
 
     let new_tokei_nft_balance = stream_nft.balance_of(RECIPIENT());
-    assert(new_tokei_nft_balance.unwrap() == 0, 'Invalid nft balance');
+    assert(new_tokei_nft_balance == 0, 'Invalid nft balance');
 }
 
 #[test]
@@ -969,7 +992,9 @@ fn test_burn_token_when_not_depleted() {
     let (tokei, token, stream_id) = create_with_duration();
     start_warp(CheatTarget::One(tokei.contract_address), 4100);
 
-    let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+    let stream_nft = ITokeiLockupLinearERC721SnakeDispatcher {
+        contract_address: tokei.contract_address
+    };
 
     start_prank(CheatTarget::One(tokei.contract_address), RECIPIENT());
 
@@ -981,12 +1006,12 @@ fn test_burn_token_when_not_depleted() {
     assert(balance == expected_balance, 'Invalid balance');
 
     let old_tokei_nft_balance = stream_nft.balance_of(RECIPIENT());
-    assert(old_tokei_nft_balance.unwrap() == 1, 'Invalid nft balance');
+    assert(old_tokei_nft_balance == 1, 'Invalid nft balance');
 
     tokei.burn_token(stream_id);
 
     let new_tokei_nft_balance = stream_nft.balance_of(RECIPIENT());
-    assert(new_tokei_nft_balance.unwrap() == 0, 'Invalid nft balance');
+    assert(new_tokei_nft_balance == 0, 'Invalid nft balance');
 }
 
 #[test]
@@ -996,7 +1021,9 @@ fn test_cancel() {
 
     start_warp(CheatTarget::One(tokei.contract_address), 4100);
 
-    let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+    let stream_nft = ITokeiLockupLinearERC721SnakeDispatcher {
+        contract_address: tokei.contract_address
+    };
     let stream = tokei.get_stream(stream_id);
 
     start_prank(CheatTarget::One(tokei.contract_address), RECIPIENT());
@@ -1016,7 +1043,9 @@ fn test_cancel_should_panic() {
 
     start_warp(CheatTarget::One(tokei.contract_address), 7000);
 
-    let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+    let stream_nft = ITokeiLockupLinearERC721SnakeDispatcher {
+        contract_address: tokei.contract_address
+    };
     let stream = tokei.get_stream(stream_id);
 
     start_prank(CheatTarget::One(tokei.contract_address), RECIPIENT());
@@ -1029,7 +1058,9 @@ fn test_renounce() {
 
     start_warp(CheatTarget::One(tokei.contract_address), 4100);
 
-    let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+    let stream_nft = ITokeiLockupLinearERC721SnakeDispatcher {
+        contract_address: tokei.contract_address
+    };
 
     start_prank(CheatTarget::One(tokei.contract_address), ALICE());
     tokei.renounce(stream_id);
@@ -1044,7 +1075,9 @@ fn test_renounce_by_recipient() {
 
     start_warp(CheatTarget::One(tokei.contract_address), 4100);
 
-    let stream_nft = IERC721SafeDispatcher { contract_address: tokei.contract_address };
+    let stream_nft = ITokeiLockupLinearERC721SnakeDispatcher {
+        contract_address: tokei.contract_address
+    };
 
     start_prank(CheatTarget::One(tokei.contract_address), RECIPIENT());
     tokei.renounce(stream_id);

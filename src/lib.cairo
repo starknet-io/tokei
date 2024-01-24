@@ -18,15 +18,20 @@ mod libraries {
 
 /// Module containing tokens implementations.
 /// TODO: remove and use OpenZeppelin dependency when it's ready.
-mod tokens {
-    mod erc20;
-    mod erc721;
-}
 
-#[cfg(test)]
 mod tests {
+    #[cfg(test)]
     mod test_lockup_linear;
-    mod utils;
-    mod test_base;
+    mod utils {
+        mod addresses;
+        mod constants;
+        mod defaults;
+        mod types;
+        mod utils;
+    }
+    mod mocks {
+        mod erc20;
+    // mod erc721;
+    }
 }
 
