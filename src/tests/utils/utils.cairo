@@ -7,7 +7,7 @@ mod Utils {
         declare, ContractClassTrait, start_prank, stop_prank, start_spoof, CheatTarget, TxInfoMock,
         get_class_hash, ContractClass
     };
-    // use tokei::tokens::erc20::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
+
     use openzeppelin::token::erc20::interface::{
         IERC20, IERC20Metadata, ERC20ABIDispatcher, ERC20ABIDispatcherTrait
     };
@@ -178,19 +178,5 @@ mod Utils {
             i += 1;
         };
     }
-/// Setup required contracts.
-// fn setup_contracts(caller_address: ContractAddress) -> (ITokeiLockupLinearDispatcher,) {
-//     // Deploy the role store contract.
-//     let tokei_address = deploy_tokei(caller_address);
-
-//     // setting the protocol fee
-
-//     // Create a role store dispatcher.
-//     let tokei = ITokeiLockupLinearDispatcher { contract_address: tokei_address };
-
-//     // Return the caller address and the contract interfaces.
-//     (tokei,)
-// }
-
 }
 

@@ -5,8 +5,6 @@ mod Defaults {
     };
     use tokei::types::lockup_linear::{LockupLinearStream, Range, Durations, Broker};
     use tokei::types::lockup::{LockupAmounts, CreateAmounts};
-    use tokei::tests::utils::constants::Constants;
-    use tokei::tests::utils::types::Users;
     use tokei::tests::utils::utils::Utils::{
         pow_256, ADMIN, BROKER, RECIPIENT, ASSET, ALICE, setup, teardown, prepare_contracts,
         deploy_setup_erc20, deploy_tokei
@@ -24,10 +22,11 @@ mod Defaults {
     const TOTAL_AMOUNT: u256 = 10_000;
     const TOTAL_DURATION: u64 = 4000;
     const WITHDRAW_AMOUNT: u256 = 2_600_000_000_000_000_000_000;
+    const MAY_1_2023: u64 = 1_682_899_200;
 
 
     fn setup_1() -> (u64, u64, u64) {
-        let START_TIME = Constants::MAY_1_2023 + 172_800;
+        let START_TIME = MAY_1_2023 + 172_800;
         let CLIFF_TIME = START_TIME + CLIFF_DURATION;
         let END_TIME = START_TIME + TOTAL_DURATION;
 

@@ -340,7 +340,6 @@ mod TokeiLockupLinear {
     use openzeppelin::token::erc20::interface::{
         IERC20, IERC20Metadata, ERC20ABIDispatcher, ERC20ABIDispatcherTrait
     };
-
     use openzeppelin::token::erc721::erc721::ERC721Component;
     use openzeppelin::token::erc721::erc721::ERC721Component::InternalTrait;
     use openzeppelin::introspection::src5::SRC5Component;
@@ -502,12 +501,9 @@ mod TokeiLockupLinear {
         self.next_stream_id.write(1);
 
         // Initialize as ERC-721 contract.
-        // let mut state: ERC721::ContractState = ERC721::unsafe_new_contract_state();
         self.erc721.initializer('Tokei Lockup Linear NFT', 'ZW-LOCKUP-LIN');
-        // self.erc721.initializer('Tokei Lockup Linear NFT', 'ZW-LOCKUP-LIN');
 
         self.emit(TransferAdmin { old_admin: Zeroable::zero(), new_admin: initial_admin, });
-    // @todo - nft_descriptor write
     }
 
     // *************************************************************************
@@ -748,9 +744,6 @@ mod TokeiLockupLinear {
             range: Range,
             broker: Broker,
         ) -> u64 {
-            // Safe Interactions: query the protocol fee. This is safe because it's a known Tokei contract that does
-            // not call other unknown contracts.
-            // TODO: implement.
             TokeiInternalImpl::_create_with_range(
                 ref self,
                 sender,
@@ -1117,7 +1110,6 @@ mod TokeiLockupLinear {
             // without asserting to avoid locking funds in case of a bug. If this situation occurs, the withdrawn
             // amount is considered to be the streamed amount, and the stream is effectively frozen.
             if (streamed_amount > deposited_amount) {
-                // self.streams.read(stream_id).amounts.withdrawn.print();
                 return self.streams.read(stream_id).amounts.withdrawn;
             }
 
@@ -1385,7 +1377,6 @@ mod TokeiLockupLinear {
             let res = self.protocol_revenues.read(asset);
 
             // Effects: mint the NFT to the recipient.
-            // let mut state: ERC721::ContractState = ERC721::unsafe_new_contract_state();
             self.erc721._mint(recipient, stream_id.into());
 
             ERC20ABIDispatcher { contract_address: asset }

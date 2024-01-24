@@ -16,17 +16,12 @@ mod libraries {
     mod errors;
 }
 
-/// Module containing tokens implementations.
-/// TODO: remove and use OpenZeppelin dependency when it's ready.
-
+/// Module containing tests.
 mod tests {
     #[cfg(test)]
     mod test_lockup_linear;
     mod utils {
-        mod addresses;
-        mod constants;
         mod defaults;
-        mod types;
         mod utils;
     }
     mod mocks {
