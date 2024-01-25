@@ -1,5 +1,6 @@
 import React from "react";
 import { IconType } from "react-icons";
+import { Uint256 } from "starknet";
 
 /** UI interface */
 export interface LinkItemProps {
@@ -13,6 +14,31 @@ export interface LinkItemProps {
   linksSubmenu?: LinkItemProps[];
 }
 
+export interface CreateStream extends StreamDurationProps {
+  sender: string;
+  recipient: string;
+  total_amount: number;
+  asset: string;
+  cancelable: boolean;
+  range: Range;
+  broker: Broker;
+  
+}
+
+
+export interface StreamDurationProps {
+  total_amount: number;
+  asset: string;
+  cancelable: boolean;
+  transferable: boolean;
+  duration_cliff: number;
+  duration_total: number;
+  broker_account: string;
+  broker_fee: Uint256;
+  broker_fee_nb: number;
+}
+
+
 export interface CreateRangeProps {
   sender: string;
   recipient: string;
@@ -21,6 +47,7 @@ export interface CreateRangeProps {
   cancelable: boolean;
   range: Range;
   broker: Broker;
+  
 }
 
 /** Contract interface */
@@ -34,6 +61,9 @@ export interface LockupLinearStreamInterface {
   cancelable: boolean;
   is_depleted:boolean;
   was_canceled:boolean;
+  transferable:boolean;
+  duration_cliff:number;
+  duration_total;
   start_time?:number;
   end_time?:number;
   range: Range;

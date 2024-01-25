@@ -5,15 +5,40 @@ import {
   useToast,
   Text,
   useColorModeValue,
+  FormLabel,
+  Checkbox,
 } from "@chakra-ui/react";
 import { useAccount } from "@starknet-react/core";
 import { useEffect, useState } from "react";
-import { CreateRangeProps } from "../../../types";
+import { CreateRangeProps, CreateStream } from "../../../types";
 import e from "cors";
-import { handleCreateStream } from "../../../hooks/lockup/handleCreateStream";
+import {
+  create_with_duration,
+  handleCreateStream,
+} from "../../../hooks/lockup/handleCreateStream";
 import { ADDRESS_LENGTH } from "../../../constants";
-import { DEFAULT_NETWORK, CONTRACT_DEPLOYED_STARKNET,  } from "../../../constants/address";
+import {
+  DEFAULT_NETWORK,
+  CONTRACT_DEPLOYED_STARKNET,
+} from "../../../constants/address";
+
+import ERC20Tokei from "../../../constants/abi/tokei_ERC20.contract_class.json";
+import {
+  Contract,
+  Uint,
+  Uint256,
+  stark,
+  uint256,
+  BigNumberish,
+  cairo,
+} from "starknet";
+
 interface ICreateStream {}
+
+enum StreamTypeCreation {
+  CREATE_WITH_DURATION = "CREATE_WITH_DURATION",
+  CREATE_WITH_RANGE = "CREATE_WITH_RANGE",
+}
 
 const CreateStreamForm = ({}: ICreateStream) => {
   const toast = useToast();
@@ -21,13 +46,33 @@ const CreateStreamForm = ({}: ICreateStream) => {
   const account = accountStarknet?.account;
   const address = accountStarknet?.account?.address;
   const [isDisabled, setIsDisabled] = useState<boolean>(true);
+  const [typeStreamCreaiton, setTypeStreamCreation] = useState<
+    StreamTypeCreation | undefined
+  >();
   const [recipient, setRecipient] = useState<boolean>(true);
-  const [form, setForm] = useState<CreateRangeProps | undefined>({
+  // const [form, setForm] = useState<CreateRangeProps | undefined>({
+  //   sender: account?.address,
+  //   recipient: undefined,
+  //   total_amount: undefined,
+  //   asset: undefined,
+  //   cancelable: undefined,
+  //   range: {
+  //     start: undefined,
+  //     cliff: undefined,
+  //     end: undefined,
+  //   },
+  //   broker: {
+  //     account: undefined,
+  //     fee: undefined,
+  //   },
+  // });
+  const [form, setForm] = useState<CreateStream | undefined>({
     sender: account?.address,
     recipient: undefined,
     total_amount: undefined,
     asset: undefined,
-    cancelable: undefined,
+    cancelable: false,
+    transferable: false,
     range: {
       start: undefined,
       cliff: undefined,
@@ -37,8 +82,12 @@ const CreateStreamForm = ({}: ICreateStream) => {
       account: undefined,
       fee: undefined,
     },
+    duration_cliff: undefined,
+    duration_total: undefined,
+    broker_account: account?.address,
+    broker_fee: undefined,
+    broker_fee_nb: undefined,
   });
-
   useEffect(() => {
     if (address && account) {
       setIsDisabled(false);
@@ -46,7 +95,9 @@ const CreateStreamForm = ({}: ICreateStream) => {
     }
   }, [accountStarknet, account, address]);
 
-  const prepareHandleCreateStream = async () => {
+  const prepareHandleCreateStream = async (
+    typeOfCreation: StreamTypeCreation
+  ) => {
     const CONTRACT_ADDRESS = CONTRACT_DEPLOYED_STARKNET[DEFAULT_NETWORK];
 
     if (!CONTRACT_ADDRESS.lockupLinearFactory?.toString()) {
@@ -123,7 +174,10 @@ const CreateStreamForm = ({}: ICreateStream) => {
     }
     /***@TODO use starknet check utils isAddress */
 
-    if (form?.recipient?.length != ADDRESS_LENGTH) {
+    if (
+      form?.recipient?.length != ADDRESS_LENGTH ||
+      cairo.isTypeContractAddress(form?.recipient)
+    ) {
       toast({
         title:
           "Recipient is not address size. Please verify your recipient address",
@@ -149,35 +203,128 @@ const CreateStreamForm = ({}: ICreateStream) => {
       return;
     }
 
-    if (!form?.range.start) {
-      toast({
-        title: "Provide Start date",
-        status: "warning",
-      });
-      return {};
-    }
+    const erc20Contract = new Contract(ERC20Tokei.abi, form?.asset, account);
 
-    if (!form?.range.end) {
-      toast({
-        title: "Please provide End date",
-        status: "warning",
-      });
-      return;
-    }
+    let decimals=18;
 
-    if (!form?.range.cliff) {
-      toast({
-        title: "Please provide Cliff",
-        status: "warning",
-      });
-      return;
+    try {
+      decimals == (await erc20Contract.decimals());
+    } catch (e) {
+    } finally {
     }
+    const total_amount_nb =
+      form?.total_amount * (10 ** Number(decimals));
 
-    const {tx, isSuccess, message} = await handleCreateStream({
-      form: form,
-      address: address,
-      accountStarknet: accountStarknet,
-    });
+    if (typeOfCreation == StreamTypeCreation.CREATE_WITH_DURATION) {
+      let total_amount;
+
+      if(Number.isInteger(total_amount_nb)) {
+        total_amount = cairo.uint256(total_amount_nb);
+      }
+
+      else if(!Number.isInteger(total_amount_nb)) {
+        total_amount=total_amount_nb
+        // total_amount = uint256.bnToUint256(BigInt(total_amount_nb));
+      }
+
+      if (!form?.duration_cliff) {
+        toast({
+          title: "Please provide End date",
+          status: "warning",
+        });
+        return;
+      }
+
+      if (!form?.duration_total) {
+        toast({
+          title: "Please provide End date",
+          status: "warning",
+        });
+        return;
+      }
+
+      if (!form?.broker_account) {
+        toast({
+          title: "Please provide broker account",
+          status: "warning",
+        });
+        return;
+      }
+
+      if (cairo.isTypeContractAddress(form?.broker_account)) {
+        toast({
+          title: "Please provide a valid Address for your broker account",
+          status: "warning",
+        });
+        return;
+      }
+
+      if (form?.duration_total < form?.duration_cliff) {
+        toast({
+          title: "Duration total need to be superior too duration_cliff",
+          status: "error",
+        });
+        return;
+      }
+
+      if (!account?.address) {
+        toast({
+          title: "Duration total need to be superior too duration_cliff",
+          status: "error",
+        });
+        return;
+      }
+
+      const { tx, isSuccess, message } = await create_with_duration(
+        accountStarknet?.account,
+        account?.address, //Sender
+        form?.recipient, //Recipient
+        total_amount_nb, // Total amount
+        // BigInt(total_amount_nb), // Total amount
+        // total_amount_nb, // Total amount
+
+        form?.asset, // Asset
+        form?.cancelable, // Asset
+        form?.transferable, // Transferable
+        form?.duration_cliff,
+        form?.duration_total,
+        form?.broker_account,
+        form?.broker_fee
+        // form?.broker_fee_nb
+      );
+
+      console.log("message", message);
+    } else {
+      if (!form?.range.start) {
+        toast({
+          title: "Provide Start date",
+          status: "warning",
+        });
+        return {};
+      }
+
+      if (!form?.range.end) {
+        toast({
+          title: "Please provide End date",
+          status: "warning",
+        });
+        return;
+      }
+
+      if (!form?.range.cliff) {
+        toast({
+          title: "Please provide Cliff",
+          status: "warning",
+        });
+        return;
+      }
+
+      const { tx, isSuccess, message } = await handleCreateStream({
+        form: form,
+        address: address,
+        accountStarknet: accountStarknet,
+      });
+    }
   };
 
   return (
@@ -194,19 +341,14 @@ const CreateStreamForm = ({}: ICreateStream) => {
         py={{ base: "1em", md: "2em" }}
         display={{ md: "flex" }}
         height={"100%"}
-        justifyContent={'space-around'}
+        justifyContent={"space-around"}
         // gridTemplateColumns={'1fr 1fr'}
         gap={{ base: "0.5em", md: "1em" }}
         alignContent={"baseline"}
         alignSelf={"self-end"}
         alignItems={"baseline"}
       >
-        <Box
-          height={"100%"}
-          // gap="1em"
-          // alignItems={"baseline"}
-          display={"grid"}
-        >
+        <Box height={"100%"} display={"grid"}>
           <Text textAlign={"left"} fontFamily={"PressStart2P"}>
             Basic details
           </Text>
@@ -247,9 +389,12 @@ const CreateStreamForm = ({}: ICreateStream) => {
               <Input
                 my={{ base: "0.25em", md: "0.5em" }}
                 py={{ base: "0.5em" }}
+                aria-valuetext={form?.broker?.account}
                 onChange={(e) => {
                   setForm({
                     ...form,
+                    broker_account: e.target.value,
+                    sender: e.target.value,
                     broker: {
                       ...form.broker,
                       account: e.target.value,
@@ -265,6 +410,11 @@ const CreateStreamForm = ({}: ICreateStream) => {
                 onChange={(e) => {
                   setForm({
                     ...form,
+                    // broker_fee: uint256.bnToUint256(Number(e?.target?.value)),
+                    // broker_fee: cairo.uint256(Number(e?.target?.value)),
+                    broker_fee: cairo.uint256(Number(e?.target?.value)),
+                    broker_fee_nb: Number(e?.target?.value),
+
                     broker: {
                       ...form.broker,
                       fee: Number(e.target.value),
@@ -273,6 +423,27 @@ const CreateStreamForm = ({}: ICreateStream) => {
                 }}
                 placeholder="Fee broker"
               ></Input>
+
+              <Text>Cancelable</Text>
+              <Checkbox
+                py={{ base: "0.5em" }}
+                type="number"
+                my={{ base: "0.25em", md: "0.5em" }}
+                onClick={(e) => {
+                  if (form?.cancelable) {
+                    setForm({
+                      ...form,
+                      cancelable: false,
+                    });
+                  } else {
+                    setForm({
+                      ...form,
+                      cancelable: true,
+                    });
+                  }
+                }}
+                placeholder="Fee broker"
+              ></Checkbox>
             </Box>
           </Box>
         </Box>
@@ -371,20 +542,90 @@ const CreateStreamForm = ({}: ICreateStream) => {
               }}
               placeholder="End date"
             ></Input>
+
+            <FormLabel fontFamily={"monospace"}>
+              Duration stream type:{" "}
+            </FormLabel>
+
+            <Text
+              textAlign={"left"}
+              color={useColorModeValue("gray.100", "gray.300")}
+            >
+              Duration cliff
+            </Text>
+            <Input
+              py={{ base: "0.5em" }}
+              type="number"
+              my={{ base: "0.25em", md: "0.5em" }}
+              color={useColorModeValue("gray.100", "gray.300")}
+              _placeholder={{
+                color: useColorModeValue("gray.100", "gray.300"),
+              }}
+              onChange={(e) => {
+                setForm({
+                  ...form,
+                  duration_cliff: Number(e?.target?.value),
+                });
+              }}
+              placeholder="Duration cliff"
+            ></Input>
+
+            <Text
+              textAlign={"left"}
+              color={useColorModeValue("gray.100", "gray.300")}
+            >
+              Duration total
+            </Text>
+            <Input
+              py={{ base: "0.5em" }}
+              type="number"
+              my={{ base: "0.25em", md: "0.5em" }}
+              color={useColorModeValue("gray.100", "gray.300")}
+              _placeholder={{
+                color: useColorModeValue("gray.100", "gray.300"),
+              }}
+              onChange={(e) => {
+                setForm({
+                  ...form,
+                  duration_total: Number(e?.target?.value),
+                });
+              }}
+              placeholder="Duration total"
+            ></Input>
           </Box>
         </Box>
       </Box>
 
-      <Box textAlign={"center"}>
-        <Button
-          bg={useColorModeValue("brand.primary", "brand.primary")}
-          disabled={isDisabled}
-          onClick={() => {
-            prepareHandleCreateStream()
-          }}
+      <Box>
+        <Text>Choose your type of stream to create</Text>
+
+        <Box
+          textAlign={"center"}
+          display={{ base: "flex" }}
+          gap={{ base: "0.5em" }}
         >
-          Create stream
-        </Button>
+          <Button
+            bg={useColorModeValue("brand.primary", "brand.primary")}
+            disabled={isDisabled}
+            onClick={() => {
+              prepareHandleCreateStream(
+                StreamTypeCreation.CREATE_WITH_DURATION
+              );
+            }}
+          >
+            Create duration stream ⏳
+          </Button>
+          {/* 
+          <Button
+            bg={useColorModeValue("brand.primary", "brand.primary")}
+            disabled={isDisabled}
+            onClick={() => {
+              prepareHandleCreateStream(StreamTypeCreation.CREATE_WITH_RANGE);
+            }}
+          >
+            Create stream
+          </Button> */}
+        </Box>
       </Box>
     </Box>
   );
