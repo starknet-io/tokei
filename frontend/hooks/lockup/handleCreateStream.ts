@@ -5,22 +5,144 @@ import {
 } from "../../constants/address";
 import { CreateRangeProps } from "../../types";
 import { ADDRESS_LENGTH } from "../../constants";
+import LockupLinearAbi from "../../constants/abi/lockup_linear.json";
+import ERC20Tokei from "../../constants/abi/tokei_ERC20.contract_class.json";
 import {
+  Account,
+  AccountInterface,
+  BigNumberish,
   CallData,
+  Contract,
   GetTransactionReceiptResponse,
   Provider,
+  ProviderInterface,
   RpcProvider,
+  Uint256,
   cairo,
   constants,
   stark,
 } from "starknet";
 import { UseAccountResult } from "@starknet-react/core";
 
+const TOKEI_ADDRESS_TEST =
+  CONTRACT_DEPLOYED_STARKNET[constants.NetworkName.SN_GOERLI]
+    .lockupLinearFactory;
 export interface IHandleCreateStream {
   form: CreateRangeProps | undefined;
   address?: string;
   accountStarknet: UseAccountResult | undefined;
-  networkName?:string
+  networkName?: string;
+}
+
+export interface ICreateWithDuration {
+  account: Account;
+  // provider:AccountInterface|ProviderInterface,
+  sender: string;
+  recipient: string;
+  total_amount: Uint256;
+  asset: string;
+  cancelable: boolean;
+  transferable: boolean;
+  duration_cliff: number;
+  duration_total: number;
+  broker_account: string;
+  broker_fee: Uint256;
+}
+export async function create_with_duration(
+  account: AccountInterface,
+  sender: string,
+  recipient: string,
+  total_amount: Uint256 | BigNumberish,
+  asset: string,
+  cancelable: boolean,
+  transferable: boolean,
+  duration_cliff: number,
+  duration_total: number,
+  broker_account: string,
+  broker_fee: Uint256
+): Promise<{
+  tx?: GetTransactionReceiptResponse;
+  isSuccess?: boolean;
+  message?: string;
+}> {
+  try {
+
+    console.log("sender", sender)
+    console.log("recipient", recipient)
+    console.log("total_amount", total_amount)
+    console.log("asset", asset)
+    console.log("cancelable", cancelable)
+    console.log("transferable", transferable)
+    console.log("duration_cliff", duration_cliff)
+    console.log("duration_total", duration_total)
+
+    console.log("broker_account", broker_account)
+    console.log("broker_fee", broker_fee)
+    const tokeiContract = new Contract(
+      LockupLinearAbi,
+      TOKEI_ADDRESS_TEST,
+      account
+    );
+    const erc20Contract = new Contract(ERC20Tokei.abi, asset, account);
+    // Calldata for Create_with_duration
+    console.log("Calldata compile")
+
+    const par1 = CallData.compile({
+      sender: sender,
+      recipient: recipient,
+      total_amount: total_amount,
+      asset: asset,
+      cancelable: cancelable,
+      transferable: transferable,
+      duration_cliff: duration_cliff,
+      duration_total: duration_total,
+      broker_account: broker_account,
+      broker_fee: broker_fee,
+    });
+
+
+    // // *************************************************************************************
+    // //                       TOKEN APPROVAL TO THE TOKEI CONTRACT & CREATE_WITH_DURATION
+    // // ****************************************************************************************
+    // // Multicall transaction with approval and create_with_duration
+    console.log("Execute multicall")
+
+    let success = await account.execute([
+      {
+        contractAddress: erc20Contract.address,
+        entrypoint: "approve",
+        calldata: CallData.compile({
+          recipient: tokeiContract.address,
+          amount: total_amount,
+        }),
+      },
+      {
+        contractAddress: tokeiContract.address,
+        entrypoint: "create_with_duration",
+        calldata: par1,
+      },
+    ]);
+    console.log(
+      "✅ create_with_duration invoked at :",
+      success.transaction_hash
+    );
+
+    const tx = await account.waitForTransaction(success.transaction_hash);
+
+    return {
+      tx: tx,
+      isSuccess: true,
+      message: "200",
+    };
+  } catch (e) {
+    console.log("Error create_with_duration", e);
+    
+    return {
+      tx: undefined,
+      isSuccess: false,
+      message: e,
+    };
+  }
 }
 export const handleCreateStream = async ({
   form,
@@ -34,7 +156,13 @@ export const handleCreateStream = async ({
   try {
     const account = accountStarknet?.account;
     const CONTRACT_ADDRESS = CONTRACT_DEPLOYED_STARKNET[DEFAULT_NETWORK];
-  
+
+    /** @TODO go format uint256 */
+    const fee = form?.broker?.fee;
+    const broker = {
+      account: form?.broker?.account,
+      fee: fee,
+    };
     const result = await account.execute({
       contractAddress: CONTRACT_ADDRESS.lockupLinearFactory?.toString(),
       entrypoint: "create_with_range",
@@ -47,20 +175,19 @@ export const handleCreateStream = async ({
         range: {
           ...form.range,
         },
+        // broker: { ...form.broker },
         broker: { ...form.broker },
       }),
     });
-    const provider = new Provider({
-      sequencer: { network: constants.NetworkName.SN_GOERLI },
+    // const provider = new Provider({
+    //   sequencer: { network: constants.NetworkName.SN_GOERLI },
+    // });
+    const provider = new RpcProvider({
+      nodeUrl: constants?.NetworkName.SN_GOERLI,
     });
-    // const provider = new RpcProvider({nodeUrl:constants?.NetworkName.SN_GOERLI});
     const tx = await provider.waitForTransaction(result.transaction_hash);
-    return { tx , isSuccess:true,};
-  }catch(e) {
-    console.log("handleCreateStream error",e)
-
+    return { tx, isSuccess: true };
+  } catch (e) {
+    console.log("handleCreateStream error", e);
   }
- 
 };
-
-
