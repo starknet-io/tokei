@@ -15,7 +15,7 @@ import e from "cors";
 import {
   create_with_duration,
   handleCreateStream,
-} from "../../../hooks/lockup/handleCreateStream";
+} from "../../../hooks/lockup/create_with_duration";
 import { ADDRESS_LENGTH } from "../../../constants";
 import {
   DEFAULT_NETWORK,
@@ -31,16 +31,18 @@ import {
   uint256,
   BigNumberish,
   cairo,
-} from "starknet";
 
-interface ICreateStream {}
+} from "starknet";
+import { create_with_range } from "../../../hooks/lockup/create_with_range";
+
+interface ICreateStream { }
 
 enum StreamTypeCreation {
   CREATE_WITH_DURATION = "CREATE_WITH_DURATION",
   CREATE_WITH_RANGE = "CREATE_WITH_RANGE",
 }
 
-const CreateStreamForm = ({}: ICreateStream) => {
+const CreateStreamForm = ({ }: ICreateStream) => {
   const toast = useToast();
   const accountStarknet = useAccount();
   const account = accountStarknet?.account;
@@ -71,8 +73,8 @@ const CreateStreamForm = ({}: ICreateStream) => {
     recipient: undefined,
     total_amount: undefined,
     asset: undefined,
-    cancelable: false,
-    transferable: false,
+    cancelable: true,
+    transferable: true,
     range: {
       start: undefined,
       cliff: undefined,
@@ -174,9 +176,12 @@ const CreateStreamForm = ({}: ICreateStream) => {
     }
     /***@TODO use starknet check utils isAddress */
 
+    console.log("form?.recipient?.length", form?.recipient?.length)
     if (
-      form?.recipient?.length != ADDRESS_LENGTH ||
-      cairo.isTypeContractAddress(form?.recipient)
+      form?.recipient?.length != ADDRESS_LENGTH
+      && !cairo.isTypeContractAddress(form?.recipient)
+      // !cairo.isTypeContractAddress(form?.recipient)
+
     ) {
       toast({
         title:
@@ -205,7 +210,7 @@ const CreateStreamForm = ({}: ICreateStream) => {
 
     const erc20Contract = new Contract(ERC20Tokei.abi, form?.asset, account);
 
-    let decimals=18;
+    let decimals = 18;
 
     try {
       decimals == (await erc20Contract.decimals());
@@ -214,18 +219,18 @@ const CreateStreamForm = ({}: ICreateStream) => {
     }
     const total_amount_nb =
       form?.total_amount * (10 ** Number(decimals));
+    let total_amount;
 
+    if (Number.isInteger(total_amount_nb)) {
+      total_amount = cairo.uint256(total_amount_nb);
+    }
+
+    else if (!Number.isInteger(total_amount_nb)) {
+      // total_amount=total_amount_nb
+      total_amount = uint256.bnToUint256(BigInt(total_amount_nb));
+    }
     if (typeOfCreation == StreamTypeCreation.CREATE_WITH_DURATION) {
-      let total_amount;
 
-      if(Number.isInteger(total_amount_nb)) {
-        total_amount = cairo.uint256(total_amount_nb);
-      }
-
-      else if(!Number.isInteger(total_amount_nb)) {
-        total_amount=total_amount_nb
-        // total_amount = uint256.bnToUint256(BigInt(total_amount_nb));
-      }
 
       if (!form?.duration_cliff) {
         toast({
@@ -279,15 +284,15 @@ const CreateStreamForm = ({}: ICreateStream) => {
         accountStarknet?.account,
         account?.address, //Sender
         form?.recipient, //Recipient
-        total_amount_nb, // Total amount
+        total_amount, // Total amount
         // BigInt(total_amount_nb), // Total amount
         // total_amount_nb, // Total amount
 
         form?.asset, // Asset
         form?.cancelable, // Asset
         form?.transferable, // Transferable
-        form?.duration_cliff,
-        form?.duration_total,
+        parseInt(form?.duration_cliff.toString()),
+        parseInt(form?.duration_total.toString()),
         form?.broker_account,
         form?.broker_fee
         // form?.broker_fee_nb
@@ -319,11 +324,30 @@ const CreateStreamForm = ({}: ICreateStream) => {
         return;
       }
 
-      const { tx, isSuccess, message } = await handleCreateStream({
-        form: form,
-        address: address,
-        accountStarknet: accountStarknet,
-      });
+      const { tx, isSuccess, message } = await create_with_range(
+        accountStarknet?.account,
+        account?.address, //Sender
+        form?.recipient, //Recipient
+        total_amount, // Total amount
+        // BigInt(total_amount_nb), // Total amount
+        // total_amount_nb, // Total amount
+
+        form?.asset, // Asset
+        form?.cancelable, // Asset
+        form?.transferable, // Transferable
+        parseInt(form?.range?.start.toString()),
+        parseInt(form?.range?.cliff.toString()),
+        parseInt(form?.range?.end.toString()),
+        form?.broker_account,
+        form?.broker_fee
+        // form?.broker_fee_nb
+      );
+
+      // const { tx, isSuccess, message } = await create_with_range({
+      //   form: form,
+      //   address: address,
+      //   accountStarknet: accountStarknet,
+      // });
     }
   };
 
@@ -412,7 +436,7 @@ const CreateStreamForm = ({}: ICreateStream) => {
                     ...form,
                     // broker_fee: uint256.bnToUint256(Number(e?.target?.value)),
                     // broker_fee: cairo.uint256(Number(e?.target?.value)),
-                    broker_fee: cairo.uint256(Number(e?.target?.value)),
+                    broker_fee: cairo.uint256(parseInt(e?.target?.value)),
                     broker_fee_nb: Number(e?.target?.value),
 
                     broker: {
@@ -500,7 +524,8 @@ const CreateStreamForm = ({}: ICreateStream) => {
             <Input
               py={{ base: "0.5em" }}
               my={{ base: "0.25em", md: "0.5em" }}
-              type="number"
+              // type="number"
+              type="datetime-local"
               placeholder="Cliff"
               color={useColorModeValue("gray.100", "gray.300")}
               _placeholder={{
@@ -511,7 +536,9 @@ const CreateStreamForm = ({}: ICreateStream) => {
                   ...form,
                   range: {
                     ...form.range,
-                    cliff: Number(e.target.value),
+                    // cliff: Number(e.target.value),
+                    cliff: new Date(e.target.value).getTime(),
+
                   },
                 });
               }}
@@ -597,7 +624,10 @@ const CreateStreamForm = ({}: ICreateStream) => {
       </Box>
 
       <Box>
-        <Text>Choose your type of stream to create</Text>
+        <Text
+        py={{base:"0.5em"}}
+        textAlign={{base:"left"}}
+        >Choose your type of stream to create</Text>
 
         <Box
           textAlign={"center"}
@@ -615,7 +645,7 @@ const CreateStreamForm = ({}: ICreateStream) => {
           >
             Create duration stream ⏳
           </Button>
-          {/* 
+          
           <Button
             bg={useColorModeValue("brand.primary", "brand.primary")}
             disabled={isDisabled}
@@ -624,7 +654,7 @@ const CreateStreamForm = ({}: ICreateStream) => {
             }}
           >
             Create stream
-          </Button> */}
+          </Button>
         </Box>
       </Box>
     </Box>

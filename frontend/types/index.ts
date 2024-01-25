@@ -1,8 +1,15 @@
 import React from "react";
 import { IconType } from "react-icons";
-import { Uint256 } from "starknet";
+import { GetTransactionReceiptResponse, Uint256 } from "starknet";
 
 /** UI interface */
+
+export interface TxCallInterface {
+  tx?: GetTransactionReceiptResponse;
+  isSuccess?: boolean;
+  message?: string;
+  hash?: string
+}
 export interface LinkItemProps {
   name: string;
   title?: string;
@@ -22,7 +29,7 @@ export interface CreateStream extends StreamDurationProps {
   cancelable: boolean;
   range: Range;
   broker: Broker;
-  
+
 }
 
 
@@ -47,34 +54,34 @@ export interface CreateRangeProps {
   cancelable: boolean;
   range: Range;
   broker: Broker;
-  
+
 }
 
 /** Contract interface */
 
 export interface LockupLinearStreamInterface {
-  stream_id?:string;
+  stream_id?: string;
   sender: string;
   recipient: string;
   total_amount: number;
   asset: string;
   cancelable: boolean;
-  is_depleted:boolean;
-  was_canceled:boolean;
-  transferable:boolean;
-  duration_cliff:number;
+  is_depleted: boolean;
+  was_canceled: boolean;
+  transferable: boolean;
+  duration_cliff: number;
   duration_total;
-  start_time?:number;
-  end_time?:number;
+  start_time?: number;
+  end_time?: number;
   range: Range;
   broker: Broker;
-  amounts?:LockupAmounts
+  amounts?: LockupAmounts
 }
 
 export interface LockupAmounts {
-  deposited:number;
-  withdrawn:number;
-  refunded:number;
+  deposited: number;
+  withdrawn: number;
+  refunded: number;
 }
 
 export interface Range {
@@ -84,8 +91,8 @@ export interface Range {
 }
 
 export interface Broker {
-  account:string;
-  fee:number; // u128
+  account: string;
+  fee: number; // u128
 
 }
 

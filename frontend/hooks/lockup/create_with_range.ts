@@ -3,9 +3,10 @@ import {
   CONTRACT_DEPLOYED_STARKNET,
   DEFAULT_NETWORK,
 } from "../../constants/address";
-import { CreateRangeProps } from "../../types";
+import { CreateRangeProps, TxCallInterface, } from "../../types";
 import { ADDRESS_LENGTH } from "../../constants";
 import LockupLinearAbi from "../../constants/abi/lockup_linear.json";
+// import TokeiLockupLinearAbi from "../../constants/abi/tokei_lockup.json";
 import ERC20Tokei from "../../constants/abi/tokei_ERC20.contract_class.json";
 import {
   Account,
@@ -48,23 +49,20 @@ export interface ICreateWithDuration {
   broker_account: string;
   broker_fee: Uint256;
 }
-export async function create_with_duration(
+export async function create_with_range(
   account: AccountInterface,
   sender: string,
   recipient: string,
-  total_amount: Uint256 | BigNumberish,
+  total_amount: Uint256,
   asset: string,
   cancelable: boolean,
   transferable: boolean,
-  duration_cliff: number,
-  duration_total: number,
+  range_start: number,
+  range_cliff: number,
+  range_end: number,
   broker_account: string,
   broker_fee: Uint256
-): Promise<{
-  tx?: GetTransactionReceiptResponse;
-  isSuccess?: boolean;
-  message?: string;
-}> {
+): Promise<TxCallInterface>{
   try {
 
     console.log("sender", sender)
@@ -73,39 +71,45 @@ export async function create_with_duration(
     console.log("asset", asset)
     console.log("cancelable", cancelable)
     console.log("transferable", transferable)
-    console.log("duration_cliff", duration_cliff)
-    console.log("duration_total", duration_total)
+    console.log("range_start", range_start)
+    console.log("range_end", range_end)
+    console.log("range_cliff", range_cliff)
 
     console.log("broker_account", broker_account)
     console.log("broker_fee", broker_fee)
+
+    const provider = new RpcProvider({nodeUrl:constants.NetworkName.SN_GOERLI})
     const tokeiContract = new Contract(
       LockupLinearAbi,
       TOKEI_ADDRESS_TEST,
-      account
+      provider
     );
-    const erc20Contract = new Contract(ERC20Tokei.abi, asset, account);
+    const erc20Contract = new Contract(ERC20Tokei.abi, asset, provider);
     // Calldata for Create_with_duration
     console.log("Calldata compile")
 
-    const par1 = CallData.compile({
+    const calldataCreateWithDuration = CallData.compile({
       sender: sender,
       recipient: recipient,
       total_amount: total_amount,
       asset: asset,
       cancelable: cancelable,
       transferable: transferable,
-      duration_cliff: duration_cliff,
-      duration_total: duration_total,
+      range_start: range_start,
+      range_cliff: range_cliff,
+      range_end: range_end,
       broker_account: broker_account,
       broker_fee: broker_fee,
     });
-
 
     // // *************************************************************************************
     // //                       TOKEN APPROVAL TO THE TOKEI CONTRACT & CREATE_WITH_DURATION
     // // ****************************************************************************************
     // // Multicall transaction with approval and create_with_duration
     console.log("Execute multicall")
+
+    // const nonce= await account.getNonce()
+    // console.log("nonce",nonce)
 
     let success = await account.execute([
       {
@@ -118,10 +122,17 @@ export async function create_with_duration(
       },
       {
         contractAddress: tokeiContract.address,
-        entrypoint: "create_with_duration",
-        calldata: par1,
+        entrypoint: "create_with_range",
+        calldata: calldataCreateWithDuration,
       },
-    ]);
+    ],
+    undefined,
+    //  [ERC20Tokei.abi, LockupLinearAbi],
+    //   {
+    //   nonce:nonce
+    // }
+    
+    );
     console.log(
       "✅ create_with_duration invoked at :",
       success.transaction_hash
@@ -131,6 +142,7 @@ export async function create_with_duration(
 
     return {
       tx: tx,
+      hash:success.transaction_hash,
       isSuccess: true,
       message: "200",
     };
@@ -148,11 +160,7 @@ export const handleCreateStream = async ({
   form,
   accountStarknet,
   address,
-}: IHandleCreateStream): Promise<{
-  tx?: GetTransactionReceiptResponse;
-  isSuccess?: boolean;
-  message?: string;
-}> => {
+}: IHandleCreateStream): Promise<TxCallInterface> => {
   try {
     const account = accountStarknet?.account;
     const CONTRACT_ADDRESS = CONTRACT_DEPLOYED_STARKNET[DEFAULT_NETWORK];
