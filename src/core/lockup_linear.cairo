@@ -368,11 +368,9 @@ mod TokeiLockupLinear {
         next_stream_id: u64,
         streams: LegacyMap<u64, LockupLinearStream>,
         nft_descriptor: ContractAddress,
-        //Comptroller
         flash_fee: u256,
         is_flash_asset: LegacyMap<ContractAddress, bool>,
         protocol_fee: LegacyMap<ContractAddress, u256>,
-        //Base
         protocol_revenues: LegacyMap<ContractAddress, u256>,
         //Component
         #[substorage(v0)]
@@ -381,7 +379,8 @@ mod TokeiLockupLinear {
         erc721: ERC721Component::Storage,
     }
 
-    const MAX_FEE: u256 = 100000000000000000;
+    // The maximum fee that can be set for the protocol.
+    const MAX_FEE: u256 = 10; //0.1%
 
     // *************************************************************************
     // EVENTS
@@ -502,7 +501,7 @@ mod TokeiLockupLinear {
 
         // Initialize as ERC-721 contract.
         self.erc721.initializer('Tokei Lockup Linear NFT', 'ZW-LOCKUP-LIN');
-
+        // Emit the transfer admin event.
         self.emit(TransferAdmin { old_admin: Zeroable::zero(), new_admin: initial_admin, });
     }
 
@@ -515,11 +514,21 @@ mod TokeiLockupLinear {
         //USER-FACING CONSTANT FUNCTIONS
         //////////////////////////////////////////////////////////////////////////
 
+        /// Returns the asset address of the stream.
+        /// # Arguments
+        /// * `stream_id` - The id of the stream.
+        /// # Returns
+        /// * `asset` - The asset address of the stream.
         fn get_asset(self: @ContractState, stream_id: u64) -> ContractAddress {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
             self.streams.read(stream_id).asset
         }
 
+        /// Returns the next stream id.
+        /// # Arguments
+        /// - 
+        /// # Returns
+        /// * `next_stream_id` - The next stream id.
         fn get_next_stream_id(self: @ContractState) -> u64 {
             self.next_stream_id.read()
         }
@@ -527,6 +536,8 @@ mod TokeiLockupLinear {
         /// Returns the cliff time of the stream.
         /// # Arguments
         /// * `stream_id` - The id of the stream.
+        /// # Returns
+        /// * `cliff_time` - The cliff time of the stream.
         fn get_cliff_time(self: @ContractState, stream_id: u64) -> u64 {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
             self.streams.read(stream_id).cliff_time
@@ -535,6 +546,8 @@ mod TokeiLockupLinear {
         /// Returns the deposited amount of the stream.
         /// # Arguments
         /// * `stream_id` - The id of the stream.
+        /// # Returns
+        /// * `deposited_amount` - The deposited amount of the stream.
         fn get_deposited_amount(self: @ContractState, stream_id: u64) -> u256 {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
             self.streams.read(stream_id).amounts.deposited
@@ -543,6 +556,8 @@ mod TokeiLockupLinear {
         /// Returns the end time of the stream.
         /// # Arguments
         /// * `stream_id` - The id of the stream.
+        /// # Returns
+        /// * `end_time` - The end time of the stream.
         fn get_end_time(self: @ContractState, stream_id: u64) -> u64 {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
             self.streams.read(stream_id).end_time
@@ -551,6 +566,8 @@ mod TokeiLockupLinear {
         /// Returns the Range of the stream.
         /// # Arguments
         /// * `stream_id` - The id of the stream.
+        /// # Returns
+        /// * `range` - The range of the stream.
         fn get_range(self: @ContractState, stream_id: u64) -> Range {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
             let stream = self.streams.read(stream_id);
@@ -560,16 +577,35 @@ mod TokeiLockupLinear {
         /// Returns the refundable amount of the stream.
         /// # Arguments
         /// * `stream_id` - The id of the stream.
+        /// # Returns
+        /// * `refundable_amount` - The refundable amount of the stream.
         fn get_refunded_amount(self: @ContractState, stream_id: u64) -> u256 {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
             self.streams.read(stream_id).amounts.refunded
         }
 
+        /// Returns the status of the stream.
+        /// # Arguments
+        /// * `stream_id` - The id of the stream.
+        /// # Returns
+        /// * `status` - The status of the stream.
+        /// # Note
+        /// * `PENDING` - The stream is pending - 0
+        /// * `STREAMING` - The stream is streaming - 1
+        /// * `CANCELED` - The stream is canceled - 2
+        /// * `SETTLED` - The stream is settled - 3
+        /// * `DEPLETED` - The stream is depleted - 4
         fn status_of(self: @ContractState, stream_id: u64) -> Status {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
             TokeiInternalImpl::_status_of(self, stream_id)
         }
 
+
+        /// Returns the amount of tokens streamed.
+        /// # Arguments
+        /// * `stream_id` - The id of the stream.
+        /// # Returns
+        /// * `streamed_amount` - The amount of tokens streamed.
         fn streamed_amount_of(self: @ContractState, stream_id: u64) -> u256 {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
             TokeiInternalImpl::_streamed_amount_of(self, stream_id)
@@ -668,7 +704,8 @@ mod TokeiLockupLinear {
         /// Returns the refundable amount of the stream.
         /// # Arguments
         /// * `stream_id` - The id of the stream.
-        // @todo - Fn check - Should it be `wasCanceled` or is it supposed to be !is_depleted check
+        /// # Returns
+        /// * `refundable_amount` - The refundable amount of the stream.
         fn refundable_amount_of(self: @ContractState, stream_id: u64) -> u256 {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
             if (self.streams.read(stream_id).is_cancelable
@@ -680,16 +717,31 @@ mod TokeiLockupLinear {
             }
         }
 
+        /// Returns if the stream was canceled.
+        /// # Arguments
+        /// * `stream_id` - The id of the stream.
+        /// # Returns
+        /// * `true` - If the stream was canceled.
         fn was_canceled(self: @ContractState, stream_id: u64) -> bool {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
             self.streams.read(stream_id).was_canceled
         }
 
+        /// Returns the recipient address of the stream.
+        /// # Arguments
+        /// * `stream_id` - The id of the stream.
+        /// # Returns
+        /// * `recipient` - The recipient address of the stream.
         fn get_recipient(self: @ContractState, stream_id: u64) -> ContractAddress {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
             self.erc721.owner_of(stream_id.into())
         }
 
+        /// Returns a bool if the stream was canceled, settled, or depleted.
+        /// # Arguments
+        /// * `stream_id` - The id of the stream.
+        /// # Returns
+        /// * `true` - If the stream is cold.
         fn is_cold(self: @ContractState, stream_id: u64) -> bool {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
             let status = TokeiInternalImpl::_status_of(self, stream_id);
@@ -699,6 +751,11 @@ mod TokeiLockupLinear {
             result
         }
 
+        /// Returns a bool if the stream is streaming or pending.
+        /// # Arguments
+        /// * `stream_id` - The id of the stream.
+        /// # Returns
+        /// * `true` - If the stream is warm.
         fn is_warm(self: @ContractState, stream_id: u64) -> bool {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
             let status = TokeiInternalImpl::_status_of(self, stream_id);
@@ -706,33 +763,68 @@ mod TokeiLockupLinear {
             result
         }
 
-
+        /// Returns the withdrawable amount of the stream.
+        /// # Arguments
+        /// * `stream_id` - The id of the stream.
+        /// # Returns
+        /// * `withdrawable_amount` - The withdrawable amount of the stream.
         fn withdrawable_amount_of(self: @ContractState, stream_id: u64) -> u256 {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
             self._withdrawable_amount_of(stream_id)
         }
 
+        /// Returns the amount of protocol revenues for the given asset.
+        /// # Arguments
+        /// * `asset` - The asset to claim the protocol revenues for.
+        /// # Returns
+        /// * `protocol_revenues` - The amount of protocol revenues for the given asset.
         fn get_protocol_revenues(self: @ContractState, asset: ContractAddress) -> u256 {
             assert(Zeroable::is_non_zero(asset), 'Invalid asset');
             self.protocol_revenues.read(asset)
         }
 
+        /// Returns the protocol fee for the given asset.
+        /// # Arguments
+        /// * `asset` - The asset that has a set protocol fee.
+        /// # Returns
+        /// * `protocol_fee` - The protocol fee for the given asset.
         fn get_protocol_fee(self: @ContractState, asset: ContractAddress) -> u256 {
             self.protocol_fee.read(asset)
         }
 
+        /// Returns the NFT descriptor address.
+        /// # Returns
+        /// * `nft_descriptor` - The NFT descriptor address.
         fn get_nft_descriptor(self: @ContractState) -> ContractAddress {
             self.nft_descriptor.read()
         }
 
+        /// Returns the flash fee
+        /// # Returns
+        /// * `flash_fee` - The flash fee.
         fn get_flash_fee(self: @ContractState) -> u256 {
             self.flash_fee.read()
         }
 
+        /// Returns the admin address.
+        /// # Returns
+        /// * `admin` - The admin address.
         fn get_admin(self: @ContractState) -> ContractAddress {
             self.admin.read()
         }
 
+        /// Creates a new stream with a given range.
+        /// # Arguments
+        /// * `sender` - The address streaming the assets, with the ability to cancel the stream.
+        /// * `recipient` - The address receiving the assets.
+        /// * `total_amount` - The total amount of ERC-20 assets to be paid, including the stream deposit and any potential
+        /// * `asset` - The contract address of the ERC-20 asset used for streaming.
+        /// * `cancelable` - Indicates if the stream is cancelable.
+        /// * `transferable` - Indicates if the stream is transferable.
+        /// * `range` - The range of the stream. Struct containing (i) the stream's start time, (ii) cliff time, and (iii) end time, all as Unix
+        /// * `broker` - The broker of the stream.  Struct containing (i) the address of the broker assisting in creating the stream, and (ii) the percentage fee paid to the broker from `totalAmount`.
+        /// # Returns
+        /// * `stream_id` - The id of the stream.
         fn create_with_range(
             ref self: ContractState,
             sender: ContractAddress,
@@ -756,6 +848,19 @@ mod TokeiLockupLinear {
                 broker,
             )
         }
+
+        /// Creates a new stream with a given duration.
+        /// # Arguments
+        /// * `sender` - The address streaming the assets, with the ability to cancel the stream.
+        /// * `recipient` - The address receiving the assets.
+        /// * `total_amount` - The total amount of ERC-20 assets to be paid, including the stream deposit and any potential
+        /// * `asset` - The contract address of the ERC-20 asset used for streaming.
+        /// * `cancelable` - Indicates if the stream is cancelable.
+        /// * `transferable` - Indicates if the stream is transferable.
+        /// * `duration` - The duration of the stream. Struct containing (i) the stream's cliff period, (ii) total duration
+        /// * `broker` - The broker of the stream.  Struct containing (i) the address of the broker assisting in creating the stream, and (ii) the percentage fee paid to the broker from `totalAmount`.
+        /// # Returns
+        /// * `stream_id` - The id of the stream.
         fn create_with_duration(
             ref self: ContractState,
             sender: ContractAddress,
@@ -788,6 +893,10 @@ mod TokeiLockupLinear {
 
             stream_id
         }
+
+        /// Burns the NFT token of the stream.
+        /// # Arguments
+        /// * `stream_id` - The id of the stream.
         fn burn_token(ref self: ContractState, stream_id: u64) {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
             assert(self.is_depleted(stream_id), STREAM_NOT_DEPLETED);
@@ -799,6 +908,9 @@ mod TokeiLockupLinear {
             self.erc721._burn(stream_id.into());
         }
 
+        /// Cancels the stream.
+        /// # Arguments
+        /// * `stream_id` - The id of the stream.
         fn cancel(ref self: ContractState, stream_id: u64) {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
             assert(!self.is_depleted(stream_id), STREAM_DEPLETED);
@@ -811,6 +923,9 @@ mod TokeiLockupLinear {
             TokeiInternalImpl::_cancel(ref self, stream_id);
         }
 
+        /// Cancels multiple streams.
+        /// # Arguments
+        /// * `stream_ids` - The ids of the streams.
         fn cancel_multiple(ref self: ContractState, stream_ids: Span<u64>) {
             let count = stream_ids.len();
             let mut i = 0;
@@ -824,6 +939,9 @@ mod TokeiLockupLinear {
             };
         }
 
+        /// Renounces the stream.
+        /// # Arguments
+        /// * `stream_id` - The id of the stream.
         fn renounce(ref self: ContractState, stream_id: u64) {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
             let status = self._status_of(stream_id);
@@ -835,6 +953,9 @@ mod TokeiLockupLinear {
             self._renounce(stream_id);
         }
 
+        /// Sets the NFT descriptor.
+        /// # Arguments
+        /// * `nft_descriptor` - The NFT descriptor.
         fn set_nft_descriptor(ref self: ContractState, nft_descriptor: ContractAddress) {
             assert(Zeroable::is_non_zero(nft_descriptor), 'Invalid nft descriptor');
             self.assert_only_admin();
@@ -851,6 +972,11 @@ mod TokeiLockupLinear {
                 );
         }
 
+        /// Withdraws the stream's assets.
+        /// # Arguments
+        /// * `stream_id` - The id of the stream.
+        /// * `to` - The address to withdraw the assets to.
+        /// * `amount` - The amount of assets to withdraw.
         fn withdraw(ref self: ContractState, stream_id: u64, to: ContractAddress, amount: u256) {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
             assert(Zeroable::is_non_zero(amount), WITHDRAW_ZERO_AMOUNT);
@@ -871,10 +997,18 @@ mod TokeiLockupLinear {
             TokeiInternalImpl::_withdraw(ref self, stream_id, to, amount);
         }
 
+        /// Withdraws maximum amount of the stream's assets.
+        /// # Arguments
+        /// * `stream_id` - The id of the stream.
+        /// * `new_recipient` - The address to withdraw the assets to.
         fn withdraw_max(ref self: ContractState, stream_id: u64, to: ContractAddress) {
             self.withdraw(stream_id, to, self.withdrawable_amount_of(stream_id));
         }
 
+        /// Withdraws maximum amount of the stream's assets and transfers the NFT to a new recipient.
+        /// # Arguments
+        /// * `stream_id` - The id of the stream.
+        /// * `new_recipient` - The address to withdraw the assets to.
         fn withdraw_max_and_transfer(
             ref self: ContractState, stream_id: u64, new_recipient: ContractAddress
         ) {
@@ -891,6 +1025,11 @@ mod TokeiLockupLinear {
             self.erc721.transfer_from(current_recipient, new_recipient, stream_id.into());
         }
 
+        /// Withdraws multiple streams' assets.
+        /// # Arguments
+        /// * `stream_ids` - The ids of the streams.
+        /// * `to` - The address to withdraw the assets to.
+        /// * `amounts` - The amounts of assets to withdraw.
         fn withdraw_multiple(
             ref self: ContractState, stream_ids: Span<u64>, to: ContractAddress, amounts: Span<u256>
         ) {
@@ -909,6 +1048,9 @@ mod TokeiLockupLinear {
             };
         }
 
+        /// Sets the flash fee.
+        /// # Arguments
+        /// * `new_flash_fee` - The new flash fee.
         fn set_flash_fee(ref self: ContractState, new_flash_fee: u256) {
             self.assert_only_admin();
             let old_fee = self.flash_fee.read();
@@ -924,6 +1066,10 @@ mod TokeiLockupLinear {
                 );
         }
 
+        /// Sets the protocol fee.
+        /// # Arguments
+        /// * `asset` - The asset to set the protocol fee for.
+        /// * `new_protocol_fee` - The new protocol fee.
         fn set_protocol_fee(
             ref self: ContractState, asset: ContractAddress, new_protocol_fee: u256
         ) {
@@ -942,6 +1088,9 @@ mod TokeiLockupLinear {
                 );
         }
 
+        /// Toggles the flash asset flag.
+        /// # Arguments
+        /// * `asset` - The asset to toggle the flash asset flag for.
         fn toggle_flash_assets(ref self: ContractState, asset: ContractAddress) {
             self.assert_only_admin();
             let old_flag = self.is_flash_asset.read(asset);
@@ -955,6 +1104,9 @@ mod TokeiLockupLinear {
                 );
         }
 
+        /// Transfers the admin.
+        /// # Arguments
+        /// * `new_admin` - The new admin.
         fn transfer_admin(ref self: ContractState, new_admin: ContractAddress) {
             self.assert_only_admin();
             let old_admin = self.admin.read();
@@ -963,6 +1115,9 @@ mod TokeiLockupLinear {
             self.emit(TransferAdmin { old_admin: old_admin, new_admin: new_admin, });
         }
 
+        /// Claims the protocol revenues for the given asset.
+        /// # Arguments
+        /// * `asset` - The asset to claim the protocol revenues for.
         fn claim_protocol_revenues(ref self: ContractState, asset: ContractAddress) {
             self.assert_only_admin();
             let protocol_revenues = self.protocol_revenues.read(asset);
@@ -1069,12 +1224,20 @@ mod TokeiLockupLinear {
 
     #[generate_trait]
     impl TokeiInternalImpl of TokeiInternalTrait {
+
+        // Assertion that caller is the admin.
         fn assert_only_admin(self: @ContractState) {
             assert(get_caller_address() == self.admin.read(), LOCKUP_UNAUTHORIZED);
         }
+
+        // Calculates the streamed amount of the stream.
+        // # Arguments
+        // * `stream_id` - The id of the stream.
+        // # Returns
+        // * `streamed_amount` - The streamed amount of the stream.
         fn _calculate_streamed_amount(self: @ContractState, stream_id: u64) -> u256 {
-            let cliff_time = self.streams.read(stream_id).cliff_time; //2600
-            let current_time = get_block_timestamp(); //3000
+            let cliff_time = self.streams.read(stream_id).cliff_time; 
+            let current_time = get_block_timestamp();
 
             // If the cliff time is in the future, return zero.
             if (current_time < cliff_time) {
@@ -1082,17 +1245,17 @@ mod TokeiLockupLinear {
             }
 
             // If the end time is not in the future, return the deposited amount.
-            let end_time = self.streams.read(stream_id).end_time; //10000
+            let end_time = self.streams.read(stream_id).end_time;
 
             if (current_time >= end_time) {
                 return self.streams.read(stream_id).amounts.deposited;
             }
 
-            let start_time = self.streams.read(stream_id).start_time; //100
+            let start_time = self.streams.read(stream_id).start_time; 
 
-            let elapsed_time = current_time - start_time; //2900
+            let elapsed_time = current_time - start_time; 
 
-            let total_time = end_time - start_time; //9900
+            let total_time = end_time - start_time; 
 
             // Divide the elapsed time by the stream's total duration.
             let elapsed_time_percentage = scaled_down_div(elapsed_time, total_time);
@@ -1116,6 +1279,11 @@ mod TokeiLockupLinear {
             return streamed_amount;
         }
 
+        // Retuns the status of the stream.
+        // # Arguments
+        // * `stream_id` - The id of the stream.
+        // # Returns
+        // * `status` - The status of the stream.
         fn _status_of(self: @ContractState, stream_id: u64) -> Status {
             if (self.streams.read(stream_id).is_depleted) {
                 return Status::DEPLETED;
@@ -1138,7 +1306,13 @@ mod TokeiLockupLinear {
             }
         }
 
+        // Withdraws the stream's deposited amount to the recipient.
+        // # Arguments
+        // * `stream_id` - The id of the stream.
+        // * `to` - The recipient of the withdrawn amount.
+        // * `amount` - The amount to withdraw.
         fn _withdraw(ref self: ContractState, stream_id: u64, to: ContractAddress, amount: u256) {
+            // Calculates the amount that can be withdrawn.
             let withdrawable_amount = self._withdrawable_amount_of(stream_id);
             assert(amount <= withdrawable_amount, OVERDRAW);
             let stream = self.streams.read(stream_id);
@@ -1162,7 +1336,7 @@ mod TokeiLockupLinear {
             self.streams.write(stream_id, stream_updated);
 
             let amounts = self.streams.read(stream_id).amounts;
-
+            
             if (amounts.withdrawn >= amounts.deposited - amounts.refunded) {
                 let _stream_updated = LockupLinearStream {
                     sender: stream.sender,
@@ -1189,6 +1363,9 @@ mod TokeiLockupLinear {
             self.emit(WithdrawFromLockupStream { stream_id, to, asset, amount, });
         }
 
+        // Renounces the stream.
+        // # Arguments
+        // * `stream_id` - The id of the stream.
         fn _renounce(ref self: ContractState, stream_id: u64) {
             let stream = self.streams.read(stream_id);
             // Checks: the stream is cancelable.
@@ -1212,22 +1389,28 @@ mod TokeiLockupLinear {
             };
             // renounce the stream by making it not cancelable.
             self.streams.write(stream_id, stream_updated);
-
+            // Emit an event for the renounced stream.
             self.emit(RenounceLockupStream { stream_id });
         }
 
+        // Cancels the stream.
+        // # Arguments
+        // * `stream_id` - The id of the stream.
         fn _cancel(ref self: ContractState, stream_id: u64) {
+            // Calculates the streamed amount of the stream.
             let streamed_amount = TokeiInternalImpl::_calculate_streamed_amount(@self, stream_id);
 
             let amounts = self.streams.read(stream_id).amounts;
-
+            // Checks: if the amount deposited is greater than the streamed amount.    
             assert(streamed_amount < amounts.deposited, STREAM_SETTLED);
-
+            // Checks: if the stream is cancelable.
             assert(self.streams.read(stream_id).is_cancelable, STREAM_NOT_CANCELABLE);
 
+            // Calculates the refundable amount of the stream.
             let sender_amount = amounts.deposited - streamed_amount;
             let recipient_amount = streamed_amount - amounts.withdrawn;
             let stream = self.streams.read(stream_id);
+
             if (recipient_amount == 0) {
                 let stream_updated = LockupLinearStream {
                     sender: stream.sender,
@@ -1272,9 +1455,11 @@ mod TokeiLockupLinear {
 
             let sender = stream.sender;
             let recipient = self.get_recipient(stream_id);
-
+            // Interactions: transfer the refundable amount from the protocol's contract to the stream sender.
             ERC20ABIDispatcher { contract_address: stream.asset }
                 .transfer(sender, sender_amount.into());
+
+            // Emit an event for the canceled stream.
             self
                 .emit(
                     CancelLockupStream {
@@ -1288,11 +1473,22 @@ mod TokeiLockupLinear {
                 );
         }
 
+        // Returns the withdrawable amount of the stream.
+        // # Arguments
+        // * `stream_id` - The id of the stream.
+        // # Returns
+        // * The withdrawable amount of the stream.
         fn _withdrawable_amount_of(self: @ContractState, stream_id: u64) -> u256 {
             TokeiInternalImpl::_streamed_amount_of(self, stream_id)
                 - self.streams.read(stream_id).amounts.withdrawn
         }
 
+
+        // Returns the streamed amount of the stream.
+        // # Arguments
+        // * `stream_id` - The id of the stream.
+        // # Returns
+        // * The streamed amount of the stream.
         fn _streamed_amount_of(self: @ContractState, stream_id: u64) -> u256 {
             let stream = self.streams.read(stream_id);
             let amounts = stream.amounts;
@@ -1306,11 +1502,29 @@ mod TokeiLockupLinear {
             TokeiInternalImpl::_calculate_streamed_amount(self, stream_id)
         }
 
+        // Checks if the caller is the stream sender.
+        // # Arguments
+        // * `stream_id` - The id of the stream.
+        // # Returns
+        // * `true` if the caller is the stream sender.
         fn _is_caller_stream_sender(self: @ContractState, stream_id: u64) -> bool {
             let stream = self.streams.read(stream_id);
             get_caller_address() == stream.sender
         }
 
+
+        // Creates a new stream with the given parameters.
+        // # Arguments
+        // * `sender` - The address of the stream sender.
+        // * `recipient` - The address of the stream recipient.
+        // * `total_amount` - The total amount of the stream.
+        // * `asset` - The address of the asset to be streamed.
+        // * `cancelable` - Whether the stream is cancelable.
+        // * `transferable` - Whether the stream is transferable.
+        // * `range` - The range of the stream.
+        // * `broker` - The broker of the stream.
+        // # Returns
+        // * The stream id of the newly created stream.
         fn _create_with_range(
             ref self: ContractState,
             sender: ContractAddress,
@@ -1328,6 +1542,7 @@ mod TokeiLockupLinear {
                 total_amount, protocol_fee, broker.fee, MAX_FEE
             );
 
+            // Checks: check the fees and calculate the fee amounts.
             check_create_with_range(create_amounts.deposit, range);
 
             let caller = get_caller_address();
@@ -1345,9 +1560,7 @@ mod TokeiLockupLinear {
             // Read the next stream id from storage.
             let stream_id = self.next_stream_id.read();
 
-            // Checks: check the fees and calculate the fee amounts.
-            // let deposited_amount = total_amount - create_amounts;
-
+            // Creating the LockupAmounts struct
             let amounts: LockupAmounts = LockupAmounts {
                 deposited: create_amounts.deposit, withdrawn: 0, refunded: 0,
             };
@@ -1371,6 +1584,7 @@ mod TokeiLockupLinear {
             // Effects: bump the next stream id.
             self.next_stream_id.write(stream_id + 1);
 
+            // Effects: update the protocol revenues.
             let protocol_revenue = self.protocol_revenues.read(asset) + create_amounts.protocol_fee;
             self.protocol_revenues.write(asset, protocol_revenue);
 
@@ -1379,17 +1593,17 @@ mod TokeiLockupLinear {
             // Effects: mint the NFT to the recipient.
             self.erc721._mint(recipient, stream_id.into());
 
+            // Interactions: transfer the deposited amount from the caller to the protocol's contract.
             ERC20ABIDispatcher { contract_address: asset }
                 .transfer_from(caller, this, amounts.deposited);
 
-            // // Interactions: pay the broker fee, if not zero.
+            // Interactions: pay the broker fee, if not zero.
             if (broker.fee > 0) {
-                // let broker_fee_u256: u256 = .into();
                 ERC20ABIDispatcher { contract_address: asset }
                     .transfer_from(caller, broker.account, create_amounts.broker_fee);
             }
 
-            // Emit an event for  the newly created stream.
+            // Emit an event for the newly created stream.
             self
                 .emit(
                     LockupLinearStreamCreated {
@@ -1409,6 +1623,11 @@ mod TokeiLockupLinear {
             stream_id
         }
 
+        // Checks if the caller is the stream recipient or an approved operator.
+        // # Arguments
+        // * `stream_id` - The id of the stream.
+        // # Returns
+        // * `true` if the caller is the stream recipient or an approved operator.
         fn _is_caller_stream_recipient_or_approved(self: @ContractState, stream_id: u64) -> bool {
             let stream_id_u256: u256 = stream_id.into();
             let recipient = self.get_recipient(stream_id);
