@@ -12,34 +12,105 @@ import {
   Uint256,
 } from "starknet";
 import fs from "fs";
+import readline from "readline";
 import { ethers } from "ethers";
 
-// import { account5TestnetAddress, account5TestnetPrivateKey } from "../../../A1priv/A1priv";
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
+
+function ask(question: string): Promise<string> {
+  return new Promise((resolve) => rl.question(question, resolve));
+}
 
 async function main() {
-  // *************************************************************************
-  //                       To set the protocol fee
-  // *************************************************************************
+  let lastTransactionHash = "";
+  while (true) {
+    // List of functions for the CLI
+    const view_functions = [
+      "get_admin",
+      "get_flash_fee",
+      "get_protocol_fee",
+      "get_protocol_revenues",
+    ];
+    const functions = [
+      "set_flash_fee",
+      "set_protocol_fee",
+      "claim_protocol_revenues",
+      "quit",
+    ];
 
-  await set_protocol_fee(1); //0.01%  - Uncomment when you are using this function and comment out when you are not using it
+    console.log("\nAvailable view functions:");
+    view_functions.forEach((func, index) =>
+      console.log("🧪 " + `${index + 1}. ${func}`)
+    );
 
-  // *************************************************************************
-  //                       To claim the protocol revenues
-  // *************************************************************************
+    console.log(
+      "\nAvailable Write (last transaction hash: " + lastTransactionHash + ")"
+    );
+    functions.forEach((func, index) =>
+      console.log("🧪 " + `${index + 1}. ${func}`)
+    );
 
-  //   await claim_protocol_revenues(); // Uncomment when you are using this function and comment out when you are not using it
+    const functionName = await ask(
+      "\nWhich function would you like to execute? (Enter the name): "
+    );
 
-  // *************************************************************************
-  //                       To get the protocol fee
-  // *************************************************************************
+    if (functionName.trim() === "quit") {
+      console.log("Exiting program.");
+      break;
+    }
 
-  //   await get_protocol_fee(); // Uncomment when you are using this function and comment out when you are not using it
+    switch (functionName.trim()) {
+      case "get_protocol_fee":
+        // Collect parameters for create_with_duration
+        let token_ = await ask("Enter the asset address: ");
+        // Call the function with collected parameters
+        await get_protocol_fee(token_);
+        break;
+      // Similar structure for other functions
+      case "get_flash_fee":
+        // Collect parameters and call create_with_range
+        await get_flash_fee();
+        break;
+      case "get_admin":
+        // Call the function with collected parameters
+        await get_admin();
+        break;
+      case "claim_protocol_revenues":
+        // Collect parameters for cancel_multiple
+        const asset = await ask("Enter the asset : ");
 
-  // *************************************************************************
-  //                       To get the protocol revenues
-  // *************************************************************************
+        // Call the function with collected parameters
+        await claim_protocol_revenues(asset);
+        break;
+      case "set_flash_fee":
+        // Collect parameters for withdraw_multiple
 
-  //   await get_protocol_revenues(); // Uncomment when you are using this function and comment out when you are not using it
+        const flash_fee = parseInt(await ask("Enter the new flash fee: "));
+        // Call the function with collected parameters
+        await set_flash_fee(flash_fee);
+        break;
+      case "set_protocol_fee":
+        const protocol_fee = parseInt(
+          await ask("Enter the new protocol fee: ")
+        );
+        await set_protocol_fee(protocol_fee);
+        break;
+      case "get_protocol_revenues":
+        // Collect parameters and call create_with_range
+        await get_protocol_revenues();
+        break;
+
+      default:
+        console.log("Function not recognized.");
+        break;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+  }
+
+  rl.close();
 }
 
 export async function initialize_account() {
@@ -134,14 +205,14 @@ export async function initialize_account() {
 
   return { account0, recipientAccount, tokeiContract, erc20Contract, provider };
 }
-async function get_protocol_fee() {
+async function get_protocol_fee(asset: string) {
   const info = await initialize_account();
   const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
     info;
 
   let success = await tokeiContract.call(
     "get_protocol_fee",
-    CallData.compile({ asset: erc20Contract.address })
+    CallData.compile({ asset: asset })
   );
 
   console.log("protocol fee =", success.toString());
@@ -181,7 +252,38 @@ async function set_protocol_fee(protocol_fee: number) {
     success.transaction_hash
   );
 }
-async function claim_protocol_revenues() {
+
+async function set_flash_fee(flash_fee: number) {
+  const info = await initialize_account();
+  const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
+    info;
+
+  let success = await account0.execute([
+    {
+      contractAddress: tokeiContract.address,
+      entrypoint: "set_flash_fee",
+      calldata: CallData.compile({
+        amount: cairo.uint256(flash_fee),
+      }),
+    },
+  ]);
+
+  console.log(
+    "✅ flash fee has been set  -> Transaction Hash :",
+    success.transaction_hash
+  );
+}
+
+async function get_flash_fee() {
+  const info = await initialize_account();
+  const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
+    info;
+
+  let success = await tokeiContract.call("get_flash_fee");
+
+  console.log("✅ flash fee =", success.toString());
+}
+async function claim_protocol_revenues(asset: string) {
   const info = await initialize_account();
   const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
     info;
@@ -191,7 +293,7 @@ async function claim_protocol_revenues() {
       contractAddress: tokeiContract.address,
       entrypoint: "claim_protocol_revenues",
       calldata: CallData.compile({
-        asset: erc20Contract.address,
+        asset: asset,
       }),
     },
   ]);
@@ -200,6 +302,17 @@ async function claim_protocol_revenues() {
     "✅ protocol fee has been claimed -> Transaction Hash :",
     success2.transaction_hash
   );
+}
+
+async function get_admin() {
+  const info = await initialize_account();
+  const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
+    info;
+
+  let success2 = await tokeiContract.call("get_admin");
+  let res = success2.valueOf();
+
+  console.log("✅ The protocol admin is -> :", "0x" + res.toString(16));
 }
 
 main()

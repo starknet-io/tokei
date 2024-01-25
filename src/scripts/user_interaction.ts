@@ -12,10 +12,23 @@ import {
   Uint256,
 } from "starknet";
 import fs from "fs";
+import readline from "readline";
+import dotenv from "dotenv";
+import { utils } from "@project-serum/anchor";
+dotenv.config();
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
+
+function ask(question: string): Promise<string> {
+  return new Promise((resolve) => rl.question(question, resolve));
+}
 
 async function main() {
   // // *************************************************************************
-  // //                       FUNCTION PARAMETER VARIABLES INITIALIZATION
+  // //                       TEST VALUES
   // // *************************************************************************
 
   // Please feel free to change the values of the variables below to test out the flow
@@ -39,72 +52,258 @@ async function main() {
   let range_cliff = 1706133071;
   let range_end = 1706139471;
 
-  // *************************************************************************
-  //                  Create_with_duration
-  // *************************************************************************
-  await create_with_duration(
-    //- Uncomment when you are using this function and comment out when you are not using it
-    sender,
-    recipient,
-    total_amount,
-    asset,
-    cancelable,
-    transferable,
-    duration_cliff,
-    duration_total,
-    broker_account,
-    broker_fee
-  );
+  let lastTransactionHash = "";
+  while (true) {
+    // List of functions for the CLI
+    const view_functions = [
+      "get_asset",
+      "get_protocol_fee",
+      "get_protocol_revenues",
+      "get_cliff_time",
+      "get_deposited_amount",
+      "get_end_time",
+      "get_range",
+      "get_refunded_amount",
+      "get_sender",
+      "get_start_time",
+      "get_stream",
+      "get_withdrawn_amount",
+      "is_cancelable",
+      "is_transferable",
+      "is_depleted",
+      "is_stream",
+      "refundable_amount_of",
+      "get_recipient",
+      "is_cold",
+      "is_warm",
+      "withdrawable_amount_of",
+      "status_of",
+      "streamed_amount_of",
+      "was_canceled",
+    ];
+    const functions = [
+      "create_with_duration",
+      "create_with_range",
+      "cancel_stream",
+      "cancel_multiple",
+      "withdraw_max",
+      "withdraw_multiple",
+      "withdraw_max_and_transfer",
+      "quit",
+    ];
 
-  // *************************************************************************
-  //                  Create_with_range
-  // *************************************************************************
+    console.log("\nAvailable view functions:");
+    view_functions.forEach((func, index) =>
+      console.log("🧪 " + `${index + 1}. ${func}`)
+    );
 
-  // await create_with_range(
-  //   // - Uncomment when you are using this function and comment out when you are not using it
-  //   sender,
-  //   recipient,
-  //   total_amount,
-  //   asset,
-  //   cancelable,
-  //   transferable,
-  //   range_start,
-  //   range_cliff,
-  //   range_end,
-  //   broker_account,
-  //   broker_fee
-  // );
+    console.log(
+      "\nAvailable Write (last transaction hash: " + lastTransactionHash + ")"
+    );
+    functions.forEach((func, index) =>
+      console.log("🧪 " + `${index + 1}. ${func}`)
+    );
 
-  // *************************************************************************
-  //                 Cancel stream
-  // *************************************************************************
+    const functionName = await ask(
+      "\nWhich function would you like to execute? (Enter the name): "
+    );
 
-  // await cancel_stream("8"); //- Uncomment when you are using this function and comment out when you are not using it
+    if (functionName.trim() === "quit") {
+      console.log("Exiting program.");
+      break;
+    }
 
-  // *************************************************************************
-  //                 Cancel Multiple stream
-  // *************************************************************************
+    switch (functionName.trim()) {
+      case "create_with_duration":
+        // Collect parameters for create_with_duration
+        const sender = await ask("Enter sender: ");
+        const recipient = await ask("Enter recipient: ");
+        const total_amount = cairo.uint256(await ask("Enter total amount: "));
+        const asset = await ask("Enter asset: ");
+        const cancelable =
+          (await ask("Is it cancelable? (true/false): ")) === "true";
+        const transferable =
+          (await ask("Is it transferable? (true/false): ")) === "true";
+        const duration_cliff = parseInt(await ask("Enter duration cliff: "));
+        const duration_total = parseInt(await ask("Enter duration total: "));
+        const broker_account = await ask("Enter broker account: ");
+        const broker_fee = cairo.uint256(await ask("Enter broker fee: "));
+        await create_with_duration(
+          sender,
+          recipient,
+          total_amount,
+          asset,
+          cancelable,
+          transferable,
+          duration_cliff,
+          duration_total,
+          broker_account,
+          broker_fee
+        );
+        break;
+      // Similar structure for other functions
+      case "create_with_range":
+        // Collect parameters and call create_with_range
+        break;
+      case "cancel_stream":
+        // Collect parameters for cancel_stream
+        const streamId = await ask("Enter stream ID: ");
+        // Call the function with collected parameters
+        await cancel_stream(streamId);
+        break;
+      case "cancel_multiple":
+        // Collect parameters for cancel_multiple
+        const streamIds = (await ask("Enter stream IDs (comma-separated): "))
+          .split(",")
+          .map((id) => parseInt(id.trim()));
+        // Call the function with collected parameters
+        await cancel_multiple(streamIds);
+        break;
+      case "withdraw_max":
+        // Collect parameters for withdraw_max
+        const streamIdForWithdraw = await ask("Enter stream ID: ");
+        let recipientAddress = await ask("Enter recipient address: ");
+        // Call the function with collected parameters
+        await withdraw_max(streamIdForWithdraw, recipientAddress);
+        break;
+      case "withdraw_multiple":
+        // Collect parameters for withdraw_multiple
+        const streamIdsForWithdraw = (
+          await ask("Enter stream IDs for withdrawal (comma-separated): ")
+        )
+          .split(",")
+          .map((id) => parseInt(id.trim()));
+        const amounts = (await ask("Enter amounts (comma-separated): "))
+          .split(",")
+          .map((amount) => parseInt(amount.trim()));
+        // Call the function with collected parameters
+        await withdraw_multiple(streamIdsForWithdraw, amounts);
+        break;
+      case "withdraw_max_and_transfer":
+        // Collect parameters for withdraw_max_and_transfer
+        const streamIdForMaxTransfer = await ask("Enter stream ID: ");
+        const transferRecipient = await ask("Enter recipient: ");
+        // Call the function with collected parameters
+        await withdraw_max_and_transfer(
+          streamIdForMaxTransfer,
+          transferRecipient
+        );
+        break;
+      case "get_asset":
+        const streamIdForAsset = await ask("Enter stream ID: ");
+        await get_asset(streamIdForAsset);
+        break;
+      case "get_protocol_fee":
+        let stream_id = await ask("Enter stream ID: ");
+        await get_protocol_fee(stream_id);
+        break;
+      case "get_protocol_revenues":
+        let asset2 = await ask("Enter asset: ");
+        await get_protocol_revenues(asset2);
+        break;
+      case "get_cliff_time":
+        let stream_id2 = await ask("Enter stream ID: ");
+        await get_cliff_time(stream_id2);
+        break;
+      case "get_deposited_amount":
+        let stream_id3 = await ask("Enter stream ID: ");
+        await get_deposited_amount(stream_id3);
+        break;
+      case "get_end_time":
+        let stream_id4 = await ask("Enter stream ID: ");
+        await get_end_time(stream_id4);
+        break;
+      case "get_range":
+        let stream_id5 = await ask("Enter stream ID: ");
+        await get_range(stream_id5);
+        break;
+      case "get_refunded_amount":
+        let stream_id6 = await ask("Enter stream ID: ");
+        await get_refunded_amount(stream_id6);
+        break;
+      case "get_sender":
+        let stream_id7 = await ask("Enter stream ID: ");
+        await get_sender(stream_id7);
+        break;
+      case "get_start_time":
+        let stream_id8 = await ask("Enter stream ID: ");
+        await get_start_time(stream_id8);
+        break;
+      case "get_withdrawn_amount":
+        let stream_id10 = await ask("Enter stream ID: ");
+        await get_withdrawn_amount(stream_id10);
+        break;
+      case "is_cancelable":
+        let stream_id11 = await ask("Enter stream ID: ");
+        await is_cancelable(stream_id11);
+        break;
+      case "is_transferable":
+        let stream_id12 = await ask("Enter stream ID: ");
+        await is_transferable(stream_id12);
+        break;
+      case "is_depleted":
+        let stream_id13 = await ask("Enter stream ID: ");
+        await is_depleted(stream_id13);
+        break;
+      case "is_stream":
+        let stream_id14 = await ask("Enter stream ID: ");
+        await is_stream(stream_id14);
+        break;
+      case "refundable_amount_of":
+        let stream_id15 = await ask("Enter stream ID: ");
+        await refundable_amount_of(stream_id15);
+        break;
+      case "get_recipient":
+        let stream_id16 = await ask("Enter stream ID: ");
+        await get_recipient(stream_id16);
+        break;
+      case "is_cold":
+        let stream_id17 = await ask("Enter stream ID: ");
+        let account2 = await ask("Enter account: ");
+        await is_cold(stream_id17, account2);
+        break;
+      case "is_warm":
+        let stream_id18 = await ask("Enter stream ID: ");
+        let account3 = await ask("Enter account: ");
+        await is_warm(stream_id18, account3);
+        break;
+      case "withdrawable_amount_of":
+        let stream_id19 = await ask("Enter stream ID: ");
+        let account4 = await ask("Enter account: ");
+        await withdrawable_amount_of(stream_id19, account4);
+        break;
+      case "status_of":
+        let stream_id20 = await ask("Enter stream ID: ");
+        let account5 = await ask("Enter account: ");
+        await status_of(stream_id20, account5);
+        break;
+      case "streamed_amount_of":
+        let stream_id21 = await ask("Enter stream ID: ");
 
-  // await cancel_multiple([7, 8]); //- Uncomment when you are using this function and comment out when you are not using it
+        await streamed_amount_of(stream_id21);
+        break;
+      case "was_canceled":
+        let stream_id22 = await ask("Enter stream ID: ");
+        await was_canceled(stream_id22);
+        break;
 
-  // *************************************************************************
-  //                 Withdraw max
-  // *************************************************************************
+      default:
+        console.log("Function not recognized.");
+        break;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+  }
 
-  // await withdraw_max("9"); //- Uncomment when you are using this function and comment out when you are not using it
-
-  // *************************************************************************
-  //                  Withdraw multiple
-  // *************************************************************************
-
-  // await withdraw_multiple([7, 9], [9000000000000000000, 8000000000000000000]); //- Uncomment when you are using this function and comment out when you are not using it
-
-  // *************************************************************************
-  //                 Withdraw max and transfer
-  // *************************************************************************
-
-  // await withdraw_max_and_transfer("9", recipient); //- Uncomment when you are using this function and comment out when you are not using it
+  rl.close();
 }
+
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    rl.close();
+    process.exit(1);
+  });
 
 export async function initialize_account() {
   const provider = new RpcProvider({
@@ -173,8 +372,8 @@ export async function initialize_account() {
   const tokeiaddress =
     "0x0661bd47eb4c872cd316a305dc673221a8f8a27379e6aa3a97a21a542efbb76f";
 
-  console.log("✅ ERC20 Contract declared with classHash =", erc20ClassHash);
-  console.log("✅ Tokei Contract declared with classHash =", tokeiClassHash);
+  // console.log("✅ ERC20 Contract declared with classHash =", erc20ClassHash);
+  // console.log("✅ Tokei Contract declared with classHash =", tokeiClassHash);
 
   // *************************************************************************
   //                      CONTRACT CONNECTION
@@ -185,7 +384,7 @@ export async function initialize_account() {
     tokeiaddress,
     provider
   );
-  console.log("✅ Tokei Contract connected at =", tokeiContract.address);
+  // console.log("✅ Tokei Contract connected at =", tokeiContract.address);
   tokeiContract.connect(account0);
 
   const erc20Contract = new Contract(
@@ -193,8 +392,10 @@ export async function initialize_account() {
     erc20address,
     provider
   );
-  console.log("✅ ERC20 Contract connected at =", erc20Contract.address);
+  // console.log("✅ ERC20 Contract connected at =", erc20Contract.address);
   erc20Contract.connect(account0);
+
+  console.log(" 🤔 In process ...");
 
   return { account0, recipientAccount, tokeiContract, erc20Contract, provider };
 }
@@ -218,13 +419,13 @@ export async function cancel_stream(stream_id: string) {
   console.log("✅ cancel_stream invoked at :", success6.transaction_hash);
 }
 
-async function withdraw_max(stream_id: string) {
+async function withdraw_max(stream_id: string, recipientAddress: string) {
   const info = await initialize_account();
   const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
     info;
   let par3 = CallData.compile({
     stream_id: stream_id,
-    to: recipientAccount.address,
+    to: recipientAddress,
   });
 
   let success3 = await recipientAccount.execute([
@@ -405,6 +606,319 @@ async function cancel_multiple(stream_ids: number[]) {
   ]);
 
   console.log("✅ cancel_multiple invoked at :", success7.transaction_hash);
+}
+
+async function get_asset(stream_id: string) {
+  const info = await initialize_account();
+  const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
+    info;
+
+  let success = await tokeiContract.call(
+    "get_asset",
+    CallData.compile({
+      stream_id: stream_id,
+    })
+  );
+
+  console.log("✅ asset =", success.toString());
+}
+
+async function get_protocol_fee(asset: string) {
+  const info = await initialize_account();
+  const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
+    info;
+
+  let success = await tokeiContract.call(
+    "get_protocol_fee",
+    CallData.compile({ asset: asset })
+  );
+
+  console.log("✅ protocol fee =", success.toString());
+}
+
+async function get_protocol_revenues(asset: string) {
+  const info = await initialize_account();
+  const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
+    info;
+
+  let success = await tokeiContract.call(
+    "get_protocol_revenues",
+    CallData.compile({ asset: asset })
+  );
+
+  console.log("✅ protocol revenues for the given asset :", success.toString());
+}
+
+async function get_cliff_time(stream_id: string) {
+  const info = await initialize_account();
+  const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
+    info;
+  let par1 = CallData.compile({
+    stream_id: stream_id,
+  });
+
+  let success = await tokeiContract.call("get_cliff_time", par1);
+
+  console.log("✅ cliff time =", success.toString());
+}
+
+async function get_deposited_amount(stream_id: string) {
+  const info = await initialize_account();
+  const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
+    info;
+  let par2 = CallData.compile({
+    stream_id: stream_id,
+  });
+
+  let success = await tokeiContract.call("get_deposited_amount", par2);
+
+  console.log("✅ deposited amount =", success.toString());
+}
+
+async function get_end_time(stream_id: string) {
+  const info = await initialize_account();
+  const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
+    info;
+  let par3 = CallData.compile({
+    stream_id: stream_id,
+  });
+
+  let success = await tokeiContract.call("get_end_time", par3);
+
+  console.log("✅ end time =", success.toString());
+}
+
+async function get_range(stream_id: string) {
+  const info = await initialize_account();
+  const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
+    info;
+  let par4 = CallData.compile({
+    stream_id: stream_id,
+  });
+
+  let success = await tokeiContract.call("get_range", par4);
+
+  console.log("✅ range =", success.valueOf());
+}
+
+async function get_refunded_amount(stream_id: string) {
+  const info = await initialize_account();
+  const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
+    info;
+  let par5 = CallData.compile({
+    stream_id: stream_id,
+  });
+
+  let success = await tokeiContract.call("get_refunded_amount", par5);
+
+  console.log("✅ refunded amount =", success.toString());
+}
+
+async function get_sender(stream_id: string) {
+  const info = await initialize_account();
+  const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
+    info;
+  let par6 = CallData.compile({
+    stream_id: stream_id,
+  });
+
+  let success = await tokeiContract.call("get_sender", par6);
+
+  console.log("✅ sender =", success.toString());
+}
+
+async function get_start_time(stream_id: string) {
+  const info = await initialize_account();
+  const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
+    info;
+  let par7 = CallData.compile({
+    stream_id: stream_id,
+  });
+
+  let success = await tokeiContract.call("get_start_time", par7);
+
+  console.log("✅ start time =", success.toString());
+}
+
+async function get_withdrawn_amount(stream_id: string) {
+  const info = await initialize_account();
+  const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
+    info;
+  let par9 = CallData.compile({
+    stream_id: stream_id,
+  });
+
+  let success = await tokeiContract.call("get_withdrawn_amount", par9);
+
+  console.log("✅ withdrawn amount =", success.toString());
+}
+
+async function is_cancelable(stream_id: string) {
+  const info = await initialize_account();
+  const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
+    info;
+  let par10 = CallData.compile({
+    stream_id: stream_id,
+  });
+
+  let success = await tokeiContract.call("is_cancelable", par10);
+
+  console.log("✅ cancelable =", success.toString());
+}
+
+async function is_transferable(stream_id: string) {
+  const info = await initialize_account();
+  const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
+    info;
+  let par11 = CallData.compile({
+    stream_id: stream_id,
+  });
+
+  let success = await tokeiContract.call("is_transferable", par11);
+
+  console.log("✅ transferable =", success.toString());
+}
+
+async function is_depleted(stream_id: string) {
+  const info = await initialize_account();
+  const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
+    info;
+  let par12 = CallData.compile({
+    stream_id: stream_id,
+  });
+
+  let success = await tokeiContract.call("is_depleted", par12);
+
+  console.log("✅ depleted =", success.toString());
+}
+
+async function is_stream(stream_id: string) {
+  const info = await initialize_account();
+  const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
+    info;
+  let par13 = CallData.compile({
+    stream_id: stream_id,
+  });
+
+  let success = await tokeiContract.call("is_stream", par13);
+
+  console.log("✅ stream =", success.toString());
+}
+
+async function refundable_amount_of(stream_id: string) {
+  const info = await initialize_account();
+  const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
+    info;
+
+  let par14 = CallData.compile({
+    stream_id: stream_id,
+  });
+
+  let success = await tokeiContract.call("refundable_amount_of", par14);
+
+  console.log("✅ refundable amount =", success.toString());
+}
+
+async function get_recipient(stream_id: string) {
+  const info = await initialize_account();
+  const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
+    info;
+
+  let par15 = CallData.compile({
+    stream_id: stream_id,
+  });
+
+  let success = await tokeiContract.call("get_recipient", par15);
+
+  console.log("✅ recipient =", success.toString());
+}
+
+async function is_cold(stream_id: string, account: string) {
+  const info = await initialize_account();
+  const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
+    info;
+
+  let par16 = CallData.compile({
+    stream_id: stream_id,
+    account: account,
+  });
+
+  let success = await tokeiContract.call("is_cold", par16);
+
+  console.log("✅ cold =", success.toString());
+}
+
+async function is_warm(stream_id: string, account: string) {
+  const info = await initialize_account();
+  const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
+    info;
+
+  let par17 = CallData.compile({
+    stream_id: stream_id,
+    account: account,
+  });
+
+  let success = await tokeiContract.call("is_warm", par17);
+
+  console.log("✅ warm =", success.toString());
+}
+
+async function withdrawable_amount_of(stream_id: string, account: string) {
+  const info = await initialize_account();
+  const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
+    info;
+
+  let par18 = CallData.compile({
+    stream_id: stream_id,
+    account: account,
+  });
+
+  let success = await tokeiContract.call("withdrawable_amount_of", par18);
+
+  console.log("✅ withdrawable amount =", success.toString());
+}
+
+async function status_of(stream_id: string, account: string) {
+  const info = await initialize_account();
+  const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
+    info;
+
+  let par19 = CallData.compile({
+    stream_id: stream_id,
+    account: account,
+  });
+
+  let success = await tokeiContract.call("status_of", par19);
+
+  console.log("✅ status =", success.toString());
+}
+
+async function streamed_amount_of(stream_id: string) {
+  const info = await initialize_account();
+  const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
+    info;
+
+  let par20 = CallData.compile({
+    stream_id: stream_id,
+  });
+
+  let success = await tokeiContract.call("streamed_amount_of", par20);
+
+  console.log("✅ streamed amount =", success.toString());
+}
+
+async function was_canceled(stream_id: string) {
+  const info = await initialize_account();
+  const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
+    info;
+
+  let par21 = CallData.compile({
+    stream_id: stream_id,
+  });
+
+  let success = await tokeiContract.call("was_canceled", par21);
+
+  console.log("✅ canceled =", success.toString());
 }
 
 main()
