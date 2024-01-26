@@ -173,19 +173,35 @@ trait ITokeiLockupLinear<TContractState> {
     fn get_admin(self: @TContractState) -> ContractAddress;
 
     /// Returns the streams of the sender.
+    /// # Arguments
+    /// * `sender` - The address of the sender.
+    /// # Returns
+    /// * `streams` - The streams of the sender.
     fn get_streams_by_sender(
         self: @TContractState, sender: ContractAddress
     ) -> Array<LockupLinearStream>;
 
     /// Returns the streams of the recipient.
+    /// # Arguments
+    /// * `recipient` - The address of the recipient.
+    /// # Returns
+    /// * `streams` - The streams of the recipient.
     fn get_streams_by_recipient(
         self: @TContractState, recipient: ContractAddress
     ) -> Array<LockupLinearStream>;
 
     /// Returns the streams ids of the sender.
+    /// # Arguments
+    /// * `sender` - The address of the sender.
+    /// # Returns
+    /// * `stream_ids` - The stream ids of the sender.
     fn get_streams_ids_by_sender(self: @TContractState, sender: ContractAddress) -> Array<u64>;
 
     /// Returns the streams ids of the recipient.
+    /// # Arguments
+    /// * `recipient` - The address of the recipient.
+    /// # Returns
+    /// * `stream_ids` - The stream ids of the recipient.
     fn get_streams_ids_by_recipient(
         self: @TContractState, recipient: ContractAddress
     ) -> Array<u64>;
@@ -831,6 +847,11 @@ mod TokeiLockupLinear {
             self.admin.read()
         }
 
+        /// Returns the streams of the sender.
+        /// # Arguments
+        /// * `sender` - The address of the sender.
+        /// # Returns
+        /// * `streams` - The streams of the sender.
         fn get_streams_by_sender(
             self: @ContractState, sender: ContractAddress
         ) -> Array<LockupLinearStream> {
@@ -850,6 +871,11 @@ mod TokeiLockupLinear {
             streams
         }
 
+        /// Returns the streams of the recipient.
+        /// # Arguments
+        /// * `recipient` - The address of the recipient.
+        /// # Returns
+        /// * `streams` - The streams of the recipient.
         fn get_streams_by_recipient(
             self: @ContractState, recipient: ContractAddress
         ) -> Array<LockupLinearStream> {
@@ -869,6 +895,11 @@ mod TokeiLockupLinear {
             streams
         }
 
+        /// Returns the streams ids of the sender.
+        /// # Arguments
+        /// * `sender` - The address of the sender.
+        /// # Returns
+        /// * `stream_ids` - The stream ids of the sender.
         fn get_streams_ids_by_sender(self: @ContractState, sender: ContractAddress) -> Array<u64> {
             let max_stream_id = self.next_stream_id.read();
             let mut stream_ids: Array<u64> = ArrayTrait::new();
@@ -887,6 +918,11 @@ mod TokeiLockupLinear {
             stream_ids
         }
 
+        /// Returns the streams ids of the recipient.
+        /// # Arguments
+        /// * `recipient` - The address of the recipient.
+        /// # Returns
+        /// * `stream_ids` - The stream ids of the recipient.
         fn get_streams_ids_by_recipient(
             self: @ContractState, recipient: ContractAddress
         ) -> Array<u64> {
@@ -907,23 +943,6 @@ mod TokeiLockupLinear {
             stream_ids
         }
 
-        // fn get_streams_ids_by_recipient(
-        //     self: @ContractState, recipient: ContractAddress
-        // ) -> Array<u64> {
-        //     let streams: Array<LockupLinearStream> = self.get_streams_by_recipient(recipient);
-        //     let mut stream_ids: Array<u64> = ArrayTrait::new();
-        //     let mut i = 0;
-        //     loop {
-        //         if i >= streams.len() {
-        //             break;
-        //         }
-        //         let stream = *streams.at(i);
-        //         let stream_id = self.stream_id.read(stream);
-        //         stream_ids.append(stream_id);
-        //         i += 1;
-        //     };
-        //     stream_ids
-        // }
 
         /// Creates a new stream with a given range.
         /// # Arguments
