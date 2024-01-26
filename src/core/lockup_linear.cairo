@@ -86,7 +86,7 @@ trait ITokeiLockupLinear<TContractState> {
     /// Returns the stream state of the stream.
     /// # Arguments
     /// * `stream_id` - The id of the stream.
-    fn get_stream(ref self: TContractState, stream_id: u64) -> LockupLinearStream;
+    fn get_stream(self: @TContractState, stream_id: u64) -> LockupLinearStream;
 
     /// Returns the withdrawn amount of the stream.
     /// # Arguments
@@ -630,11 +630,11 @@ mod TokeiLockupLinear {
         /// Returns the stream state for the given stream id.
         /// # Arguments
         /// * `stream_id` - The id of the stream.
-        fn get_stream(ref self: ContractState, stream_id: u64) -> LockupLinearStream {
+        fn get_stream(self: @ContractState, stream_id: u64) -> LockupLinearStream {
             assert(Zeroable::is_non_zero(stream_id), 'Invalid stream id');
             let stream = self.streams.read(stream_id);
 
-            if (TokeiInternalImpl::_status_of(@self, stream_id) == Status::SETTLED) {
+            if (TokeiInternalImpl::_status_of(self, stream_id) == Status::SETTLED) {
                 let stream_updated = LockupLinearStream {
                     sender: stream.sender,
                     asset: stream.asset,
@@ -653,9 +653,7 @@ mod TokeiLockupLinear {
                     },
                 };
 
-                self.streams.write(stream_id, stream_updated);
-
-                self.streams.read(stream_id)
+                stream_updated
             } else {
                 stream
             }
@@ -1224,7 +1222,6 @@ mod TokeiLockupLinear {
 
     #[generate_trait]
     impl TokeiInternalImpl of TokeiInternalTrait {
-
         // Assertion that caller is the admin.
         fn assert_only_admin(self: @ContractState) {
             assert(get_caller_address() == self.admin.read(), LOCKUP_UNAUTHORIZED);
@@ -1236,7 +1233,7 @@ mod TokeiLockupLinear {
         // # Returns
         // * `streamed_amount` - The streamed amount of the stream.
         fn _calculate_streamed_amount(self: @ContractState, stream_id: u64) -> u256 {
-            let cliff_time = self.streams.read(stream_id).cliff_time; 
+            let cliff_time = self.streams.read(stream_id).cliff_time;
             let current_time = get_block_timestamp();
 
             // If the cliff time is in the future, return zero.
@@ -1251,11 +1248,11 @@ mod TokeiLockupLinear {
                 return self.streams.read(stream_id).amounts.deposited;
             }
 
-            let start_time = self.streams.read(stream_id).start_time; 
+            let start_time = self.streams.read(stream_id).start_time;
 
-            let elapsed_time = current_time - start_time; 
+            let elapsed_time = current_time - start_time;
 
-            let total_time = end_time - start_time; 
+            let total_time = end_time - start_time;
 
             // Divide the elapsed time by the stream's total duration.
             let elapsed_time_percentage = scaled_down_div(elapsed_time, total_time);
@@ -1336,7 +1333,7 @@ mod TokeiLockupLinear {
             self.streams.write(stream_id, stream_updated);
 
             let amounts = self.streams.read(stream_id).amounts;
-            
+
             if (amounts.withdrawn >= amounts.deposited - amounts.refunded) {
                 let _stream_updated = LockupLinearStream {
                     sender: stream.sender,
