@@ -172,6 +172,25 @@ trait ITokeiLockupLinear<TContractState> {
     /// Returns the admin address.    
     fn get_admin(self: @TContractState) -> ContractAddress;
 
+    /// Returns the streams of the sender.
+    fn get_streams_by_sender(
+        self: @TContractState, sender: ContractAddress
+    ) -> Array<LockupLinearStream>;
+
+    /// Returns the streams of the recipient.
+    fn get_streams_by_recipient(
+        self: @TContractState, recipient: ContractAddress
+    ) -> Array<LockupLinearStream>;
+
+    /// Returns the streams ids of the sender.
+    fn get_streams_ids_by_sender(self: @TContractState, sender: ContractAddress) -> Array<u64>;
+
+    /// Returns the streams ids of the recipient.
+    fn get_streams_ids_by_recipient(
+        self: @TContractState, recipient: ContractAddress
+    ) -> Array<u64>;
+
+
     //////////////////////////////////////////////////////////////////////////
     //USER-FACING NON-CONSTANT FUNCTIONS
     //////////////////////////////////////////////////////////////////////////
@@ -638,6 +657,7 @@ mod TokeiLockupLinear {
                 let stream_updated = LockupLinearStream {
                     sender: stream.sender,
                     asset: stream.asset,
+                    recipient: stream.recipient,
                     start_time: stream.start_time,
                     cliff_time: stream.cliff_time,
                     end_time: stream.end_time,
@@ -810,6 +830,100 @@ mod TokeiLockupLinear {
         fn get_admin(self: @ContractState) -> ContractAddress {
             self.admin.read()
         }
+
+        fn get_streams_by_sender(
+            self: @ContractState, sender: ContractAddress
+        ) -> Array<LockupLinearStream> {
+            let max_stream_id = self.next_stream_id.read();
+            let mut streams: Array<LockupLinearStream> = ArrayTrait::new();
+            let mut i = 1; //Since the stream id starts from 1
+            loop {
+                if i >= max_stream_id {
+                    break;
+                }
+                let stream = self.streams.read(i);
+                if stream.sender == sender {
+                    streams.append(stream);
+                }
+                i += 1;
+            };
+            streams
+        }
+
+        fn get_streams_by_recipient(
+            self: @ContractState, recipient: ContractAddress
+        ) -> Array<LockupLinearStream> {
+            let max_stream_id = self.next_stream_id.read();
+            let mut streams: Array<LockupLinearStream> = ArrayTrait::new();
+            let mut i = 1; //Since the stream id starts from 1
+            loop {
+                if i >= max_stream_id {
+                    break;
+                }
+                let stream = self.streams.read(i);
+                if stream.recipient == recipient {
+                    streams.append(stream);
+                }
+                i += 1;
+            };
+            streams
+        }
+
+        fn get_streams_ids_by_sender(self: @ContractState, sender: ContractAddress) -> Array<u64> {
+            let max_stream_id = self.next_stream_id.read();
+            let mut stream_ids: Array<u64> = ArrayTrait::new();
+            let mut i = 1; // As the stream id starts from 1
+            loop {
+                if i >= max_stream_id {
+                    break;
+                }
+                let stream = self.streams.read(i);
+                if (stream.sender == sender) {
+                    stream_ids.append(i);
+                }
+
+                i += 1;
+            };
+            stream_ids
+        }
+
+        fn get_streams_ids_by_recipient(
+            self: @ContractState, recipient: ContractAddress
+        ) -> Array<u64> {
+            let max_stream_id = self.next_stream_id.read();
+            let mut stream_ids: Array<u64> = ArrayTrait::new();
+            let mut i = 1; // As the stream id starts from 1
+            loop {
+                if i >= max_stream_id {
+                    break;
+                }
+                let stream = self.streams.read(i);
+                if (stream.recipient == recipient) {
+                    stream_ids.append(i);
+                }
+
+                i += 1;
+            };
+            stream_ids
+        }
+
+        // fn get_streams_ids_by_recipient(
+        //     self: @ContractState, recipient: ContractAddress
+        // ) -> Array<u64> {
+        //     let streams: Array<LockupLinearStream> = self.get_streams_by_recipient(recipient);
+        //     let mut stream_ids: Array<u64> = ArrayTrait::new();
+        //     let mut i = 0;
+        //     loop {
+        //         if i >= streams.len() {
+        //             break;
+        //         }
+        //         let stream = *streams.at(i);
+        //         let stream_id = self.stream_id.read(stream);
+        //         stream_ids.append(stream_id);
+        //         i += 1;
+        //     };
+        //     stream_ids
+        // }
 
         /// Creates a new stream with a given range.
         /// # Arguments
@@ -1316,6 +1430,7 @@ mod TokeiLockupLinear {
             let stream_updated = LockupLinearStream {
                 sender: stream.sender,
                 asset: stream.asset,
+                recipient: stream.recipient,
                 start_time: stream.start_time,
                 cliff_time: stream.cliff_time,
                 end_time: stream.end_time,
@@ -1338,6 +1453,7 @@ mod TokeiLockupLinear {
                 let _stream_updated = LockupLinearStream {
                     sender: stream.sender,
                     asset: stream.asset,
+                    recipient: stream.recipient,
                     start_time: stream.start_time,
                     cliff_time: stream.cliff_time,
                     end_time: stream.end_time,
@@ -1370,6 +1486,7 @@ mod TokeiLockupLinear {
             let stream_updated = LockupLinearStream {
                 sender: stream.sender,
                 asset: stream.asset,
+                recipient: stream.recipient,
                 start_time: stream.start_time,
                 cliff_time: stream.cliff_time,
                 end_time: stream.end_time,
@@ -1412,6 +1529,7 @@ mod TokeiLockupLinear {
                 let stream_updated = LockupLinearStream {
                     sender: stream.sender,
                     asset: stream.asset,
+                    recipient: stream.recipient,
                     start_time: stream.start_time,
                     cliff_time: stream.cliff_time,
                     end_time: stream.end_time,
@@ -1432,6 +1550,7 @@ mod TokeiLockupLinear {
                 let stream_updated = LockupLinearStream {
                     sender: stream.sender,
                     asset: stream.asset,
+                    recipient: stream.recipient,
                     start_time: stream.start_time,
                     cliff_time: stream.cliff_time,
                     end_time: stream.end_time,
@@ -1566,6 +1685,7 @@ mod TokeiLockupLinear {
             let stream = LockupLinearStream {
                 sender,
                 asset,
+                recipient,
                 start_time: range.start,
                 cliff_time: range.cliff,
                 end_time: range.end,

@@ -79,6 +79,33 @@ fn create_with_duration() -> (ITokeiLockupLinearDispatcher, ERC20ABIDispatcher, 
     stop_prank(CheatTarget::One(tokei.contract_address));
     (tokei, token_dispatcher, stream_id)
 }
+
+fn create_with_duration_common(
+    sender: ContractAddress,
+    recipient: ContractAddress,
+    token: ERC20ABIDispatcher,
+    tokei: ITokeiLockupLinearDispatcher
+) -> u64 {
+    let (alice, _, total_amount, _, cancelable, transferable, range, broker) =
+        Defaults::create_with_durations();
+    start_prank(CheatTarget::One(tokei.contract_address), sender);
+    start_warp(CheatTarget::One(tokei.contract_address), 1000);
+
+    let stream_id = tokei
+        .create_with_duration(
+            sender,
+            recipient,
+            total_amount,
+            token.contract_address,
+            cancelable,
+            transferable,
+            range,
+            broker,
+        );
+    stop_warp(CheatTarget::One(tokei.contract_address));
+    stop_prank(CheatTarget::One(tokei.contract_address));
+    stream_id
+}
 #[test]
 fn test_set_protocol_fee() {
     let (tokei) = setup(ADMIN());
@@ -292,6 +319,7 @@ fn test_create_with_duration() {
     let expected_stream = LockupLinearStream {
         sender: ALICE(),
         asset: token,
+        recipient: RECIPIENT(),
         start_time: 100,
         cliff_time: 100 + 2500,
         end_time: 100 + 10000,
@@ -550,6 +578,7 @@ fn test_get_stream_when_status_settled() {
     let expected_stream = LockupLinearStream {
         sender: ALICE(),
         asset: token.contract_address,
+        recipient: RECIPIENT(),
         start_time: 1000,
         cliff_time: 1000 + 2500,
         end_time: 1000 + 4000,
@@ -575,6 +604,7 @@ fn test_get_stream_when_not_settled() {
     let expected_stream = LockupLinearStream {
         sender: ALICE(),
         asset: token.contract_address,
+        recipient: RECIPIENT(),
         start_time: 1000,
         cliff_time: 1000 + 2500,
         end_time: 1000 + 4000,
@@ -1081,6 +1111,90 @@ fn test_transfer_admin() {
     assert(tokei.get_admin() == BOB(), 'Invalid admin');
 }
 
+#[test]
+fn test_get_streams_by_sender() {
+    // create_with_duration function passed Alice as sender and recipient as RECIPIENT
+    let (tokei, token, stream_id_1) = create_with_duration();
+    let stream_id_2 = create_with_duration_common(ALICE(), RECIPIENT(), token, tokei);
+    let stream_id_3 = create_with_duration_common(BOB(), CHARLIE(), token, tokei);
+
+    let streams_alice = tokei.get_streams_by_sender(ALICE());
+    assert(streams_alice.len() == 2, 'Invalid stream count');
+
+    let streams_bob = tokei.get_streams_by_sender(BOB());
+    assert(streams_bob.len() == 1, 'Invalid stream count');
+
+    let stream_alice_1 = tokei.get_stream(stream_id_1);
+
+    let stream_alice_2 = tokei.get_stream(stream_id_2);
+    let stream_bob_1 = tokei.get_stream(stream_id_3);
+
+    assert(*streams_alice.at(0) == stream_alice_1, 'Invalid stream');
+    assert(*streams_alice.at(1) == stream_alice_2, 'Invalid stream');
+    assert(*streams_bob.at(0) == stream_bob_1, 'Invalid stream');
+}
+#[test]
+fn test_get_streams_by_receiver() {
+    // create_with_duration function passed Alice as sender and recipient as RECIPIENT
+    let (tokei, token, stream_id_1) = create_with_duration();
+    let stream_id_2 = create_with_duration_common(ALICE(), RECIPIENT(), token, tokei);
+    let stream_id_3 = create_with_duration_common(BOB(), CHARLIE(), token, tokei);
+
+    let streams_recipient = tokei.get_streams_by_recipient(RECIPIENT());
+    let streams_charlie = tokei.get_streams_by_recipient(CHARLIE());
+
+    let stream_1 = tokei.get_stream(stream_id_1);
+    let stream_2 = tokei.get_stream(stream_id_2);
+    let stream_3 = tokei.get_stream(stream_id_3);
+
+    assert(streams_recipient.len() == 2, 'Invalid stream count');
+    assert(streams_charlie.len() == 1, 'Invalid stream count');
+    assert(*streams_recipient.at(0) == stream_1, 'Invalid stream');
+    assert(*streams_recipient.at(1) == stream_2, 'Invalid stream');
+    assert(*streams_charlie.at(0) == stream_3, 'Invalid stream');
+}
+
+#[test]
+fn test_get_stream_ids_by_receiver() {
+    // create_with_duration function passed Alice as sender and recipient as RECIPIENT
+    let (tokei, token, stream_id_1) = create_with_duration();
+    let stream_id_2 = create_with_duration_common(ALICE(), RECIPIENT(), token, tokei);
+    let stream_id_3 = create_with_duration_common(BOB(), CHARLIE(), token, tokei);
+
+    let stream_ids_recipient = tokei.get_streams_ids_by_recipient(RECIPIENT());
+    let stream_ids_charlie = tokei.get_streams_ids_by_recipient(CHARLIE());
+
+    let expected_stream_id_1 = 1_u64;
+    let expected_stream_id_2 = 2_u64;
+    let expected_stream_id_3 = 3_u64;
+
+    assert(stream_ids_recipient.len() == 2, 'Invalid stream count');
+    assert(stream_ids_charlie.len() == 1, 'Invalid stream count');
+    assert(*stream_ids_recipient.at(0) == expected_stream_id_1, 'Invalid stream');
+    assert(*stream_ids_recipient.at(1) == expected_stream_id_2, 'Invalid stream');
+    assert(*stream_ids_charlie.at(0) == expected_stream_id_3, 'Invalid stream');
+}
+
+#[test]
+fn test_get_stream_ids_by_sender() {
+    // create_with_duration function passed Alice as sender and recipient as RECIPIENT
+    let (tokei, token, stream_id_1) = create_with_duration();
+    let stream_id_2 = create_with_duration_common(ALICE(), RECIPIENT(), token, tokei);
+    let stream_id_3 = create_with_duration_common(BOB(), CHARLIE(), token, tokei);
+
+    let stream_ids_alice = tokei.get_streams_ids_by_sender(ALICE());
+    let stream_ids_bob = tokei.get_streams_ids_by_sender(BOB());
+
+    let expected_stream_id_1 = 1_u64;
+    let expected_stream_id_2 = 2_u64;
+    let expected_stream_id_3 = 3_u64;
+
+    assert(stream_ids_alice.len() == 2, 'Invalid stream count');
+    assert(stream_ids_bob.len() == 1, 'Invalid stream count');
+    assert(*stream_ids_alice.at(0) == expected_stream_id_1, 'Invalid stream');
+    assert(*stream_ids_alice.at(1) == expected_stream_id_2, 'Invalid stream');
+    assert(*stream_ids_bob.at(0) == expected_stream_id_3, 'Invalid stream');
+}
 
 #[test]
 #[should_panic(expected: ('lockup_unauthorized',))]

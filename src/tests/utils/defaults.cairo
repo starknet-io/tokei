@@ -63,6 +63,7 @@ mod Defaults {
         LockupLinearStream {
             sender: contract_address_const::<'sender'>(),
             asset: contract_address_const::<'asset'>(),
+            recipient: contract_address_const::<'recipient'>(),
             start_time: START_TIME,
             cliff_time: CLIFF_TIME,
             end_time: END_TIME,

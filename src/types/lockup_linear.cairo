@@ -19,6 +19,8 @@ struct LockupLinearStream {
     sender: ContractAddress,
     /// The contract address of the ERC-20 asset used for streaming.
     asset: ContractAddress,
+    /// The address receiving the streamed assets.
+    recipient: ContractAddress,
     /// The Unix timestamp indicating the stream's start.
     start_time: u64,
     /// The Unix timestamp indicating the stream's cliff period's end.
