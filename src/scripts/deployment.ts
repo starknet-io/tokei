@@ -67,7 +67,7 @@ async function main() {
   //**************************************************************************************** */
 
   const contractClassHash =
-    "0x00890b38f484174605c68c956b2b5263950610e5da509fb35807afb321a3a10d";
+    "0x0642757913747e242c09cbbe73a3ab5733dfde42bc9293ed1b3642202dde7ff8";
 
   console.log("✅ Test Contract declared with classHash =", contractClassHash);
 
@@ -90,4 +90,5 @@ main()
   });
 
 //Deployed Address
+// Updated deployed contract address: 0x682799e0ba490a32a4e24cf8a349b8d3560ee48f7ef2b9349b5cb4a527e99ae
 // 0x0661bd47eb4c872cd316a305dc673221a8f8a27379e6aa3a97a21a542efbb76f on goerli

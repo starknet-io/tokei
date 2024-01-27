@@ -80,6 +80,10 @@ async function main() {
       "status_of",
       "streamed_amount_of",
       "was_canceled",
+      "get_streams_by_sender",
+      "get_streams_by_recipient",
+      "get_streams_ids_by_sender",
+      "get_streams_ids_by_recipient",
     ];
     const functions = [
       "create_with_duration",
@@ -144,6 +148,33 @@ async function main() {
       // Similar structure for other functions
       case "create_with_range":
         // Collect parameters and call create_with_range
+        const sender_3 = await ask("Enter sender: ");
+        const recipient_3 = await ask("Enter recipient: ");
+        const total_amount_3 = cairo.uint256(await ask("Enter total amount: "));
+        const asset_3 = await ask("Enter asset: ");
+        const cancelable_3 =
+          (await ask("Is it cancelable? (true/false): ")) === "true";
+        const transferable_3 =
+          (await ask("Is it transferable? (true/false): ")) === "true";
+        const range_start_3 = parseInt(await ask("Enter range start: "));
+        const range_cliff_3 = parseInt(await ask("Enter range cliff: "));
+        const range_end_3 = parseInt(await ask("Enter range end: "));
+        const broker_account_3 = await ask("Enter broker account: ");
+        const broker_fee_3 = cairo.uint256(await ask("Enter broker fee: "));
+        await create_with_range(
+          sender_3,
+          recipient_3,
+          total_amount_3,
+          asset_3,
+          cancelable_3,
+          transferable_3,
+          range_start_3,
+          range_cliff_3,
+          range_end_3,
+          broker_account_3,
+          broker_fee_3
+        );
+
         break;
       case "cancel_stream":
         // Collect parameters for cancel_stream
@@ -286,6 +317,22 @@ async function main() {
         let stream_id22 = await ask("Enter stream ID: ");
         await was_canceled(stream_id22);
         break;
+      case "get_streams_by_sender":
+        let sender2 = await ask("Enter sender: ");
+        await get_streams_by_sender(sender2);
+        break;
+      case "get_streams_by_recipient":
+        let recipient2 = await ask("Enter recipient: ");
+        await get_streams_by_recipient(recipient2);
+        break;
+      case "get_streams_ids_by_sender":
+        let sender3 = await ask("Enter sender: ");
+        await get_streams_ids_by_sender(sender3);
+        break;
+      case "get_streams_ids_by_recipient":
+        let recipient3 = await ask("Enter recipient: ");
+        await get_streams_ids_by_recipient(recipient3);
+        break;
 
       default:
         console.log("Function not recognized.");
@@ -368,9 +415,9 @@ export async function initialize_account() {
     "0x075b1b684be1cd0f08a4a59a22994dedb6d3f5851e630b3f1a895459ef754e87";
 
   const tokeiClassHash =
-    "0x00890b38f484174605c68c956b2b5263950610e5da509fb35807afb321a3a10d";
+    "0x0642757913747e242c09cbbe73a3ab5733dfde42bc9293ed1b3642202dde7ff8";
   const tokeiaddress =
-    "0x0661bd47eb4c872cd316a305dc673221a8f8a27379e6aa3a97a21a542efbb76f";
+    "0x682799e0ba490a32a4e24cf8a349b8d3560ee48f7ef2b9349b5cb4a527e99ae";
 
   // console.log("✅ ERC20 Contract declared with classHash =", erc20ClassHash);
   // console.log("✅ Tokei Contract declared with classHash =", tokeiClassHash);
@@ -738,6 +785,62 @@ async function get_start_time(stream_id: string) {
   let success = await tokeiContract.call("get_start_time", par7);
 
   console.log("✅ start time =", success.toString());
+}
+
+async function get_streams_by_sender(sender: string) {
+  const info = await initialize_account();
+  const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
+    info;
+
+  let par8 = CallData.compile({
+    sender: sender,
+  });
+
+  let success = await tokeiContract.call("get_streams_by_sender", par8);
+
+  console.log("✅ streams =", success.valueOf());
+}
+
+async function get_streams_by_recipient(recipient: string) {
+  const info = await initialize_account();
+  const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
+    info;
+
+  let par9 = CallData.compile({
+    recipient: recipient,
+  });
+
+  let success = await tokeiContract.call("get_streams_by_recipient", par9);
+
+  console.log("✅ streams =", success.valueOf());
+}
+
+async function get_streams_ids_by_sender(sender: string) {
+  const info = await initialize_account();
+  const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
+    info;
+
+  let par10 = CallData.compile({
+    sender: sender,
+  });
+
+  let success = await tokeiContract.call("get_streams_ids_by_sender", par10);
+
+  console.log("✅ streams =", success.toString());
+}
+
+async function get_streams_ids_by_recipient(recipient: string) {
+  const info = await initialize_account();
+  const { account0, recipientAccount, tokeiContract, erc20Contract, provider } =
+    info;
+
+  let par11 = CallData.compile({
+    recipient: recipient,
+  });
+
+  let success = await tokeiContract.call("get_streams_ids_by_recipient", par11);
+
+  console.log("✅ streams =", success.toString());
 }
 
 async function get_withdrawn_amount(stream_id: string) {
