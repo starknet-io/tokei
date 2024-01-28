@@ -61,6 +61,7 @@ mod Defaults {
     fn lockup_linear_stream() -> LockupLinearStream {
         let (START_TIME, CLIFF_TIME, END_TIME) = setup_1();
         LockupLinearStream {
+            stream_id: 1,
             sender: contract_address_const::<'sender'>(),
             asset: contract_address_const::<'asset'>(),
             recipient: contract_address_const::<'recipient'>(),

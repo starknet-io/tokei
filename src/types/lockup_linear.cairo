@@ -15,6 +15,8 @@ use tokei::types::lockup::LockupAmounts;
 /// Represent a Lockup Linear Stream.
 #[derive(Copy, Drop, starknet::Store, Serde, PartialEq)]
 struct LockupLinearStream {
+    /// The stream's ID.
+    stream_id: u64,
     /// The address streaming the assets, with the ability to cancel the stream.
     sender: ContractAddress,
     /// The contract address of the ERC-20 asset used for streaming.

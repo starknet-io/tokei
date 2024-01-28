@@ -317,6 +317,7 @@ fn test_create_with_duration() {
     let expected_Broker_balance = 3;
     let expected_protocol_revenue = 1;
     let expected_stream = LockupLinearStream {
+        stream_id: 1,
         sender: ALICE(),
         asset: token,
         recipient: RECIPIENT(),
@@ -576,6 +577,7 @@ fn test_get_stream_when_status_settled() {
 
     let actual_stream = tokei.get_stream(stream_id);
     let expected_stream = LockupLinearStream {
+        stream_id: 1,
         sender: ALICE(),
         asset: token.contract_address,
         recipient: RECIPIENT(),
@@ -602,6 +604,7 @@ fn test_get_stream_when_not_settled() {
     let actual_stream = tokei.get_stream(stream_id);
 
     let expected_stream = LockupLinearStream {
+        stream_id: 1,
         sender: ALICE(),
         asset: token.contract_address,
         recipient: RECIPIENT(),

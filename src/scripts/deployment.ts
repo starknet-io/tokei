@@ -67,7 +67,7 @@ async function main() {
   //**************************************************************************************** */
 
   const contractClassHash =
-    "0x0642757913747e242c09cbbe73a3ab5733dfde42bc9293ed1b3642202dde7ff8";
+    "0x01f9313b620810859fb1aa2b6920bb80a00d6bf5b13d1329b9a82424c8c272ab";
 
   console.log("✅ Test Contract declared with classHash =", contractClassHash);
 
@@ -90,5 +90,4 @@ main()
   });
 
 //Deployed Address
-// Updated deployed contract address: 0x682799e0ba490a32a4e24cf8a349b8d3560ee48f7ef2b9349b5cb4a527e99ae
-// 0x0661bd47eb4c872cd316a305dc673221a8f8a27379e6aa3a97a21a542efbb76f on goerli
+// Updated deployed contract_address : 0x04bf83b5554b165b5f0ff5e797a8f57162840c78915b4864bdbfbdc71649ef1b on goerli

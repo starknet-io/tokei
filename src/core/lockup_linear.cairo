@@ -671,6 +671,7 @@ mod TokeiLockupLinear {
 
             if (TokeiInternalImpl::_status_of(self, stream_id) == Status::SETTLED) {
                 let stream_updated = LockupLinearStream {
+                    stream_id: stream.stream_id,
                     sender: stream.sender,
                     asset: stream.asset,
                     recipient: stream.recipient,
@@ -1447,6 +1448,7 @@ mod TokeiLockupLinear {
             assert(amount <= withdrawable_amount, OVERDRAW);
             let stream = self.streams.read(stream_id);
             let stream_updated = LockupLinearStream {
+                stream_id: stream.stream_id,
                 sender: stream.sender,
                 asset: stream.asset,
                 recipient: stream.recipient,
@@ -1470,6 +1472,7 @@ mod TokeiLockupLinear {
 
             if (amounts.withdrawn >= amounts.deposited - amounts.refunded) {
                 let _stream_updated = LockupLinearStream {
+                    stream_id: stream.stream_id,
                     sender: stream.sender,
                     asset: stream.asset,
                     recipient: stream.recipient,
@@ -1503,6 +1506,7 @@ mod TokeiLockupLinear {
             // Checks: the stream is cancelable.
             assert(stream.is_cancelable, STREAM_NOT_CANCELABLE);
             let stream_updated = LockupLinearStream {
+                stream_id: stream.stream_id,
                 sender: stream.sender,
                 asset: stream.asset,
                 recipient: stream.recipient,
@@ -1546,6 +1550,7 @@ mod TokeiLockupLinear {
 
             if (recipient_amount == 0) {
                 let stream_updated = LockupLinearStream {
+                    stream_id: stream.stream_id,
                     sender: stream.sender,
                     asset: stream.asset,
                     recipient: stream.recipient,
@@ -1567,6 +1572,7 @@ mod TokeiLockupLinear {
                 self.streams.write(stream_id, stream_updated);
             } else {
                 let stream_updated = LockupLinearStream {
+                    stream_id: stream.stream_id,
                     sender: stream.sender,
                     asset: stream.asset,
                     recipient: stream.recipient,
@@ -1702,6 +1708,7 @@ mod TokeiLockupLinear {
 
             // Effects: create the stream.
             let stream = LockupLinearStream {
+                stream_id: stream_id,
                 sender,
                 asset,
                 recipient,
