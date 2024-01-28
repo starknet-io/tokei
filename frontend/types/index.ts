@@ -60,7 +60,7 @@ export interface CreateRangeProps {
 /** Contract interface */
 
 export interface LockupLinearStreamInterface {
-  stream_id?: string;
+  stream_id?: number;
   sender: string;
   recipient: string;
   total_amount: number;

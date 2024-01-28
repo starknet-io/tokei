@@ -113,7 +113,31 @@ const RecipientStreamComponent = () => {
   return (
     <Box>
       <Text>Find here your stream</Text>
-      <Text>Coming soon</Text>
+      <Text>Total: {streamsReceived.length}</Text>
+      <Box
+        // display={"grid"}
+        // gap={{ base: "0.5em" }}
+
+        display={"grid"}
+        gridTemplateColumns={{
+          base: "repeat(1,1fr)",
+          md: "repeat(2,1fr)",
+        }}
+        gap={{ base: "0.5em" }}
+      >
+        {streamsReceived.length > 0 && streamsReceived.map((s, i) => {
+          console.log("s", s)
+
+          if (!s?.was_canceled) {
+            return (
+              <StreamCard stream={s} key={i} />
+            )
+          }
+
+        }
+        )
+        }
+      </Box>
       {streamsReceived.length > 0 && streamsReceived.map((s, i) => {
         return (<Box
           key={i}
@@ -172,16 +196,20 @@ const SenderStreamComponent = ({
 
         display={"grid"}
         gridTemplateColumns={{
-          md: "repeat(1,1fr)",
-          lg: "repeat(3,1fr)",
+          base: "repeat(1,1fr)",
+          md: "repeat(2,1fr)",
         }}
         gap={{ base: "0.5em" }}
       >
         {streamsSend.length > 0 && streamsSend.map((s, i) => {
           console.log("s", s)
-          return (
-            <StreamCard stream={s} key={i} />
-          )
+
+          if (!s?.was_canceled) {
+            return (
+              <StreamCard stream={s} key={i} />
+            )
+          }
+
         }
         )
         }

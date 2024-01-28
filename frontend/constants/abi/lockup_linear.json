@@ -73,6 +73,10 @@
     "name": "tokei::types::lockup_linear::LockupLinearStream",
     "members": [
       {
+        "name": "stream_id",
+        "type": "core::integer::u64"
+      },
+      {
         "name": "sender",
         "type": "core::starknet::contract_address::ContractAddress"
       },
