@@ -415,9 +415,9 @@ export async function initialize_account() {
     "0x075b1b684be1cd0f08a4a59a22994dedb6d3f5851e630b3f1a895459ef754e87";
 
   const tokeiClassHash =
-    "0x0642757913747e242c09cbbe73a3ab5733dfde42bc9293ed1b3642202dde7ff8";
+    "0x01f9313b620810859fb1aa2b6920bb80a00d6bf5b13d1329b9a82424c8c272ab";
   const tokeiaddress =
-    "0x682799e0ba490a32a4e24cf8a349b8d3560ee48f7ef2b9349b5cb4a527e99ae";
+    "0x04bf83b5554b165b5f0ff5e797a8f57162840c78915b4864bdbfbdc71649ef1b";
 
   // console.log("✅ ERC20 Contract declared with classHash =", erc20ClassHash);
   // console.log("✅ Tokei Contract declared with classHash =", tokeiClassHash);
