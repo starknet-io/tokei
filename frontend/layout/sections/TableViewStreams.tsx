@@ -1,9 +1,7 @@
 import {
   Box,
-  Card,
   Text,
   Button,
-  CardFooter,
   Table,
   Thead,
   Tr,
@@ -12,7 +10,6 @@ import {
   Tbody,
 } from "@chakra-ui/react";
 import { LockupLinearStreamInterface, StreamCardView } from "../../types";
-import { cairo, shortString, stark, validateAndParseAddress } from "starknet";
 import { feltToAddress, feltToString } from "../../utils/starknet";
 import { useAccount } from "@starknet-react/core";
 import { cancelStream } from "../../hooks/lockup/cancelStream";
@@ -20,10 +17,7 @@ import {
   CONTRACT_DEPLOYED_STARKNET,
   DEFAULT_NETWORK,
 } from "../../constants/address";
-import { withdraw_max } from "../../hooks/lockup/withdrawn";
-import { useEffect, useState } from "react";
-import { formatDateTime, formatRelativeTime, timeAgo } from "../../utils/format";
-import { BiCheck } from "react-icons/bi";
+import { formatDateTime, timeAgo } from "../../utils/format";
 import { MdCancel } from "react-icons/md";
 
 interface IStreamCard {
@@ -80,10 +74,10 @@ export const TableViewStreams = ({ viewType, streams }: IStreamCard) => {
                         gap={{ base: "1em" }}
                       >
                         <Td
-                        w={"100%"}>
+                          w={"100%"}>
                           <Button
-                          width={"100%"}
-                          my={{ base: "0.15em" }}>Withdraw</Button>
+                            width={"100%"}
+                            my={{ base: "0.15em" }}>Withdraw</Button>
                           <Button my={{ base: "0.15em" }}>Withdraw max</Button>
                         </Td>
                       </Box>
@@ -126,7 +120,7 @@ export const TableViewStreams = ({ viewType, streams }: IStreamCard) => {
                       </Td>
 
                       <Td>{Number(total_withdraw?.toString()) / 10 ** 18}</Td>
-                   
+
                     </Tr>
                   );
                   // }
@@ -136,73 +130,63 @@ export const TableViewStreams = ({ viewType, streams }: IStreamCard) => {
           </>
         )}
         {viewType == StreamCardView.SENDER_VIEW && (
-          <Box overflowX={"auto"}>
-            <Table
-            // display={"grid"}
-            // gridTemplateColumns={{
-            //   base: "repeat(1,1fr)",
-            //   md: "repeat(2,1fr)",
-            // }}
-            // gap={{ base: "0.5em" }}
-            >
-              <Thead>
-                <Tr>
-                  {/* <Th>Sender</Th> */}
-                  <Th>Token address</Th>
-                  <Th>Amount deposit</Th>
-                  <Th>Withdraw</Th>
-                  <Th>Recipient</Th>
-                  <Th>Actions</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {streams?.length > 0 &&
-                  streams.map((s, i) => {
-                    const sender = feltToAddress(BigInt(s?.sender));
-                    const recipient = feltToAddress(BigInt(s?.recipient));
-                    const asset = feltToAddress(BigInt(s?.asset));
-                    let total_amount = s?.amounts?.deposited;
-                    let total_withdraw = s?.amounts?.withdrawn;
-                    console.log("s", s);
-                    return (
-                      <tr key={i}>
+          <>
+            <Thead>
+              <Tr>
+                {/* <Th>Sender</Th> */}
+                <Th>Token address</Th>
+                <Th>Amount deposit</Th>
+                <Th>Withdraw</Th>
+                <Th>Recipient</Th>
+                <Th>Actions</Th>
+              </Tr>
+            </Thead>
+            <Tbody>
+              {streams?.length > 0 &&
+                streams.map((s, i) => {
+                  const sender = feltToAddress(BigInt(s?.sender));
+                  const recipient = feltToAddress(BigInt(s?.recipient));
+                  const asset = feltToAddress(BigInt(s?.asset));
+                  let total_amount = s?.amounts?.deposited;
+                  let total_withdraw = s?.amounts?.withdrawn;
+                  console.log("s", s);
+                  return (
+                    <tr key={i}>
+                      <Td>
+                        {sender?.slice(0, 10)} ...
+                        {sender?.slice(
+                          sender?.length - 10,
+                          sender?.length
+                        )}{" "}
+                      </Td>
+                      <Td>
+                        {asset?.slice(0, 10)} ...
+                        {asset?.slice(asset?.length - 10, asset?.length)}{" "}
+                      </Td>
+                      <Td>{Number(total_amount?.toString()) / 10 ** 18}</Td>
+                      <Td>{Number(total_withdraw?.toString()) / 10 ** 18}</Td>
+                      <Box>
                         <Td>
-                          {sender?.slice(0, 10)} ...
-                          {sender?.slice(
-                            sender?.length - 10,
-                            sender?.length
-                          )}{" "}
+                          <Button
+                            onClick={() => {
+                              cancelStream(
+                                account,
+                                CONTRACT_DEPLOYED_STARKNET[DEFAULT_NETWORK]
+                                  .lockupLinearFactory,
+                                s?.stream_id
+                              );
+                            }}
+                          >
+                            Cancel
+                          </Button>
                         </Td>
-                        <Td>
-                          {asset?.slice(0, 10)} ...
-                          {asset?.slice(asset?.length - 10, asset?.length)}{" "}
-                        </Td>
-                        <Td>{Number(total_amount?.toString()) / 10 ** 18}</Td>
-                        <Td>{Number(total_withdraw?.toString()) / 10 ** 18}</Td>
-                        <Box>
-                          <Td>
-                            <Button
-                              onClick={() => {
-                                cancelStream(
-                                  account,
-                                  CONTRACT_DEPLOYED_STARKNET[DEFAULT_NETWORK]
-                                    .lockupLinearFactory,
-                                  s?.stream_id
-                                );
-                              }}
-                            >
-                              Cancel
-                            </Button>
-                          </Td>
-                        </Box>
-                      </tr>
-                    );
-                    // }
-                  })}
-              </Tbody>
-
-            </Table>
-          </Box>
+                      </Box>
+                    </tr>
+                  );
+                  // }
+                })}
+            </Tbody>
+          </>
         )}
       </Table>
     </Box>

@@ -135,14 +135,13 @@ export async function create_with_range(
     );
     console.log(
       "✅ create_with_duration invoked at :",
-      success.transaction_hash
+      success?.transaction_hash
     );
 
-    const tx = await account.waitForTransaction(success.transaction_hash);
 
     return {
-      tx: tx,
-      hash:success.transaction_hash,
+      // tx: tx,
+      hash:success?.transaction_hash,
       isSuccess: true,
       message: "200",
     };

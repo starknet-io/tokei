@@ -7,13 +7,7 @@ import {
   Text,
   Card,
   Box,
-  useColorModeValue,
   Button,
-  Table,
-  Thead,
-  Tr,
-  Th,
-  Td,
 } from "@chakra-ui/react";
 import { useAccount } from "@starknet-react/core";
 import { useEffect, useState } from "react";
@@ -25,9 +19,7 @@ import {
 } from "../../constants/address";
 import { get_streams_by_recipient } from "../../hooks/lockup/get_streams_by_recipient";
 import { StreamCard } from "./StreamCard";
-import { feltToAddress } from "../../utils/starknet";
 import { TableViewStreams } from "./TableViewStreams";
-import { TableIcon } from "@heroicons/react/solid";
 import { BiCard, BiTable } from "react-icons/bi";
 import { BsCardChecklist, BsCardList } from "react-icons/bs";
 
@@ -162,7 +154,6 @@ export const StreamViewContainer = () => {
   );
 };
 
-/** @TODO Cairo spec to be defined. */
 const AllStreamComponent = () => {
   return (
     <Box>
@@ -179,7 +170,6 @@ interface IRecipientStreamComponent {
   setViewType: (viewType: ViewType) => void;
 }
 
-/** @TODO Cairo spec recipient component */
 const RecipientStreamComponent = ({
   streamsReceivedProps,
   setStreamsReceivedProps,
@@ -234,7 +224,6 @@ interface ISenderStreamComponent {
   viewType?: ViewType;
   setViewType: (viewType: ViewType) => void;
 }
-/** @TODO Cairo spec recipient component */
 const SenderStreamComponent = ({
   streamsSend,
   setStreamsSend,
