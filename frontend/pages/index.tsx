@@ -60,7 +60,6 @@ const Home: NextPage = ({}) => {
               gap="1em"
               >
                 <AccountView></AccountView>
-
                 <Box width={{ base: "100%" }} py={{ base: "0.5em" }}>
                   <ConnectModal
                     modalOpen={isOpen}

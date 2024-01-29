@@ -26,6 +26,7 @@ import {
 import { get_streams_by_recipient } from "../../hooks/lockup/get_streams_by_recipient";
 import { StreamCard } from "./StreamCard";
 import { feltToAddress } from "../../utils/starknet";
+import { TableViewStreams } from "./TableViewStreams";
 
 enum EnumStreamSelector {
   SENDER = "SENDER",
@@ -38,14 +39,14 @@ enum ViewType {
 }
 /** @TODO getters Cairo contracts, Indexer */
 export const StreamViewContainer = () => {
-  const account = useAccount().account
+  const account = useAccount().account;
   const [streamsSend, setStreamsSend] = useState<LockupLinearStreamInterface[]>(
     []
   );
 
-  const [streamsReceived, setStreamsReceived] = useState<LockupLinearStreamInterface[]>(
-    []
-  );
+  const [streamsReceived, setStreamsReceived] = useState<
+    LockupLinearStreamInterface[]
+  >([]);
   const [selectView, setSelectView] = useState<EnumStreamSelector>(
     EnumStreamSelector.SENDER
   );
@@ -64,14 +65,33 @@ export const StreamViewContainer = () => {
       setStreamsSend(streams);
     };
 
-    if (account?.address) {
+    const getStreamsByRecipient = async () => {
+      const contractAddress =
+        CONTRACT_DEPLOYED_STARKNET[DEFAULT_NETWORK].lockupLinearFactory;
+      let streams = await get_streams_by_recipient(
+        account?.address,
+        contractAddress
+      );
+      console.log("streams recipient", streams);
+      setStreamsReceived(streams);
+    };
+    if (
+      account?.address
+      // &&  selectView == EnumStreamSelector.SENDER
+    ) {
       getStreamsBySender();
     }
-  }, [account?.address]);
+    if (
+      account?.address
+      //  && selectView== EnumStreamSelector.RECIPIENT
+    ) {
+      getStreamsByRecipient();
+    }
+  }, [account?.address, account]);
 
   return (
     <>
-      <Box>
+      <Box display={"flex"} gap="1em">
         <Button onClick={() => setViewType(ViewType.CARDS)}>Card</Button>
         <Button onClick={() => setViewType(ViewType.TABS)}>Tabs</Button>
       </Box>
@@ -85,7 +105,7 @@ export const StreamViewContainer = () => {
         <TabList>
           {/* <Tab>All streams</Tab> */}
 
-          <Tab onClick={() => setSelectView(EnumStreamSelector.SENDER)}>
+          <Tab onClick={() => setSelectView(EnumStreamSelector.RECIPIENT)}>
             As recipient
           </Tab>
 
@@ -102,10 +122,10 @@ export const StreamViewContainer = () => {
           </TabPanel> */}
           <TabPanel>
             <RecipientStreamComponent
-            streamsReceivedProps={streamsSend}
-            setStreamsReceivedProps={setStreamsSend}
-            setViewType={setViewType}
-            viewType={viewType}
+              streamsReceivedProps={streamsReceived}
+              setStreamsReceivedProps={setStreamsReceived}
+              setViewType={setViewType}
+              viewType={viewType}
             ></RecipientStreamComponent>
           </TabPanel>
           <TabPanel>
@@ -151,31 +171,11 @@ const RecipientStreamComponent = ({
   setViewType,
 }: IRecipientStreamComponent) => {
   const account = useAccount();
-  const [streamsReceived, setStreamsReiceived] =
-    useState<LockupLinearStreamInterface[]>(streamsReceivedProps);
-
-  useEffect(() => {
-    const getStreamsByRecipient = async () => {
-      const contractAddress =
-        CONTRACT_DEPLOYED_STARKNET[DEFAULT_NETWORK].lockupLinearFactory;
-      let streams = await get_streams_by_recipient(
-        account?.address,
-        contractAddress
-      );
-      console.log("streams receive", streams);
-
-      setStreamsReceivedProps(streams);
-      setStreamsReiceived(streams)
-    };
-
-    if (account?.address) {
-      getStreamsByRecipient();
-    }
-  }, [account?.address]);
+  console.log("streamsReceivedProps", streamsReceivedProps);
   return (
     <Box>
       <Text>Check the streams you can receive here.</Text>
-      <Text>Total: {streamsReceived?.length}</Text>
+      <Text>Total: {streamsReceivedProps?.length}</Text>
       {viewType == ViewType.CARDS && (
         <Box
           // display={"grid"}
@@ -188,8 +188,8 @@ const RecipientStreamComponent = ({
           }}
           gap={{ base: "0.5em" }}
         >
-          {streamsReceived?.length > 0 &&
-            streamsReceived.map((s, i) => {
+          {streamsReceivedProps?.length > 0 &&
+            streamsReceivedProps.map((s, i) => {
               // if (!s?.was_canceled) {
               return (
                 <StreamCard
@@ -203,54 +203,11 @@ const RecipientStreamComponent = ({
         </Box>
       )}
 
-      {viewType == ViewType.TABS && (
-        <Table
-        overflow={"auto"}
-        overflowX={"auto"}
+      <TableViewStreams
+        streams={streamsReceivedProps}
+        viewType={StreamCardView.RECIPIENT_VIEW}
+      ></TableViewStreams>
 
-        >
-          <Thead>
-            <Tr>
-              <Th>Sender</Th>
-              <Th>Token address</Th>
-              <Th>Amount deposit</Th>
-              <Th>Withdraw</Th>
-              <Th>Call</Th>
-            </Tr>
-          </Thead>
-          {streamsReceived.length > 0 &&
-            streamsReceived.map((s, i) => {
-              const sender = feltToAddress(BigInt(s?.sender));
-              const recipient = feltToAddress(BigInt(s?.recipient));
-              const asset = feltToAddress(BigInt(s?.asset));
-              let total_amount = s?.amounts?.deposited;
-              let total_withdraw = s?.amounts?.withdrawn;
-              console.log("s", s);
-              return (
-                <Tr key={i}>
-                  <Td>
-                    {sender?.slice(0, 10)} ...
-                    {sender?.slice(sender?.length - 10, sender?.length)}{" "}
-                  </Td>
-                  <Td>
-                    {asset?.slice(0, 10)} ...
-                    {asset?.slice(asset?.length - 10, asset?.length)}{" "}
-                  </Td>
-                  <Td>{Number(total_amount?.toString()) / 10 ** 18}</Td>
-                  <Td>{Number(total_withdraw?.toString()) / 10 ** 18}</Td>
-                  <Td>{Number(total_withdraw?.toString()) / 10 ** 18}</Td>
-                  <Td>
-                    <Box>
-                      <Button>Cancel</Button>
-                      <Button>Withdraw</Button>
-                    </Box>
-                  </Td>
-                </Tr>
-              );
-              // }
-            })}
-        </Table>
-      )}
     </Box>
   );
 };
@@ -273,7 +230,7 @@ const SenderStreamComponent = ({
   return (
     <Box>
       <Text>Find here your stream</Text>
-      <Text>Total: {streamsSend.length}</Text>
+      <Text>Total: {streamsSend?.length}</Text>
 
       {viewType == ViewType.CARDS && (
         <Box
@@ -301,58 +258,11 @@ const SenderStreamComponent = ({
         </Box>
       )}
 
-      {viewType == ViewType.TABS && (
-        <Table
-        // display={"grid"}
-        // gridTemplateColumns={{
-        //   base: "repeat(1,1fr)",
-        //   md: "repeat(2,1fr)",
-        // }}
-        // gap={{ base: "0.5em" }}
-        >
-          <Thead>
-            <Tr>
-              {/* <Th>Sender</Th> */}
-              <Th>Token address</Th>
-              <Th>Amount deposit</Th>
-              <Th>Withdraw</Th>
-              <Th>Recipient</Th>
-              <Th>Call</Th>
-            </Tr>
-          </Thead>
-          {streamsSend.length > 0 &&
-            streamsSend.map((s, i) => {
-              const sender = feltToAddress(BigInt(s?.sender));
-              const recipient = feltToAddress(BigInt(s?.recipient));
-              const asset = feltToAddress(BigInt(s?.asset));
-              let total_amount = s?.amounts?.deposited;
-              let total_withdraw = s?.amounts?.withdrawn;
-              console.log("s", s);
-              return (
-                <tr key={i}>
-                  <Td>
-                    {sender?.slice(0, 10)} ...
-                    {sender?.slice(sender?.length - 10, sender?.length)}{" "}
-                  </Td>
-                  <Td>
-                    {asset?.slice(0, 10)} ...
-                    {asset?.slice(asset?.length - 10, asset?.length)}{" "}
-                  </Td>
-                  <Td>{Number(total_amount?.toString()) / 10 ** 18}</Td>
-                  <Td>{Number(total_withdraw?.toString()) / 10 ** 18}</Td>
-                  <Td>{Number(total_withdraw?.toString()) / 10 ** 18}</Td>
-                  <Td>
-                    <Box>
-                      <Button>Cancel</Button>
-                      <Button>Withdraw</Button>
-                    </Box>
-                  </Td>
-                </tr>
-              );
-              // }
-            })}
-        </Table>
-      )}
+      <TableViewStreams
+        streams={streamsSend}
+        viewType={StreamCardView.SENDER_VIEW}
+      ></TableViewStreams>
+
     </Box>
   );
 };

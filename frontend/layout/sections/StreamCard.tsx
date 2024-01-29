@@ -51,15 +51,15 @@ export const StreamCard = ({ stream, viewType }: IStreamCard) => {
         maxW={{ base: "100%" }}
         minH={{ base: "150px" }}
         py={{ base: "0.5em" }}
+        p={{base:"1.5em", md:"1.5em"}}
         w={{ base: "100%", md: "330px", lg: "450px" }}
         maxWidth={{ lg: "750px" }}
         rounded={"1em"}
-        mx={[5, 5]}
+        // mx={[5, 5]}
         overflow={"hidden"}
         justifyContent={"space-between"}
         border={"1px"}
         height={"100%"}
-        p="1em"
       >
         <Text>Start Date: {startDate?.toString()}</Text>
 
@@ -98,7 +98,9 @@ export const StreamCard = ({ stream, viewType }: IStreamCard) => {
         <Text>Recipient: {recipientAddress}</Text>
         <Text>Amount: {total_amount}</Text>
 
-        <CardFooter>
+        <CardFooter
+        textAlign={"left"}
+        >
           {senderAddress == address && (
             <Box>
               <Button
@@ -116,7 +118,7 @@ export const StreamCard = ({ stream, viewType }: IStreamCard) => {
             </Box>
           )}
 
-          {recipientAddress == address && withdrawTo && (
+          {recipientAddress == address && withdrawTo && !stream.was_canceled && (
             <Box>
               <Button
                 onClick={() =>
