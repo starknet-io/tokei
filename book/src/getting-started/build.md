@@ -13,10 +13,8 @@ Sample output:
 ```shell
 tree target/dev
 ├── tokei.starknet_artifacts.json
-├── tokei_ERC20.casm.json
-├── tokei_ERC20.sierra.json
-├── tokei_ERC721.casm.json
-├── tokei_ERC721.sierra.json
-├── tokei_TokeiLockupLinear.casm.json
-└── tokei_TokeiLockupLinear.sierra.json
+├── tokei_ERC20.compiled_contract_class.json
+├── tokei_ERC20.contract_class.json
+├── tokei_TokeiLockupLinear.compiled_contract_class.json
+└── tokei_TokeiLockupLinear.contract_class.json
 ```
