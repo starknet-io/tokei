@@ -1,5 +1,13 @@
 import { constants } from "starknet";
 
+export const CHAIN_IDS ={
+  GOERLI:"0x534e5f474f45524c49",
+
+}
+
+export const CHAINS_NAMES= {
+  GOERLI:"Starknet Goerli Testnet"
+}
 
 export const DEFAULT_NETWORK= constants.NetworkName.SN_GOERLI
 interface ContractAddressByChain {

@@ -4,7 +4,7 @@ import {
   Text,
   Button
 } from "@chakra-ui/react";
-import { LockupLinearStreamInterface } from "../../types";
+import { LockupLinearStreamInterface, StreamCardView } from "../../types";
 import { cairo, shortString, stark, validateAndParseAddress } from "starknet";
 import { feltToAddress, feltToString } from "../../utils/starknet";
 import { useAccount } from "@starknet-react/core";
@@ -12,12 +12,16 @@ import { cancelStream } from "../../hooks/lockup/cancelStream";
 import { CONTRACT_DEPLOYED_STARKNET, DEFAULT_NETWORK } from "../../constants/address";
 import { withdraw_max } from "../../hooks/lockup/withdrawn";
 import { useEffect, useState } from "react";
+import { formatRelativeTime } from "../../utils/format";
+import { BiCheck } from "react-icons/bi";
 
 interface IStreamCard {
-  stream?: LockupLinearStreamInterface
+  stream?: LockupLinearStreamInterface,
+  viewType?: StreamCardView
 }
+
 /** @TODO get component view ui with call claim reward for recipient visibile */
-export const StreamCard = ({ stream }: IStreamCard) => {
+export const StreamCard = ({ stream, viewType }: IStreamCard) => {
   const startDateBn = Number(stream.start_time.toString())
   const startDate = new Date(startDateBn)
 
@@ -27,17 +31,17 @@ export const StreamCard = ({ stream }: IStreamCard) => {
   const address = account?.address
 
 
-  const [withdrawTo, setWithdrawTo] = useState<string|undefined>(address)
-  useEffect(()=> {
+  const [withdrawTo, setWithdrawTo] = useState<string | undefined>(address)
+  useEffect(() => {
 
     const updateWithdrawTo = () => {
-      if(!withdrawTo && address) {
+      if (!withdrawTo && address) {
         setWithdrawTo(address)
       }
     }
     updateWithdrawTo()
 
-  },[address])
+  }, [address])
 
   const recipientAddress = feltToAddress(BigInt(stream.recipient.toString()))
 
@@ -46,19 +50,17 @@ export const StreamCard = ({ stream }: IStreamCard) => {
     <>
       <Card
         textAlign={"left"}
-        borderRadius={{ base: "1em" }}
+        // borderRadius={{ base: "1em" }}
+        // borderRadius={"5em"}
         maxW={{ base: "100%" }}
         minH={{ base: "150px" }}
         py={{ base: "0.5em" }}
-        w={{ base: "100%", lg: "350px" }}
+        w={{ base: "100%", md: "330px", lg: "450px" }}
         maxWidth={{ lg: "750px" }}
-        rounded={"sm"}
+        rounded={"1em"}
         mx={[5, 5]}
         overflow={"hidden"}
         border={"1px"}
-        // borderColor="black"
-        // boxShadow={colorBoxShadow}
-        // bg={bg}
         height={"100%"}
         p='1em'
       >
@@ -67,8 +69,39 @@ export const StreamCard = ({ stream }: IStreamCard) => {
         </Text>
 
         <Text>
-          End Date:  {endDate?.toString()}
+          End Date:  {formatRelativeTime(endDate)}
         </Text>
+
+        <Text>
+          End Date:  {endDate.toISOString()}
+        </Text>
+
+        {stream?.was_canceled &&
+
+          <Box display={"flex"} gap="1em" alignItems={"baseline"}>Cancel <BiCheck color="red"></BiCheck>
+
+          </Box>}
+
+
+        {stream?.is_depleted &&
+
+          <Box
+          display={"flex"} gap="1em" alignItems={"baseline"}
+          >Depleted 
+            
+          </Box>}
+
+        {stream?.amounts?.withdrawn &&
+
+          <Box
+          display={"flex"} gap="1em" alignItems={"baseline"}
+          >Withdraw <BiCheck></BiCheck>
+            <Box>
+              {stream?.amounts?.withdrawn.toString()}
+
+            </Box>
+          </Box>}
+
 
         {stream?.stream_id &&
           <Box>
@@ -96,11 +129,11 @@ export const StreamCard = ({ stream }: IStreamCard) => {
         {recipientAddress == address && withdrawTo &&
 
           <Box>
-            <Button onClick={() => withdraw_max(account, 
+            <Button onClick={() => withdraw_max(account,
               CONTRACT_DEPLOYED_STARKNET[DEFAULT_NETWORK].lockupLinearFactory,
-               stream?.stream_id,
-               withdrawTo
-               )}>Withdraw max</Button>
+              stream?.stream_id,
+              withdrawTo
+            )}>Withdraw max</Button>
           </Box>
         }
 

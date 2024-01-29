@@ -11,7 +11,7 @@ import {
 } from "@chakra-ui/react";
 import { useAccount } from "@starknet-react/core";
 import { useEffect, useState } from "react";
-import { LockupLinearStreamInterface } from "../../types";
+import { LockupLinearStreamInterface, StreamCardView } from "../../types";
 import { get_streams_by_sender } from "../../hooks/lockup/get_streams_by_sender";
 import {
   CONTRACT_DEPLOYED_STARKNET,
@@ -112,8 +112,8 @@ const RecipientStreamComponent = () => {
   }, [account?.address]);
   return (
     <Box>
-      <Text>Find here your stream</Text>
-      <Text>Total: {streamsReceived.length}</Text>
+      <Text>Check the streams you can receive here.</Text>
+      <Text>Total: {streamsReceived?.length}</Text>
       <Box
         // display={"grid"}
         // gap={{ base: "0.5em" }}
@@ -125,32 +125,17 @@ const RecipientStreamComponent = () => {
         }}
         gap={{ base: "0.5em" }}
       >
-        {streamsReceived.length > 0 && streamsReceived.map((s, i) => {
-          console.log("s", s)
-
-          if (!s?.was_canceled) {
+        {streamsReceived?.length > 0 && streamsReceived.map((s, i) => {
+          // if (!s?.was_canceled) {
             return (
-              <StreamCard stream={s} key={i} />
+              <StreamCard stream={s} key={i}
+                viewType={StreamCardView.RECIPIENT_VIEW}
+              />
             )
-          }
-
-        }
-        )
+          // }
+        })
         }
       </Box>
-      {streamsReceived.length > 0 && streamsReceived.map((s, i) => {
-        return (<Box
-          key={i}
-        >
-          <Text>
-            {s.asset}
-
-          </Text>
-          <Text>
-            {s.recipient}
-          </Text>
-        </Box>)
-      })}
     </Box>
   );
 };
@@ -182,18 +167,11 @@ const SenderStreamComponent = ({
       getStreamsBySender();
     }
   }, [account?.address]);
-  const colorText = useColorModeValue("gray.700", "gray.300");
-  const bg = useColorModeValue("gray.300", "gray.700");
-
   return (
     <Box>
       <Text>Find here your stream</Text>
       <Text>Total: {streamsSend.length}</Text>
-
       <Box
-        // display={"grid"}
-        // gap={{ base: "0.5em" }}
-
         display={"grid"}
         gridTemplateColumns={{
           base: "repeat(1,1fr)",
@@ -206,12 +184,12 @@ const SenderStreamComponent = ({
 
           if (!s?.was_canceled) {
             return (
-              <StreamCard stream={s} key={i} />
+              <StreamCard stream={s} key={i}
+                viewType={StreamCardView.SENDER_VIEW}
+              />
             )
           }
-
-        }
-        )
+        })
         }
       </Box>
 

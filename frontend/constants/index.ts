@@ -3,8 +3,11 @@ export const CONFIG_WEBSITE = {
   description: "Starknet ERC20 token streaming protocol 💰⏳, inspired by Sablier.",
   page: {
     portal:"https://starknet-io.github.io/tokei/",
-    explorer:"https://starkscan.co"
-  }
+    explorer: "https://starkscan.co",
+    goerli_explorer: "https://testnet.starkscan.co",
+    voyager_explorer: "https://voyager.online",
+    goerli_voyager_explorer: "https://goerli.voyager.online",
+  },
 
 };
 

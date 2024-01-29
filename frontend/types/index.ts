@@ -3,6 +3,10 @@ import { IconType } from "react-icons";
 import { GetTransactionReceiptResponse, Uint256 } from "starknet";
 
 /** UI interface */
+export enum StreamCardView  {
+  SENDER_VIEW="SENDER_VIEW",
+  RECIPIENT_VIEW="RECIPIENT_VIEW"
+  }
 
 export interface TxCallInterface {
   tx?: GetTransactionReceiptResponse;

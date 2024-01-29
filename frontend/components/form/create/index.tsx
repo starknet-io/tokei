@@ -52,22 +52,6 @@ const CreateStreamForm = ({ }: ICreateStream) => {
     StreamTypeCreation | undefined
   >();
   const [recipient, setRecipient] = useState<boolean>(true);
-  // const [form, setForm] = useState<CreateRangeProps | undefined>({
-  //   sender: account?.address,
-  //   recipient: undefined,
-  //   total_amount: undefined,
-  //   asset: undefined,
-  //   cancelable: undefined,
-  //   range: {
-  //     start: undefined,
-  //     cliff: undefined,
-  //     end: undefined,
-  //   },
-  //   broker: {
-  //     account: undefined,
-  //     fee: undefined,
-  //   },
-  // });
   const [form, setForm] = useState<CreateStream | undefined>({
     sender: account?.address,
     recipient: undefined,
@@ -224,14 +208,12 @@ const CreateStreamForm = ({ }: ICreateStream) => {
     if (Number.isInteger(total_amount_nb)) {
       total_amount = cairo.uint256(total_amount_nb);
     }
-
     else if (!Number.isInteger(total_amount_nb)) {
       // total_amount=total_amount_nb
       total_amount = uint256.bnToUint256(BigInt(total_amount_nb));
     }
+    // Call function. Last check input
     if (typeOfCreation == StreamTypeCreation.CREATE_WITH_DURATION) {
-
-
       if (!form?.duration_cliff) {
         toast({
           title: "Please provide End date",
@@ -329,9 +311,6 @@ const CreateStreamForm = ({ }: ICreateStream) => {
         account?.address, //Sender
         form?.recipient, //Recipient
         total_amount, // Total amount
-        // BigInt(total_amount_nb), // Total amount
-        // total_amount_nb, // Total amount
-
         form?.asset, // Asset
         form?.cancelable, // Asset
         form?.transferable, // Transferable
@@ -340,14 +319,7 @@ const CreateStreamForm = ({ }: ICreateStream) => {
         parseInt(form?.range?.end.toString()),
         form?.broker_account,
         form?.broker_fee
-        // form?.broker_fee_nb
       );
-
-      // const { tx, isSuccess, message } = await create_with_range({
-      //   form: form,
-      //   address: address,
-      //   accountStarknet: accountStarknet,
-      // });
     }
   };
 
@@ -366,7 +338,6 @@ const CreateStreamForm = ({ }: ICreateStream) => {
         display={{ md: "flex" }}
         height={"100%"}
         justifyContent={"space-around"}
-        // gridTemplateColumns={'1fr 1fr'}
         gap={{ base: "0.5em", md: "1em" }}
         alignContent={"baseline"}
         alignSelf={"self-end"}
@@ -447,27 +418,85 @@ const CreateStreamForm = ({ }: ICreateStream) => {
                 }}
                 placeholder="Fee broker"
               ></Input>
+  
+              <Box display={{ base: "flex" }}
+                gap={{ base: "5em" }}
+              >
+                <Box>
+                  <Text>Cancelable</Text>
+                  <Checkbox
+                    py={{ base: "0.5em" }}
+                    type="number"
+                    isChecked={form.cancelable}
+                    my={{ base: "0.25em", md: "0.5em" }}
+                    onChange={(e) => {
+                      if (form?.cancelable) {
+                        setForm({
+                          ...form,
+                          cancelable: false,
+                        });
+                      } else {
+                        setForm({
+                          ...form,
+                          cancelable: true,
+                        });
+                      }
+                    }}
+                    onClick={(e) => {
+                      if (form?.cancelable) {
+                        setForm({
+                          ...form,
+                          cancelable: false,
+                        });
+                      } else {
+                        setForm({
+                          ...form,
+                          cancelable: true,
+                        });
+                      }
+                    }}
+                    placeholder="Cancelable"
+                  ></Checkbox>
+                </Box>
 
-              <Text>Cancelable</Text>
-              <Checkbox
-                py={{ base: "0.5em" }}
-                type="number"
-                my={{ base: "0.25em", md: "0.5em" }}
-                onClick={(e) => {
-                  if (form?.cancelable) {
-                    setForm({
-                      ...form,
-                      cancelable: false,
-                    });
-                  } else {
-                    setForm({
-                      ...form,
-                      cancelable: true,
-                    });
-                  }
-                }}
-                placeholder="Fee broker"
-              ></Checkbox>
+                <Box>
+                  <Text>Transferable</Text>
+                  <Checkbox
+                    py={{ base: "0.5em" }}
+                    type="number"
+                    isChecked={form.transferable}
+                    my={{ base: "0.25em", md: "0.5em" }}
+                    onChange={(e) => {
+                      if (form?.transferable) {
+                        setForm({
+                          ...form,
+                          transferable: false,
+                        });
+                      } else {
+                        setForm({
+                          ...form,
+                          transferable: true,
+                        });
+                      }
+                    }}
+                    onClick={(e) => {
+                      if (form?.transferable) {
+                        setForm({
+                          ...form,
+                          transferable: false,
+                        });
+                      } else {
+                        setForm({
+                          ...form,
+                          transferable: true,
+                        });
+                      }
+                    }}
+                    placeholder="Transferable"
+                  ></Checkbox>
+                </Box>
+              </Box>
+
             </Box>
           </Box>
         </Box>
@@ -625,8 +654,8 @@ const CreateStreamForm = ({ }: ICreateStream) => {
 
       <Box>
         <Text
-        py={{base:"0.5em"}}
-        textAlign={{base:"left"}}
+          py={{ base: "0.5em" }}
+          textAlign={{ base: "left" }}
         >Choose your type of stream to create</Text>
 
         <Box
@@ -645,7 +674,7 @@ const CreateStreamForm = ({ }: ICreateStream) => {
           >
             Create duration stream ⏳
           </Button>
-          
+
           <Button
             bg={useColorModeValue("brand.primary", "brand.primary")}
             disabled={isDisabled}
@@ -657,7 +686,7 @@ const CreateStreamForm = ({ }: ICreateStream) => {
           </Button>
         </Box>
       </Box>
-    </Box>
+    </Box >
   );
 };
 
