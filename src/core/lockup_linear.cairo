@@ -179,7 +179,7 @@ trait ITokeiLockupLinear<TContractState> {
     /// * `streams` - The streams of the sender.
     fn get_streams_by_sender(
         self: @TContractState, sender: ContractAddress
-    ) -> Array<LockupLinearStream>;
+    ) -> Span<LockupLinearStream>;
 
     /// Returns the streams of the recipient.
     /// # Arguments
@@ -188,23 +188,21 @@ trait ITokeiLockupLinear<TContractState> {
     /// * `streams` - The streams of the recipient.
     fn get_streams_by_recipient(
         self: @TContractState, recipient: ContractAddress
-    ) -> Array<LockupLinearStream>;
+    ) -> Span<LockupLinearStream>;
 
     /// Returns the streams ids of the sender.
     /// # Arguments
     /// * `sender` - The address of the sender.
     /// # Returns
     /// * `stream_ids` - The stream ids of the sender.
-    fn get_streams_ids_by_sender(self: @TContractState, sender: ContractAddress) -> Array<u64>;
+    fn get_streams_ids_by_sender(self: @TContractState, sender: ContractAddress) -> Span<u64>;
 
     /// Returns the streams ids of the recipient.
     /// # Arguments
     /// * `recipient` - The address of the recipient.
     /// # Returns
     /// * `stream_ids` - The stream ids of the recipient.
-    fn get_streams_ids_by_recipient(
-        self: @TContractState, recipient: ContractAddress
-    ) -> Array<u64>;
+    fn get_streams_ids_by_recipient(self: @TContractState, recipient: ContractAddress) -> Span<u64>;
 
 
     //////////////////////////////////////////////////////////////////////////
@@ -855,21 +853,20 @@ mod TokeiLockupLinear {
         /// * `streams` - The streams of the sender.
         fn get_streams_by_sender(
             self: @ContractState, sender: ContractAddress
-        ) -> Array<LockupLinearStream> {
+        ) -> Span<LockupLinearStream> {
             let max_stream_id = self.next_stream_id.read();
             let mut streams: Array<LockupLinearStream> = ArrayTrait::new();
             let mut i = 1; //Since the stream id starts from 1
             loop {
                 if i >= max_stream_id {
-                    break;
+                    break streams.span();
                 }
                 let stream = self.streams.read(i);
                 if stream.sender == sender {
                     streams.append(stream);
                 }
                 i += 1;
-            };
-            streams
+            }
         }
 
         /// Returns the streams of the recipient.
@@ -879,21 +876,20 @@ mod TokeiLockupLinear {
         /// * `streams` - The streams of the recipient.
         fn get_streams_by_recipient(
             self: @ContractState, recipient: ContractAddress
-        ) -> Array<LockupLinearStream> {
+        ) -> Span<LockupLinearStream> {
             let max_stream_id = self.next_stream_id.read();
             let mut streams: Array<LockupLinearStream> = ArrayTrait::new();
             let mut i = 1; //Since the stream id starts from 1
             loop {
                 if i >= max_stream_id {
-                    break;
+                    break streams.span();
                 }
                 let stream = self.streams.read(i);
                 if stream.recipient == recipient {
                     streams.append(stream);
                 }
                 i += 1;
-            };
-            streams
+            }
         }
 
         /// Returns the streams ids of the sender.
@@ -901,13 +897,13 @@ mod TokeiLockupLinear {
         /// * `sender` - The address of the sender.
         /// # Returns
         /// * `stream_ids` - The stream ids of the sender.
-        fn get_streams_ids_by_sender(self: @ContractState, sender: ContractAddress) -> Array<u64> {
+        fn get_streams_ids_by_sender(self: @ContractState, sender: ContractAddress) -> Span<u64> {
             let max_stream_id = self.next_stream_id.read();
             let mut stream_ids: Array<u64> = ArrayTrait::new();
             let mut i = 1; // As the stream id starts from 1
             loop {
                 if i >= max_stream_id {
-                    break;
+                    break stream_ids.span();
                 }
                 let stream = self.streams.read(i);
                 if (stream.sender == sender) {
@@ -915,8 +911,7 @@ mod TokeiLockupLinear {
                 }
 
                 i += 1;
-            };
-            stream_ids
+            }
         }
 
         /// Returns the streams ids of the recipient.
@@ -926,13 +921,13 @@ mod TokeiLockupLinear {
         /// * `stream_ids` - The stream ids of the recipient.
         fn get_streams_ids_by_recipient(
             self: @ContractState, recipient: ContractAddress
-        ) -> Array<u64> {
+        ) -> Span<u64> {
             let max_stream_id = self.next_stream_id.read();
             let mut stream_ids: Array<u64> = ArrayTrait::new();
             let mut i = 1; // As the stream id starts from 1
             loop {
                 if i >= max_stream_id {
-                    break;
+                    break stream_ids.span();
                 }
                 let stream = self.streams.read(i);
                 if (stream.recipient == recipient) {
@@ -940,8 +935,7 @@ mod TokeiLockupLinear {
                 }
 
                 i += 1;
-            };
-            stream_ids
+            }
         }
 
 
