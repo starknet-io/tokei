@@ -4,6 +4,7 @@ on: [push, pull_request]
 
 env:
   STARKNET_FOUNDRY_VERSION: 0.12.0
+  STARKNET_FOUNDRY_VERSION: 0.12.0
 
 jobs:
   check:
@@ -16,9 +17,8 @@ jobs:
       - name: Install starknet foundry
         run: |
           curl -L https://raw.githubusercontent.com/foundry-rs/starknet-foundry/master/scripts/install.sh | sh -s -- -v ${STARKNET_FOUNDRY_VERSION}
-          echo "/root/.local/bin" >> $GITHUB_PATH
-          echo "Listing /root/.local/bin:"
-          ls -al /root/.local/bin
+          echo "/home/runner/.local/bin" >> $GITHUB_PATH
+
       - name: Run cairo tests
         run: |
           export PATH="/root/.local/bin:$PATH"
