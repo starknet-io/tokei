@@ -1,6 +1,7 @@
 /// Core module.
 mod core {
     mod lockup_linear;
+    mod interface;
 }
 
 /// Module containing types for the system.
@@ -15,9 +16,16 @@ mod libraries {
     mod errors;
 }
 
-/// Module containing tokens implementations.
-/// TODO: remove and use OpenZeppelin dependency when it's ready.
-mod tokens {
-    mod erc20;
-    mod erc721;
+/// Module containing tests.
+mod tests {
+    #[cfg(test)]
+    mod test_lockup_linear;
+    mod utils {
+        mod defaults;
+        mod utils;
+    }
+    mod mocks {
+        mod erc20;
+    }
 }
+

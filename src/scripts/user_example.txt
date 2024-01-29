@@ -1,0 +1,17 @@
+let sender =
+    "0x05D20A56d451F02B50486B7d7B2b3F25F5A594Da8AA620Ca599fd65E7312b7F4";
+  let recipient =
+    "0x01ad3cD865329587101B3a2c3e0B7C9ca8ac9D538F6c2179384108d8ff7E6B3d";
+  let total_amount = cairo.uint256(12000000000000000000);
+  let asset =
+    "0x075b1b684be1cd0f08a4a59a22994dedb6d3f5851e630b3f1a895459ef754e87";
+  let cancelable = true;
+  let transferable = true;
+  let duration_cliff = 430; // 430/60 = 7.16 minutes
+  let duration_total = 700; // 700/60 = 11.66 minutes
+  let broker_account =
+    "0x0375b883a5A4624660EF419ed58a3c7C3ba262100CA6eE7056B65d7EB745F933";
+  let broker_fee = cairo.uint256(3); // 0.03%
+  let range_start = 1706132876;
+  let range_cliff = 1706133071;
+  let range_end = 1706139471;

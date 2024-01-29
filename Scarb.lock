@@ -2,6 +2,11 @@
 version = 1
 
 [[package]]
+name = "openzeppelin"
+version = "0.8.0"
+source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?tag=v0.8.0#c23e8e96de60e6e3159b1ff8591a1187269c0eb7"
+
+[[package]]
 name = "snforge_std"
 version = "0.1.0"
 source = "git+https://github.com/foundry-rs/starknet-foundry.git?tag=v0.12.0#0c3d2fe4ab31aa4484fa216417408ae65a149efe"
@@ -10,5 +15,6 @@ source = "git+https://github.com/foundry-rs/starknet-foundry.git?tag=v0.12.0#0c3
 name = "tokei"
 version = "0.1.0"
 dependencies = [
+ "openzeppelin",
  "snforge_std",
 ]
