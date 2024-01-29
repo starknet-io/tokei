@@ -27,6 +27,9 @@ import { get_streams_by_recipient } from "../../hooks/lockup/get_streams_by_reci
 import { StreamCard } from "./StreamCard";
 import { feltToAddress } from "../../utils/starknet";
 import { TableViewStreams } from "./TableViewStreams";
+import { TableIcon } from "@heroicons/react/solid";
+import { BiCard, BiTable } from "react-icons/bi";
+import { BsCardChecklist, BsCardList } from "react-icons/bs";
 
 enum EnumStreamSelector {
   SENDER = "SENDER",
@@ -50,7 +53,7 @@ export const StreamViewContainer = () => {
   const [selectView, setSelectView] = useState<EnumStreamSelector>(
     EnumStreamSelector.SENDER
   );
-  const [viewType, setViewType] = useState<ViewType>(ViewType.CARDS);
+  const [viewType, setViewType] = useState<ViewType>(ViewType.TABS);
   console.log("streams state Send", streamsSend);
 
   useEffect(() => {
@@ -91,25 +94,38 @@ export const StreamViewContainer = () => {
 
   return (
     <>
-      <Box display={"flex"} gap="1em">
-        <Button onClick={() => setViewType(ViewType.CARDS)}>Card</Button>
-        <Button onClick={() => setViewType(ViewType.TABS)}>Tabs</Button>
+      <Box display={"flex"} gap="1em"
+      py={{base:"1em"}}
+      textAlign={"right"}
+      justifyContent={"right"}
+      >
+        <Button onClick={() => setViewType(ViewType.TABS)}>Tabs <BiTable></BiTable></Button>
+        <Button onClick={() => setViewType(ViewType.CARDS)}>Card <BsCardChecklist></BsCardChecklist></Button>
       </Box>
 
       <Tabs
         minH={{ base: "250px", md: "350px" }}
         variant="enclosed"
+        // variant={""}
         alignItems={"center"}
         gap={{ sm: "1em" }}
       >
-        <TabList>
+        <TabList
+        
+        >
           {/* <Tab>All streams</Tab> */}
 
-          <Tab onClick={() => setSelectView(EnumStreamSelector.RECIPIENT)}>
+          <Tab onClick={() => setSelectView(EnumStreamSelector.RECIPIENT)}
+          // color={"brand.primary"}
+          _selected={{ color: 'brand.primary',  }}
+          >
             As recipient
           </Tab>
 
-          <Tab onClick={() => setSelectView(EnumStreamSelector.SENDER)}>
+          <Tab onClick={() => setSelectView(EnumStreamSelector.SENDER)}
+          // color={"brand.primary"}
+          _selected={{ color: 'brand.primary', }}
+          >
             As sender
           </Tab>
 

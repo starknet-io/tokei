@@ -10,7 +10,7 @@ import {
 } from "@chakra-ui/react";
 import { useAccount } from "@starknet-react/core";
 import { useEffect, useState } from "react";
-import { CreateRangeProps, CreateStream } from "../../../types";
+import { CreateRangeProps, CreateStream, TypeCreationStream } from "../../../types";
 import e from "cors";
 import {
   create_with_duration,
@@ -37,10 +37,6 @@ import { create_with_range } from "../../../hooks/lockup/create_with_range";
 
 interface ICreateStream { }
 
-enum StreamTypeCreation {
-  CREATE_WITH_DURATION = "CREATE_WITH_DURATION",
-  CREATE_WITH_RANGE = "CREATE_WITH_RANGE",
-}
 
 const CreateStreamForm = ({ }: ICreateStream) => {
   const toast = useToast();
@@ -48,10 +44,11 @@ const CreateStreamForm = ({ }: ICreateStream) => {
   const account = accountStarknet?.account;
   const address = accountStarknet?.account?.address;
   const [isDisabled, setIsDisabled] = useState<boolean>(true);
-  const [typeStreamCreaiton, setTypeStreamCreation] = useState<
-    StreamTypeCreation | undefined
-  >();
+  const [typeStreamCreation, setTypeStreamCreation] = useState<
+    TypeCreationStream | undefined
+  >(TypeCreationStream.CREATE_WITH_RANGE);
   const [recipient, setRecipient] = useState<boolean>(true);
+  const [typeCreation, setTypeCreation] = useState<boolean>(true);
   const [form, setForm] = useState<CreateStream | undefined>({
     sender: account?.address,
     recipient: undefined,
@@ -82,7 +79,7 @@ const CreateStreamForm = ({ }: ICreateStream) => {
   }, [accountStarknet, account, address]);
 
   const prepareHandleCreateStream = async (
-    typeOfCreation: StreamTypeCreation
+    typeOfCreation: TypeCreationStream
   ) => {
     const CONTRACT_ADDRESS = CONTRACT_DEPLOYED_STARKNET[DEFAULT_NETWORK];
 
@@ -213,7 +210,7 @@ const CreateStreamForm = ({ }: ICreateStream) => {
       total_amount = uint256.bnToUint256(BigInt(total_amount_nb));
     }
     // Call function. Last check input
-    if (typeOfCreation == StreamTypeCreation.CREATE_WITH_DURATION) {
+    if (typeOfCreation == TypeCreationStream.CREATE_WITH_DURATION) {
       if (!form?.duration_cliff) {
         toast({
           title: "Please provide End date",
@@ -333,8 +330,22 @@ const CreateStreamForm = ({ }: ICreateStream) => {
         Start creating your lockup linear vesting
       </Text>
 
+      <Text>Select the type of Stream you want to create</Text>
+
       <Box
-        py={{ base: "1em", md: "2em" }}
+        py={{ base: "0.25em" }}
+        // justifyContent={"space-around"}
+        justifyContent={"center"}
+        display={"flex"}
+        gap={{ base: "1em" }}
+      >
+
+        <Button onClick={() => setTypeStreamCreation(TypeCreationStream.CREATE_WITH_DURATION)}>Stream with duration</Button>
+        <Button onClick={() => setTypeStreamCreation(TypeCreationStream.CREATE_WITH_RANGE)}>Stream with range</Button>
+      </Box>
+
+      <Box
+        py={{ base: "0.25em", md: "1em" }}
         display={{ md: "flex" }}
         height={"100%"}
         justifyContent={"space-around"}
@@ -418,7 +429,7 @@ const CreateStreamForm = ({ }: ICreateStream) => {
                 }}
                 placeholder="Fee broker"
               ></Input>
-  
+
               <Box display={{ base: "flex" }}
                 gap={{ base: "5em" }}
               >
@@ -516,145 +527,156 @@ const CreateStreamForm = ({ }: ICreateStream) => {
             p={{ base: "1em" }}
             borderRadius={{ base: "5px" }}
           >
-            <Text
-              textAlign={"left"}
-              color={useColorModeValue("gray.100", "gray.300")}
-            >
-              Start date
-            </Text>
-            <Input
-              justifyContent={"start"}
-              w={"100%"}
-              py={{ base: "0.5em" }}
-              my={{ base: "0.25em", md: "0.5em" }}
-              type="datetime-local"
-              color={useColorModeValue("gray.100", "gray.300")}
-              _placeholder={{
-                color: useColorModeValue("gray.100", "gray.300"),
-              }}
-              onChange={(e) => {
-                setForm({
-                  ...form,
-                  range: {
-                    ...form.range,
-                    start: new Date(e.target.value).getTime(),
-                  },
-                });
-              }}
-              placeholder="Start date"
-            ></Input>
 
-            <Text
-              textAlign={"left"}
-              color={useColorModeValue("gray.100", "gray.300")}
-            >
-              Cliff date
-            </Text>
-            <Input
-              py={{ base: "0.5em" }}
-              my={{ base: "0.25em", md: "0.5em" }}
-              // type="number"
-              type="datetime-local"
-              placeholder="Cliff"
-              color={useColorModeValue("gray.100", "gray.300")}
-              _placeholder={{
-                color: useColorModeValue("gray.100", "gray.300"),
-              }}
-              onChange={(e) => {
-                setForm({
-                  ...form,
-                  range: {
-                    ...form.range,
-                    // cliff: Number(e.target.value),
-                    cliff: new Date(e.target.value).getTime(),
+            {typeStreamCreation == TypeCreationStream.CREATE_WITH_RANGE &&
 
-                  },
-                });
-              }}
-            ></Input>
+              <Box>
+                <Text
+                  textAlign={"left"}
+                  color={useColorModeValue("gray.100", "gray.300")}
+                >
+                  Start date
+                </Text>
+                <Input
+                  justifyContent={"start"}
+                  w={"100%"}
+                  py={{ base: "0.5em" }}
+                  my={{ base: "0.25em", md: "0.5em" }}
+                  type="datetime-local"
+                  color={useColorModeValue("gray.100", "gray.300")}
+                  _placeholder={{
+                    color: useColorModeValue("gray.100", "gray.300"),
+                  }}
+                  onChange={(e) => {
+                    setForm({
+                      ...form,
+                      range: {
+                        ...form.range,
+                        start: new Date(e.target.value).getTime(),
+                      },
+                    });
+                  }}
+                  placeholder="Start date"
+                ></Input>
 
-            <Text
-              textAlign={"left"}
-              color={useColorModeValue("gray.100", "gray.300")}
-            >
-              End date
-            </Text>
-            <Input
-              py={{ base: "0.5em" }}
-              type="datetime-local"
-              my={{ base: "0.25em", md: "0.5em" }}
-              color={useColorModeValue("gray.100", "gray.300")}
-              _placeholder={{
-                color: useColorModeValue("gray.100", "gray.300"),
-              }}
-              onChange={(e) => {
-                setForm({
-                  ...form,
-                  range: {
-                    ...form.range,
-                    end: new Date(e.target.value).getTime(),
-                  },
-                });
-              }}
-              placeholder="End date"
-            ></Input>
 
-            <FormLabel fontFamily={"monospace"}>
-              Duration stream type:{" "}
-            </FormLabel>
+                <Text
+                  textAlign={"left"}
+                  color={useColorModeValue("gray.100", "gray.300")}
+                >
+                  Cliff date
+                </Text>
+                <Input
+                  py={{ base: "0.5em" }}
+                  my={{ base: "0.25em", md: "0.5em" }}
+                  // type="number"
+                  type="datetime-local"
+                  placeholder="Cliff"
+                  color={useColorModeValue("gray.100", "gray.300")}
+                  _placeholder={{
+                    color: useColorModeValue("gray.100", "gray.300"),
+                  }}
+                  onChange={(e) => {
+                    setForm({
+                      ...form,
+                      range: {
+                        ...form.range,
+                        // cliff: Number(e.target.value),
+                        cliff: new Date(e.target.value).getTime(),
 
-            <Text
-              textAlign={"left"}
-              color={useColorModeValue("gray.100", "gray.300")}
-            >
-              Duration cliff
-            </Text>
-            <Input
-              py={{ base: "0.5em" }}
-              type="number"
-              my={{ base: "0.25em", md: "0.5em" }}
-              color={useColorModeValue("gray.100", "gray.300")}
-              _placeholder={{
-                color: useColorModeValue("gray.100", "gray.300"),
-              }}
-              onChange={(e) => {
-                setForm({
-                  ...form,
-                  duration_cliff: Number(e?.target?.value),
-                });
-              }}
-              placeholder="Duration cliff"
-            ></Input>
+                      },
+                    });
+                  }}
+                ></Input>
 
-            <Text
-              textAlign={"left"}
-              color={useColorModeValue("gray.100", "gray.300")}
-            >
-              Duration total
-            </Text>
-            <Input
-              py={{ base: "0.5em" }}
-              type="number"
-              my={{ base: "0.25em", md: "0.5em" }}
-              color={useColorModeValue("gray.100", "gray.300")}
-              _placeholder={{
-                color: useColorModeValue("gray.100", "gray.300"),
-              }}
-              onChange={(e) => {
-                setForm({
-                  ...form,
-                  duration_total: Number(e?.target?.value),
-                });
-              }}
-              placeholder="Duration total"
-            ></Input>
+                <Text
+                  textAlign={"left"}
+                  color={useColorModeValue("gray.100", "gray.300")}
+                >
+                  End date
+                </Text>
+                <Input
+                  py={{ base: "0.5em" }}
+                  type="datetime-local"
+                  my={{ base: "0.25em", md: "0.5em" }}
+                  color={useColorModeValue("gray.100", "gray.300")}
+                  _placeholder={{
+                    color: useColorModeValue("gray.100", "gray.300"),
+                  }}
+                  onChange={(e) => {
+                    setForm({
+                      ...form,
+                      range: {
+                        ...form.range,
+                        end: new Date(e.target.value).getTime(),
+                      },
+                    });
+                  }}
+                  placeholder="End date"
+                ></Input>
+              </Box>}
+            {typeStreamCreation == TypeCreationStream.CREATE_WITH_DURATION &&
+              <Box>
+
+                <FormLabel fontFamily={"monospace"}>
+                  Duration stream type:{" "}
+                </FormLabel>
+
+                <Text
+                  textAlign={"left"}
+                  color={useColorModeValue("gray.100", "gray.300")}
+                >
+                  Duration cliff
+                </Text>
+                <Input
+                  py={{ base: "0.5em" }}
+                  type="number"
+                  my={{ base: "0.25em", md: "0.5em" }}
+                  color={useColorModeValue("gray.100", "gray.300")}
+                  _placeholder={{
+                    color: useColorModeValue("gray.100", "gray.300"),
+                  }}
+                  onChange={(e) => {
+                    setForm({
+                      ...form,
+                      duration_cliff: Number(e?.target?.value),
+                    });
+                  }}
+                  placeholder="Duration cliff"
+                ></Input>
+
+                <Text
+                  textAlign={"left"}
+                  color={useColorModeValue("gray.100", "gray.300")}
+                >
+                  Duration total
+                </Text>
+                <Input
+                  py={{ base: "0.5em" }}
+                  type="number"
+                  my={{ base: "0.25em", md: "0.5em" }}
+                  color={useColorModeValue("gray.100", "gray.300")}
+                  _placeholder={{
+                    color: useColorModeValue("gray.100", "gray.300"),
+                  }}
+                  onChange={(e) => {
+                    setForm({
+                      ...form,
+                      duration_total: Number(e?.target?.value),
+                    });
+                  }}
+                  placeholder="Duration total"
+                ></Input>
+              </Box>
+            }
+
           </Box>
         </Box>
       </Box>
 
       <Box>
         <Text
-          py={{ base: "0.5em" }}
+          py={{ base: "0.1em" }}
           textAlign={{ base: "left" }}
         >Choose your type of stream to create</Text>
 
@@ -663,27 +685,33 @@ const CreateStreamForm = ({ }: ICreateStream) => {
           display={{ base: "flex" }}
           gap={{ base: "0.5em" }}
         >
-          <Button
-            bg={useColorModeValue("brand.primary", "brand.primary")}
-            disabled={isDisabled}
-            onClick={() => {
-              prepareHandleCreateStream(
-                StreamTypeCreation.CREATE_WITH_DURATION
-              );
-            }}
-          >
-            Create duration stream ⏳
-          </Button>
 
-          <Button
-            bg={useColorModeValue("brand.primary", "brand.primary")}
-            disabled={isDisabled}
-            onClick={() => {
-              prepareHandleCreateStream(StreamTypeCreation.CREATE_WITH_RANGE);
-            }}
-          >
-            Create stream
-          </Button>
+          {typeStreamCreation == TypeCreationStream.CREATE_WITH_DURATION ?
+            <Button
+              bg={useColorModeValue("brand.primary", "brand.primary")}
+              disabled={isDisabled}
+              onClick={() => {
+                prepareHandleCreateStream(
+                  TypeCreationStream.CREATE_WITH_DURATION
+                );
+              }}
+            >
+              Create duration stream ⏳
+            </Button> :
+            <Button
+              bg={useColorModeValue("brand.primary", "brand.primary")}
+              disabled={isDisabled}
+              onClick={() => {
+                prepareHandleCreateStream(TypeCreationStream.CREATE_WITH_RANGE);
+              }}
+            >
+              Create stream
+            </Button>
+
+          }
+
+
+
         </Box>
       </Box>
     </Box >

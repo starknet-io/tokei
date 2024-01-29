@@ -3,6 +3,11 @@ import { IconType } from "react-icons";
 import { GetTransactionReceiptResponse, Uint256 } from "starknet";
 
 /** UI interface */
+
+export enum TypeCreationStream {
+  CREATE_WITH_DURATION="CREATE_WITH_DURATION",
+  CREATE_WITH_RANGE="CREATE_WITH_RANGE"
+}
 export enum StreamCardView  {
   SENDER_VIEW="SENDER_VIEW",
   RECIPIENT_VIEW="RECIPIENT_VIEW"

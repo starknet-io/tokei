@@ -136,4 +136,33 @@ export const ExternalStylizedButtonLink: React.FC<StylizedButtonLinkProps> = ({
   );
 };
 
+
+export const ExternalTransparentButtonLink: React.FC<StylizedButtonLinkProps> = ({
+  icon,
+  href,
+  text,
+  title,
+  children,
+  ...rest
+}) => {
+  return (
+    <Box as={LinkChakra} title={title} {...rest} href={href} target="_blank"
+    bg='transparent'
+    >
+      <Button
+        rel="noopener noreferrer"
+        display="inline-flex"
+        alignItems="center"
+        width={"100%"}
+        bg="transparent"
+        {...rest}
+      >
+        {icon && <Icon as={icon} marginRight={2} />}
+        {children}
+      </Button>
+    </Box>
+  );
+};
+
+
 export default StylizedButtonLink;

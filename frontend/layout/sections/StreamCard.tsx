@@ -10,8 +10,10 @@ import {
 } from "../../constants/address";
 import { withdraw_max } from "../../hooks/lockup/withdrawn";
 import { useEffect, useState } from "react";
-import { formatRelativeTime } from "../../utils/format";
-import { BiCheck } from "react-icons/bi";
+import { formatDateTime, formatRelativeTime } from "../../utils/format";
+import { BiCheck, BiCheckShield } from "react-icons/bi";
+import { ExternalStylizedButtonLink, ExternalTransparentButtonLink } from "../../components/button/NavItem";
+import { CONFIG_WEBSITE } from "../../constants";
 
 interface IStreamCard {
   stream?: LockupLinearStreamInterface;
@@ -39,7 +41,23 @@ export const StreamCard = ({ stream, viewType }: IStreamCard) => {
   }, [address]);
 
   const recipientAddress = feltToAddress(BigInt(stream.recipient.toString()));
+  function timeAgo(date: Date): string {
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
+    if (diffInSeconds < 60) {
+      return `${diffInSeconds} seconds ago`;
+    } else if (diffInSeconds < 3600) {
+      const minutes = Math.floor(diffInSeconds / 60);
+      return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+    } else if (diffInSeconds < 86400) {
+      const hours = Math.floor(diffInSeconds / 3600);
+      return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    } else {
+      const days = Math.floor(diffInSeconds / 86400);
+      return `${days} day${days > 1 ? 's' : ''} ago`;
+    }
+  }
   const senderAddress = feltToAddress(BigInt(stream.sender.toString()));
   let total_amount = stream?.amounts?.deposited
   return (
@@ -51,7 +69,7 @@ export const StreamCard = ({ stream, viewType }: IStreamCard) => {
         maxW={{ base: "100%" }}
         minH={{ base: "150px" }}
         py={{ base: "0.5em" }}
-        p={{base:"1.5em", md:"1.5em"}}
+        p={{ base: "1.5em", md: "1.5em" }}
         w={{ base: "100%", md: "330px", lg: "450px" }}
         maxWidth={{ lg: "750px" }}
         rounded={"1em"}
@@ -61,11 +79,10 @@ export const StreamCard = ({ stream, viewType }: IStreamCard) => {
         border={"1px"}
         height={"100%"}
       >
-        <Text>Start Date: {startDate?.toString()}</Text>
-
-        <Text>End Date: {formatRelativeTime(endDate)}</Text>
-
-        <Text>End Date: {endDate.toISOString()}</Text>
+        {/* <Text>Start Date: {startDate?.toString()}</Text> */}
+        <Text>Start Date: {formatDateTime(startDate)}</Text>
+        <Text>End Date: {timeAgo(endDate)}</Text>
+        <Text>End Date: {formatDateTime(endDate)}</Text>
 
         {stream?.was_canceled && (
           <Box display={"flex"} gap="1em" alignItems={"baseline"}>
@@ -75,7 +92,7 @@ export const StreamCard = ({ stream, viewType }: IStreamCard) => {
 
         {stream?.is_depleted && (
           <Box display={"flex"} gap="1em" alignItems={"baseline"}>
-            Depleted
+            Depleted <BiCheckShield></BiCheckShield>
           </Box>
         )}
 
@@ -94,12 +111,47 @@ export const StreamCard = ({ stream, viewType }: IStreamCard) => {
         )}
 
         <Text>Asset: {feltToAddress(BigInt(stream.asset.toString()))}</Text>
-        <Text>Sender: {senderAddress}</Text>
-        <Text>Recipient: {recipientAddress}</Text>
-        <Text>Amount: {total_amount}</Text>
+        <a href={`${CONFIG_WEBSITE.page.goerli_voyager_explorer}/contract/${recipientAddress}`}>Recipient</a>
+        <ExternalStylizedButtonLink
+        pb={{base:"0.5em"}}
+          textOverflow={"no"}
+
+          href={`${CONFIG_WEBSITE.page.goerli_voyager_explorer}/contract/${recipientAddress}`}>
+          {/* <Text>{senderAddress}</Text> */}
+          <Text>Sender explorer</Text>
+
+        </ExternalStylizedButtonLink>
+        <ExternalStylizedButtonLink
+
+          href={`${CONFIG_WEBSITE.page.goerli_voyager_explorer}/contract/${recipientAddress}`}>
+          <Text>Recipient explorer</Text>
+
+        </ExternalStylizedButtonLink>
+
+        <Box>
+          <Text>Amount: {Number(total_amount) / 10 ** 18}</Text>
+
+          <Box
+            display={{ base: "flex" }}
+            gap={{ base: "0.5em" }}
+          >
+            {stream?.amounts?.refunded &&
+              <Text>
+                Refunded  {Number(stream.amounts?.refunded) / 10 ** 18}
+              </Text>
+            }
+            {stream?.amounts?.withdrawn &&
+              <Text>
+                Withdraw {Number(stream.amounts?.withdrawn) / 10 ** 18}
+
+              </Text>
+            }
+          </Box>
+
+        </Box>
 
         <CardFooter
-        textAlign={"left"}
+          textAlign={"left"}
         >
           {senderAddress == address && (
             <Box>

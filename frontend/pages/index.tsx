@@ -61,7 +61,7 @@ const Home: NextPage = ({}) => {
               >
                 <AccountView></AccountView>
                 <Box width={{ base: "100%" }} py={{ base: "0.5em" }}>
-                  <ConnectModal
+                  {/* <ConnectModal
                     modalOpen={isOpen}
                     onClose={onCloseConnectModal}
                     onOpen={onOpenConnectModal}
@@ -71,7 +71,7 @@ const Home: NextPage = ({}) => {
 
                       // width: { base: "150px" },
                     }}
-                  />
+                  /> */}
                   <ButtonLink
                     restButton={{
                       width: { base: "150px", md: "220px" },
