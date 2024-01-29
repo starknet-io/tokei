@@ -88,7 +88,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../index.html">Introduction</a></li><li class="chapter-item expanded "><a href="../getting-started/index.html" class="active"><strong aria-hidden="true">1.</strong> Getting Started</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../getting-started/prerequisites.html"><strong aria-hidden="true">1.1.</strong> Prerequisites</a></li><li class="chapter-item expanded "><a href="../getting-started/build.html"><strong aria-hidden="true">1.2.</strong> Build the contracts</a></li><li class="chapter-item expanded "><a href="../getting-started/test.html"><strong aria-hidden="true">1.3.</strong> Test the contracts</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../index.html">Introduction</a></li><li class="chapter-item expanded "><a href="../getting-started/index.html" class="active"><strong aria-hidden="true">1.</strong> Getting Started</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../getting-started/prerequisites.html"><strong aria-hidden="true">1.1.</strong> Prerequisites</a></li><li class="chapter-item expanded "><a href="../getting-started/build.html"><strong aria-hidden="true">1.2.</strong> Build the contracts</a></li><li class="chapter-item expanded "><a href="../getting-started/test.html"><strong aria-hidden="true">1.3.</strong> Test the contracts</a></li><li class="chapter-item expanded "><a href="../getting-started/user.html"><strong aria-hidden="true">1.4.</strong> Interact with contract as a User</a></li><li class="chapter-item expanded "><a href="../getting-started/admin.html"><strong aria-hidden="true">1.5.</strong> Interact with contract as an Admin</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
@@ -179,8 +179,119 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="getting-started"><a class="header" href="#getting-started">Getting Started</a></h1>
-<p>In this section, we will go through the steps to build and test the smart contracts.</p>
+                        <h1 id="getting-started-with-tokei-lockup-linear-contract"><a class="header" href="#getting-started-with-tokei-lockup-linear-contract">Getting Started with Tokei Lockup Linear Contract</a></h1>
+<p>Welcome to the Tokei Lockup Linear Contract on StarkNet. This guide will provide you with all the necessary information to get started with building, testing, and interacting with the contract, as well as administering it effectively.</p>
+<h2 id="table-of-contents"><a class="header" href="#table-of-contents">📝Table of Contents</a></h2>
+<ul>
+<li><a href="#about-tokei">About Tokei</a></li>
+<li><a href="#prerequisites">Prerequisites</a></li>
+<li><a href="#building-the-contracts">Building the Contracts</a></li>
+<li><a href="#testing-the-contracts">Testing the Contracts</a></li>
+<li><a href="#user-interaction-cli-tool">User Interaction CLI Tool</a></li>
+<li><a href="#admin-interaction-script">Admin Interaction Script</a></li>
+</ul>
+<h2 id="about-tokei"><a class="header" href="#about-tokei">About Tokei</a></h2>
+<p>In the digital age where blockchain technology is reshaping financial landscapes, the Tokei protocol emerges as a cutting-edge solution for token streaming. Inspired by Sablier's groundbreaking work, Tokei harnesses the power of Starknet's Layer 2 capabilities to offer a novel and secure approach to token allocation and distribution, setting a new paradigm in decentralized finance (DeFi).</p>
+<h2 id="the-advent-of-tokei-a-new-era-in-token-streaming"><a class="header" href="#the-advent-of-tokei-a-new-era-in-token-streaming"><strong>The Advent of Tokei: A New Era in Token Streaming</strong></a></h2>
+<p>At its essence, token streaming facilitates the continuous transfer of assets over time. Tokei elevates this concept by providing enhanced flexibility and customizability on Starknet, enabling users to create tailored streams that fit a plethora of financial scenarios.</p>
+<h3 id="distinctive-features-of-tokei"><a class="header" href="#distinctive-features-of-tokei"><strong>Distinctive Features of Tokei</strong></a></h3>
+<ul>
+<li><strong>Linear Lockup Streams</strong>: Tokei's lockup linear streams are designed for a gradual and controlled release of funds, ideal for structured payment plans and corporate vesting schedules.</li>
+<li><strong>Customization at Its Core</strong>: With adjustable parameters like start and end times, cliff durations, and options for cancelability and transferability, Tokei caters to diverse streaming needs.</li>
+<li><strong>Integration with ERC Standards</strong>: Tokei supports ERC-20 tokens for streaming transactions and leverages ERC-721 (NFTs) to represent stream ownership, expanding its utility across asset classes.</li>
+<li><strong>Transparent Fee Structure</strong>: The platform ensures fair dealings with a clear-cut mechanism for protocol fees and brokerage commissions.</li>
+<li><strong>Administrative Oversight</strong>: Advanced features allow for administrative interventions, including setting fees, claiming revenues, and managing NFT descriptors.</li>
+</ul>
+<h2 id="a-closer-look-at-tokeis-mechanics-on-starknet"><a class="header" href="#a-closer-look-at-tokeis-mechanics-on-starknet"><strong>A Closer Look at Tokei's Mechanics on Starknet</strong></a></h2>
+<p>Tokei's smart contract infrastructure orchestrates the entire lifecycle of token streams, from their inception to conclusion.</p>
+<h3 id="stream-creation"><a class="header" href="#stream-creation"><strong>Stream Creation</strong></a></h3>
+<p>Participants can initiate streams with specific durations or date ranges, defining the total amount and the type of asset, as well as other bespoke conditions.</p>
+<h3 id="stream-management-and-oversight"><a class="header" href="#stream-management-and-oversight"><strong>Stream Management and Oversight</strong></a></h3>
+<p>The protocol provides a suite of functions for obtaining comprehensive details about each stream, such as asset details, key timepoints, deposited sums, and the stream's current state.</p>
+<h3 id="stream-conclusion"><a class="header" href="#stream-conclusion"><strong>Stream Conclusion</strong></a></h3>
+<p>Streams can be terminated based on predefined conditions, with the protocol adeptly reallocating funds relative to the amount streamed and the remaining balance.</p>
+<h3 id="withdrawals-and-ownership-transfers"><a class="header" href="#withdrawals-and-ownership-transfers"><strong>Withdrawals and Ownership Transfers</strong></a></h3>
+<p>Users can withdraw from streams or transfer ownership, facilitated by NFT representations, further emphasizing Tokei's commitment to flexibility and security.</p>
+<h2 id="practical-applications-and-implications"><a class="header" href="#practical-applications-and-implications"><strong>Practical Applications and Implications</strong></a></h2>
+<p>Tokei's protocol unlocks a myriad of possibilities within the DeFi ecosystem:</p>
+<ul>
+<li><strong>Employee Vesting</strong>: For example, enterprises can implement Tokei to distribute tokens to employees systematically, thereby ensuring a transparent vesting journey.</li>
+<li><strong>Subscription Services</strong>: Businesses can adopt token streaming as a payment method for subscription services, providing a seamless transaction flow.</li>
+<li><strong>DAO Operations</strong>: DAOs can employ Tokei to regulate ongoing contributions and distributions, enhancing community engagement and financial management.</li>
+</ul>
+<h2 id="visualizing-token-streaming-with-tokei"><a class="header" href="#visualizing-token-streaming-with-tokei"><strong>Visualizing Token Streaming with Tokei</strong></a></h2>
+<p>Let's visualize the process with an example:</p>
+<ul>
+<li><strong>Scenario</strong>: Evelyn wishes to stream 10,000 XYZ tokens to Jordan over three months.</li>
+<li><strong>Execution</strong>: She locks the XYZ tokens into Tokei's smart contract at the start of April, with the stream set to end in July.</li>
+<li><strong>Token Accrual</strong>: As the days of April unfold, Jordan's balance begins to grow in real-time.</li>
+<li><strong>Withdrawal Option</strong>: By the 10th of April, Jordan has access to a portion of the tokens and can choose to withdraw at any time.</li>
+</ul>
+<p><em>The graph here depicts a consistent token stream without a cliff.</em></p>
+<img width="528" alt="Screenshot 2024-01-25 at 11 35 54 PM" src="https://github.com/Akashneelesh/tokei/assets/66639153/68abfa36-3117-452c-87b7-d0e1a73e6d95">
+<p>Should Evelyn choose to retract her tokens, she has the autonomy to cancel the stream and retrieve the unstreamed tokens.</p>
+<h3 id="introducing-cliffs-for-enhanced-control"><a class="header" href="#introducing-cliffs-for-enhanced-control"><strong>Introducing Cliffs for Enhanced Control</strong></a></h3>
+<p>Tokei introduces the concept of cliffs to add a strategic pause in the token release schedule:</p>
+<ul>
+<li><strong>Vesting with Cliffs</strong>: Consider a business that sets a 6-month cliff for an employee's token vesting, followed by a 2-year linear stream. If the employee exits the company prematurely, the business can cancel the stream and secure the assets not yet streamed.</li>
+</ul>
+<p><em>This graph showcases a Lockup Linear stream with a cliff. The horizontal plateau represents the cliff duration, after which the linear increase in streamed tokens resumes.</em></p>
+<img width="522" alt="Screenshot 2024-01-25 at 11 36 06 PM" src="https://github.com/Akashneelesh/tokei/assets/66639153/b787c0f0-38a6-42e3-af83-d9233d81bd4e">
+<h2 id="prerequisites"><a class="header" href="#prerequisites">📖Prerequisites</a></h2>
+<p>Before you begin, make sure you have the following prerequisites installed:</p>
+<ul>
+<li>Starknet Foundry</li>
+<li>Scarb</li>
+<li>Starknet.js</li>
+<li>Node.js (for User and Admin scripts)</li>
+<li>TypeScript</li>
+</ul>
+<p>More details: <a href="https://foundry-rs.github.io/starknet-foundry/">Starknet Foundry</a></p>
+<h2 id="-building-the-contracts"><a class="header" href="#-building-the-contracts">🏗️ Building the Contracts</a></h2>
+<p>To build the smart contracts, open a terminal and execute:</p>
+<pre><code class="language-bash">scarb build
+</code></pre>
+<p>This command will compile the smart contracts and output them to the target directory. For a detailed structure of the output, see <a href="(https://github.com/Akashneelesh/tokei/blob/main/book/src/getting-started/build.html">build.md</a>.</p>
+<h2 id="testing-the-contracts"><a class="header" href="#testing-the-contracts">🔨Testing the Contracts</a></h2>
+<p>Run the following command to test the contracts:</p>
+<pre><code class="language-bash">snforge test
+</code></pre>
+<p>This executes tests located in the tests directory. Sample output:</p>
+<pre><code>Collected 38 test(s) from tokei package
+Running 38 test(s) from src/
+[PASS] tokei::tests::... (detailed test results)
+</code></pre>
+<p>For more detailed view about the test cases see <a href="https://github.com/Akashneelesh/tokei/blob/main/book/src/getting-started/test.md">test.md</a>.</p>
+<h2 id="-user-interaction-cli-tool"><a class="header" href="#-user-interaction-cli-tool">⚙ User Interaction CLI Tool</a></h2>
+<p>The User Interaction CLI tool is designed for easy interaction with the streaming contract. It supports various functionalities such as creating streams, withdrawing funds, and querying stream details. To use this tool, you need to install certain dependencies and follow the steps outlined in <a href="https://github.com/Akashneelesh/tokei/blob/main/book/src/getting-started/user.md">user.md</a>.</p>
+<h3 id="key-functionalities-include"><a class="header" href="#key-functionalities-include">Key functionalities include:</a></h3>
+<ul>
+<li>Stream creation and management</li>
+<li>Asset management</li>
+<li>Fee and NFT integration</li>
+</ul>
+<p>For detailed instructions on installation, usage, and examples, please refer to <a href="https://github.com/Akashneelesh/tokei/blob/main/book/src/getting-started/user.md">user.md</a>.</p>
+<h2 id="-admin-interaction-script"><a class="header" href="#-admin-interaction-script">👮‍♂️ Admin Interaction Script</a></h2>
+<p>The Admin Interaction Script facilitates the management of the Tokei Lockup Linear Contract. It includes features for setting and retrieving protocol fees, claiming protocol revenues, and viewing administrative details.</p>
+<h3 id="key-aspects-include"><a class="header" href="#key-aspects-include">Key aspects include:</a></h3>
+<ul>
+<li>Stream creation and management</li>
+<li>Fee handling</li>
+<li>NFT Integration</li>
+<li>Core functionalities and key structures
+For complete guidelines on installation, usage, and available functions, see <a href="https://github.com/Akashneelesh/tokei/blob/main/book/src/getting-started/admin.md">admin.md</a>.</li>
+</ul>
+<h2 id="-resources"><a class="header" href="#-resources">📚 Resources</a></h2>
+<p>Here are some resources to help you get started:</p>
+<ul>
+<li><a href="https://book.cairo-lang.org/">Cairo Book</a></li>
+<li><a href="https://book.starknet.io/">Starknet Book</a></li>
+<li><a href="https://foundry-rs.github.io/starknet-foundry/">Starknet Foundry Book</a></li>
+<li><a href="https://starknet-by-example.voyager.online/">Starknet By Example</a></li>
+<li><a href="https://book.starkli.rs/">Starkli Book</a></li>
+</ul>
+<h2 id="-license"><a class="header" href="#-license">📖 License</a></h2>
+<p>This project is licensed under the <strong>MIT license</strong>. See <a href="LICENSE">LICENSE</a> for more information.</p>
 
                     </main>
 
