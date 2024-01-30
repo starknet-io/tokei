@@ -15,6 +15,7 @@ import { useAccount, useConnect, useDisconnect } from "@starknet-react/core";
 import { CONFIG_WEBSITE } from "../../../constants";
 import { ExternalStylizedButtonLink } from "../../button/NavItem";
 import { installWallet } from "../../../utils/connect";
+import { useEffect } from "react";
 interface IAdminPanelGroup {
   modalOpen: boolean;
   chatId?: string;
@@ -37,6 +38,9 @@ const ConnectModal = ({
   const address = accountStarknet?.account?.address;
   const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
+  useEffect(()=> {
+    
+  },[address])
   return (
     <Box>
       <Button
